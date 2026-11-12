@@ -7,7 +7,6 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.util.Arrays;
 import java.util.function.Consumer;
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -36,7 +35,6 @@ final class DangNhapPanel extends JPanel {
     // Khoi tao lop va noi cac thanh phan can thiet.
     DangNhapPanel(Consumer<ThongTin> khiGui,Consumer<String> khiThu) {
         super(new GridBagLayout()); this.khiGui=khiGui; this.khiThu=khiThu; setBackground(Theme.NEN);
-        hangLai.setMaximumSize(new Dimension(600,88)); server.setMaximumSize(new Dimension(600,125));
         var daLuu=CauHinhClient.doc(); ten.setText(daLuu.getProperty("username","")); ip.setText(daLuu.getProperty("server","localhost"));
         the.setLayout(new BorderLayout(0,Theme.S24)); the.setBorder(Theme.le(Theme.S24));
 
@@ -63,9 +61,7 @@ final class DangNhapPanel extends JPanel {
     private static JLabel loi() { JLabel l=Theme.nhan(" ",false); l.setForeground(Theme.LOI); l.setFont(Theme.NHO); l.setVisible(false); return l; }
     // Them.
     private static void them(JPanel cha,String ten,javax.swing.JComponent o,JLabel loi) {
-        JPanel hang=new JPanel(new BorderLayout(0,Theme.S4)); hang.setBorder(BorderFactory.createEmptyBorder(8,0,4,0));
-        hang.add(Theme.nhan(ten,false),BorderLayout.NORTH); hang.add(o,BorderLayout.CENTER); hang.add(loi,BorderLayout.SOUTH);
-        hang.setAlignmentX(LEFT_ALIGNMENT); hang.setMaximumSize(new Dimension(600,hang.getPreferredSize().height));
+        JPanel hang=Theme.hangNhap(ten,o,loi);
         if (cha.getLayout() instanceof BorderLayout) { cha.add(hang,BorderLayout.CENTER); } else { cha.add(hang); }
     }
     // Gui.
@@ -89,9 +85,8 @@ final class DangNhapPanel extends JPanel {
     }
     // Bo cuc.
     private void boCuc() {
-        for (JLabel l:new JLabel[]{loiTen,loiMk,loiLai,loiIp}) {
-            if (l.getParent()!=null) { var h=(javax.swing.JComponent)l.getParent(); h.setMaximumSize(new Dimension(600,h.getPreferredSize().height)); }
-        }
+        form.invalidate(); hangLai.invalidate(); server.invalidate(); the.invalidate();
+        the.setPreferredSize(null);
         the.setPreferredSize(new Dimension(440,the.getLayout().preferredLayoutSize(the).height)); revalidate(); repaint();
     }
     // Remove notify.

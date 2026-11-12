@@ -1,4 +1,4 @@
-# Ảnh UiPreview — M2.6
+# Ảnh UiPreview — M2.7
 
 Chạy từ project:
 
@@ -29,5 +29,13 @@ Công cụ vẽ **chính component Swing của ứng dụng** lên BufferedImage
 | [17-chat-960x600.png](17-chat-960x600.png) | Kiểm tra kích thước cửa sổ tối thiểu |
 | [18-soan-nhieu-dong.png](18-soan-nhieu-dong.png) | Năm dòng, nút Gửi tròn và emoji/+ căn đáy |
 | [19-chu-so.png](19-chu-so.png) | Số 111 trong hai bong bóng, grayscale AA không viền RGB |
+| [20-dang-nhap-nhieu-loi.png](20-dang-nhap-nhieu-loi.png) | Tên/mật khẩu/Server cùng có lỗi, input không bị nén |
+| [21-dang-ky-nhieu-loi.png](21-dang-ky-nhieu-loi.png) | Ba ô tài khoản/mật khẩu/nhập lại giữ chiều cao khi lỗi |
+| [22-tao-phong-co-loi.png](22-tao-phong-co-loi.png) | Tạo phòng có nhiều dòng lỗi, ô nhập/nút vẫn đủ chỗ |
+| [23-sua-phong-co-loi.png](23-sua-phong-co-loi.png) | Sửa phòng còn nguyên chữ đã nhập khi lỗi |
+| [24-vao-phong-co-loi.png](24-vao-phong-co-loi.png) | Mã phòng và mật khẩu cùng có lỗi |
 
-19 PNG đã được xuất lại bằng UI M2.6. UiPreview còn xác nhận trên component thật: đổi profile vẽ lại đúng một Bạn, hai tên hiển thị trùng nhau không nhầm tài khoản, chuyển phòng xóa badge ngay, nút Tạo phòng không bị cắt và kiểm tra pixel chữ trắng trên nền xanh không có viền RGB.
+
+24 PNG đã được xuất lại bằng UI M2.7. UiPreview còn xác nhận trên component thật: đổi profile vẽ lại đúng một Bạn, hai tên hiển thị trùng nhau không nhầm tài khoản, chuyển phòng xóa badge ngay, nút Tạo phòng không bị cắt và kiểm tra pixel chữ trắng trên nền xanh không có viền RGB.
+
+M2.7 tái hiện bản cũ bằng assertion (ô tên còn 12px), sau sửa toàn bộ ảnh qua kiểm tra chiều cao input (32px cho hàng form; editor bên trong spinner trừ viền), font nội dung PLAIN và vị trí toast. Ảnh 03, 06/07, 15 và các ảnh khác đã xuất lại. Toast một dòng khoảng 48px, nhiều dòng tự cao lên, rộng tối đa 360px. Ảnh hộp Đổi mật khẩu thật thuộc mốc M3a, chưa có tại M2.7.

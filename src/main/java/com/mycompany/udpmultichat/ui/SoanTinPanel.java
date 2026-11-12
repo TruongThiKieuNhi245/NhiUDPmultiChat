@@ -43,6 +43,7 @@ final class SoanTinPanel extends JPanel {
     SoanTinPanel(Consumer<String> khiGui) {
         super(new BorderLayout(0,Theme.S4)); setBorder(Theme.le(Theme.S16)); setBackground(Theme.THE);
         vien.setBackground(Theme.THE); o.setFont(Theme.FONT); o.setLineWrap(true); o.setWrapStyleWord(true);
+        vien.setName("khung-soan");
         o.setMargin(new Insets(4,4,4,4)); cuon.setBorder(null); cuon.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         vien.add(nutDinhKem(),BorderLayout.WEST); vien.add(cuon,BorderLayout.CENTER);
         JPanel benPhai=new JPanel(new BorderLayout()); benPhai.setOpaque(false); benPhai.add(gui,BorderLayout.SOUTH); vien.add(benPhai,BorderLayout.EAST);
@@ -114,6 +115,8 @@ final class SoanTinPanel extends JPanel {
         dem.setForeground(qua?Theme.LOI:Theme.PHU); String thongBao=qua?Protocol.LOI_TIN_DAI:loiGui;
         loi.setText(thongBao); loi.setVisible(!thongBao.isBlank()); loi.setRows(thongBao.isBlank()?0:2);
         gui.setEnabled(choPhep && !dangGui && !text.isBlank() && !qua); o.setEnabled(choPhep && !dangGui);
+        java.awt.Color nen=choPhep?Theme.THE:Theme.NEN_KHOA;
+        vien.setBackground(nen); o.setBackground(nen); cuon.getViewport().setBackground(nen);
         int dong=0,rong=Math.max(150,o.getWidth()-8);
         for (String d:text.split("\n",-1)) { dong+=Math.max(1,(o.getFontMetrics(Theme.FONT).stringWidth(d)+rong-1)/rong); }
         cuon.setPreferredSize(new Dimension(100,Math.max(28,Math.min(5,dong)*20+8))); vien(); revalidate();

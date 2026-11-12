@@ -80,12 +80,11 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }
     // Tieu de khong lap thanh tab; ma va nut co du cho o cua so toi thieu.
     private JPanel tieuDePhong() {
-        JPanel dau=new JPanel(new BorderLayout(0,Theme.S8)); dau.setBorder(Theme.le(Theme.S16));
+        JPanel dau=new JPanel(new BorderLayout(Theme.S8,0)); dau.setBorder(Theme.le(Theme.S16));
         tenPhong.setFont(Theme.DAM.deriveFont(18f)); chiTiet.setFont(Theme.NHO); chiTiet.setForeground(Theme.PHU);
-        dau.add(tenPhong,BorderLayout.NORTH);
-        JPanel duoi=new JPanel(new BorderLayout()); duoi.add(chiTiet);
+        JPanel ten=new JPanel(new GridLayout(2,1,0,Theme.S4)); ten.add(tenPhong); ten.add(chiTiet); dau.add(ten,BorderLayout.CENTER);
         JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); nut.add(copy); nut.add(thanhVienNut); nut.add(menuPhong);
-        duoi.add(nut,BorderLayout.EAST); dau.add(duoi,BorderLayout.CENTER); return dau;
+        dau.add(nut,BorderLayout.EAST); return dau;
     }
     // The tai khoan co le, hai dong va mui ten de nhan biet menu.
     private JPanel theTaiKhoan() {
@@ -101,7 +100,8 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         if (n!=null) {
             String ten=n.tenHienThi.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
             avatar.setIcon(Theme.avatar(n.tenHienThi));
-            avatar.setText("<html><b>"+ten+"</b><br><small>"+(n.vaiTro==VaiTro.ADMIN?"Quản trị viên":"Thành viên")+"</small></html>");
+            avatar.setFont(Theme.FONT);
+            avatar.setText("<html><b>"+ten+"</b><br><span style='font-size:12px;color:"+Theme.mauHtml(Theme.PHU)+"'>"+(n.vaiTro==VaiTro.ADMIN?"Quản trị viên":"Thành viên")+"</span></html>");
             setTitle("UDP Chat — "+n.tenHienThi);
         }
         phongPanel.capNhat(danhSach); capNhatPhongDangXem();

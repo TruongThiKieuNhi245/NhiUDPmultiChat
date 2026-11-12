@@ -1,4 +1,4 @@
-# UDPmultiChat — mốc M2.6
+# UDPmultiChat — mốc M2.7
 
 Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmultichat.ClientMain` và `com.mycompany.udpmultichat.server.ServerMain`. Giao diện dùng **FlatLaf 3.7.2**, giấy phép Apache 2.0 ([trang chính thức](https://www.formdev.com/flatlaf/)); đây là thư viện duy nhất của ứng dụng, được bổ sung theo yêu cầu M2.5.
 
@@ -14,13 +14,16 @@ Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmulti
 - M2.6: hộp thông tin phòng dùng HopThoai, thẻ tài khoản hai dòng, nút header nhẹ, toast giữa dưới khung chat, nút Gửi tròn cố định, form chỉ dành chỗ lỗi khi cần. Server hiện IP LAN/copy, bốn thẻ thống kê, log màu/font đơn cách và Xóa log. Giới hạn cửa sổ Client 960×600.
 - M2.6: giới hạn nội dung **1000 byte UTF-8**, kiểm tra thêm header/escape để gói cuối không vượt 1399 byte. Bộ đếm UI hiển thị ký tự; xem phần giới hạn bên dưới.
 
+- M2.7: sửa ô nhập bị ép còn 12px khi hiện lỗi; dùng hàng form chung giữ input 32px và tăng chiều cao theo lỗi. Toast gọn (một dòng 48px), giữa dọc, tối đa 360px, cách viền ô soạn 12px. Nút Tham gia có nền/viền, ẩn nhóm công khai rỗng, vai trò xám 12px, ngày dd/MM/yyyy/copy sát mã, nền soạn xám khi khóa, log Consolas 13 và header thẳng hàng.
+
 **Sảnh chung** luôn công khai, mở, không mật khẩu; không được Sửa/Xóa/Rời/Đóng. Phòng tạo hoặc sửa dùng tên 3–30 ký tự, mô tả tối đa 240 byte UTF-8, giới hạn 2–500 thành viên. Sảnh hệ thống giữ giới hạn cũ 1000 nếu dữ liệu được tạo từ M2.
 
-Mốc tiếp theo, mỗi mốc đều dừng chờ xác nhận:
+Mốc tiếp theo, mỗi mốc đều commit và dừng chờ xác nhận. Chỉ bắt đầu M3a sau khi người dùng duyệt M2.7:
 
 | Mốc | Phần việc |
 |---|---|
-| M3 | Hồ sơ/giới thiệu/avatar 96×96 chia mảnh UDP và cache, sticker, typing, tìm kiếm, thu hồi, trạng thái gửi/gửi lại, ngày/gộp tin/sao chép/cuộn có điều kiện, đổi mật khẩu và bắt buộc đổi mật khẩu admin mặc định; bổ sung trả lời trích dẫn và tắt thông báo theo phòng |
+| M3a | Hồ sơ: tách tên đăng nhập cố định/tên hiển thị 2–30 ký tự, giới thiệu 100 ký tự; avatar PNG/JPG ≤2 MB, cắt giữa/96×96 PNG, mảnh ~600 byte/ACK/CRC32, phiên bản/cache có giới hạn, cập nhật realtime; đổi mật khẩu và buộc admin đổi admin123 |
+| M3b | Sticker bằng hình vẽ/PNG (không emoji font), typing, tìm kiếm, thu hồi, trạng thái gửi/gửi lại, ngày/gộp tin, trả lời trích dẫn, sao chép/cuộn có điều kiện; tắt thông báo theo phòng |
 | M4 | File UDP tối đa 10 MB cấu hình được, ACK/CRC32/tiến trình/hủy, chống path traversal, tải xuống, xem trước ảnh, chỉ thành viên phòng được tải |
 | M5 | Dashboard đầy đủ bảng user (vai trò/online/phòng/ngày tạo/khóa-cấm, thêm/sửa/xóa/khóa/mở/đặt lại mật khẩu/đổi vai trò), bảng phòng (thành viên/tin/file, CRUD/đóng/mở), kick/mute có hạn/ban/gỡ cấm, broadcast, chống spam, thống kê, nhật ký thao tác, báo cáo CSV BOM + HTML (tổng user, user theo phòng, top chat) |
 | M6 | Sáng/Tối, co giãn, phím tắt, xuất lịch sử một phòng ra .txt, hoàn thiện launch Server/Client 1/2/3 và tài liệu |
@@ -85,7 +88,7 @@ java '-Djava.net.preferIPv4Stack=true' '-Dstdout.encoding=UTF-8' '-Dstderr.encod
 
 Bốn file test ở `src/test/java`: SelfTest, PhongSelfTest, GiaoDienSelfTest, DanhTinhSelfTest. Dữ liệu riêng `.selftest/`, cấu hình Client test cũng tách riêng; không dùng data thật. UDP điều khiển dùng cổng tạm, multicast test dùng gốc 19000/21000/23000/25000. Chạy một phiên SelfTest mỗi lần.
 
-Kết quả M2.6 trên máy hiện tại: **28 PASS, 0 FAIL**, gồm:
+Kết quả chạy lại ở M2.7 trên máy hiện tại: **28 PASS, 0 FAIL**, gồm:
 
 - Tài khoản, timeout, mất ngẫu nhiên 20% DATA/ACK với seed `20261112/20261113` (thứ tự lập lịch hệ điều hành vẫn có thể khác).
 - CRUD/quyền/mật khẩu/phòng đầy, phòng riêng không lộ, lưu đúng loại, chuyển quyền và nạp lại sau restart.
@@ -103,7 +106,7 @@ $mvnChat = 'C:\Program Files\Apache NetBeans\java\maven\bin\mvn.cmd'
 & $mvnChat -q compile exec:java '-Dexec.mainClass=com.mycompany.udpmultichat.ui.UiPreview'
 ```
 
-Xuất **19 PNG** vào [docs/screenshots](docs/screenshots/README.md): đăng nhập/đăng ký/lỗi inline, chat, mất kết nối, toast, menu tài khoản, hộp thoại phòng, Server và giới hạn tin, thông tin phòng, Client bbb vào cuối có Bạn, cửa sổ 960×600, ô soạn 5 dòng và số 111. Công cụ vẽ chính component Swing đang dùng lên BufferedImage với dữ liệu mẫu; không mở socket, không phải ảnh chụp thao tác desktop. Cần môi trường đồ họa để tạo JFrame. Đã xem PNG và chạy kiểm tra component thật: đổi profile vẽ lại đúng Bạn kể cả trùng tên hiển thị, chuyển phòng xóa badge không cần mạng, nút Tạo phòng không cắt chữ và chữ số không có viền RGB do LCD AA. Đây không thay thế thử tương tác thực tế.
+Xuất **24 PNG** vào [docs/screenshots](docs/screenshots/README.md): đăng nhập/đăng ký/lỗi inline, chat, mất kết nối, toast, menu tài khoản, hộp thoại phòng, Server và giới hạn tin, thông tin phòng, Client bbb vào cuối có Bạn, cửa sổ 960×600, ô soạn 5 dòng và số 111 và năm ảnh lỗi form bổ sung (20–24). Công cụ vẽ chính component Swing đang dùng lên BufferedImage với dữ liệu mẫu; không mở socket, không phải ảnh chụp thao tác desktop. Cần môi trường đồ họa để tạo JFrame. Đã xem PNG và chạy kiểm tra component thật: đổi profile vẽ lại đúng Bạn kể cả trùng tên hiển thị, chuyển phòng xóa badge không cần mạng, nút Tạo phòng không cắt chữ, chữ số không có viền RGB do LCD AA; mọi input vẫn đủ cao khi có lỗi, nội dung JTextArea là Font.PLAIN, toast không che ô soạn và nhóm công khai rỗng được ẩn. Đây không thay thế thử tương tác thực tế.
 
 ## Dữ liệu
 
@@ -123,13 +126,13 @@ Chỉ chạy một Server cho mỗi data, từ thư mục project. Token/trạng
 
 `target/`, `data/`, `reports/`, `.selftest/`, log, `client.properties` và file tạm được bỏ qua bởi Git. Commit chỉ ở repository cục bộ, không tự push lên GitHub.
 
-## Thử tay M2.6 (1 Server + 3 Client)
+## Thử tay M2.7 (1 Server + 3 Client)
 
-1. Đóng bản cũ, F5 **Server**, **Client 1/2/3**. Đăng nhập admin rồi aaa rồi bbb: mỗi cửa sổ có đúng một **Bạn**, riêng Client vào cuối phải nằm cạnh bbb. Gửi “111” từ bbb: bên phải ở bbb, bên trái ở aaa.
-2. Tạo phòng công khai: user khác thấy ở nhóm PHÒNG CÔNG KHAI, bấm Tham gia thì chuyển sang PHÒNG CỦA TÔI. Tạo phòng riêng và vào bằng mã. Thử lọc cả hai nhóm, đổi phòng không có tab giữa, giữ vị trí cuộn và badge về 0 khi mở.
-3. Mở ⋮ → Thông tin phòng: đủ tên/mô tả/mã/copy/loại/giới hạn/chủ/ngày/thành viên. Thử quyền Sửa/Xóa từ chủ và người ngoài. Menu tài khoản chỉ hiện chức năng đã có; thẻ tên/vai trò không lặp Admin.
-4. Thử Shift+Enter nhiều dòng, nút Gửi giữ hình tròn ở đáy, tin dài bị chặn rõ, toast nằm giữa dưới chat. Thu nhỏ cửa sổ 960×600; tiêu đề/nút không bị cắt. Thử lỗi form và nút hiện mật khẩu.
-5. Kiểm tra Server có IP LAN/copy, bốn thẻ thống kê, log trắng/đơn cách, lỗi đỏ/cảnh báo vàng, Xóa log. Dừng/bật lại Server để kiểm tra Client khóa ô soạn rồi nối lại/RESYNC; đóng Client bằng X để xem log đăng xuất.
+1. Mở Server + Client 1/2/3. Ở form đăng nhập/đăng ký, thử tên sai/trùng, mật khẩu ngắn và nhập lại không khớp; mở Cài đặt máy chủ, thử IP sai. Ô nhập phải giữ chiều cao/chữ khi lỗi hiện rồi biến mất.
+2. Tạo/sửa phòng với tên/mô tả sai, thử mã và mật khẩu phòng sai; kiểm tra các ô không bị nén, nút Hủy/Lưu luôn dưới nội dung. Chức năng Đổi mật khẩu chưa có ở M2.7; bố cục hộp thật sẽ kiểm tra tại M3a.
+3. Tạo phòng công khai ở A, B thấy nút Tham gia có nền/viền và hover. Sau khi B tham gia hết phòng còn lại, tiêu đề PHÒNG CÔNG KHAI phải ẩn. Kiểm tra thẻ tài khoản có vai trò chữ thường màu xám.
+4. Sao chép mã/đổi trạng thái phòng để xem toast ngắn; toast nhiều dòng tự tăng chiều cao, không che ô soạn. Mở Thông tin phòng: ngày dd/MM/yyyy và Sao chép sát mã; tiêu đề phòng thẳng hàng cụm nút.
+5. Dừng/bật Server: ô soạn xám đồng nhất lúc khóa, nối lại về trắng. Kiểm tra log Consolas 13 (máy không có dùng Monospaced), chữ Việt; thử soạn tin/111 và kiểm tra chữ nội dung không đậm.
 
 ## Giới hạn đã biết
 
@@ -149,3 +152,5 @@ Xem [docs/GIAI_THICH.md](docs/GIAI_THICH.md) để tra bảng chức năng → f
 Trong tài khoản admin, phòng riêng chưa tham gia vẫn hiển thị để quản lý ở nhóm PHÒNG CỦA TÔI; đây là quyền giám sát, không tự cấp membership hay quyền chat. Cờ membership do Server gửi, không suy từ tên hay việc phòng xuất hiện trong danh sách.
 
 Đốm góc thẻ đăng nhập trong ảnh cũ chưa tái hiện riêng được ở lần thử này. Đã sửa điểm vẽ có thể để lại pixel cũ: card bo góc trước đây khai báo opaque nhưng không tô kín các góc; nay transparent, nền cha vẽ đầy đủ. PNG mới không có đốm. Chữ số viền màu đã xác nhận là LCD subpixel AA trong PNG, đổi grayscale AA tập trung ở Theme và kiểm tra pixel.
+
+M2.7 chỉ thay bố cục/thành phần giao diện; không đổi định dạng gói hay dữ liệu M2.6. Hộp Đổi mật khẩu chưa tồn tại ở mốc này: các JPasswordField hiện có đã được kiểm tra, còn ba ô của hộp Đổi mật khẩu thật sẽ được kiểm tra và chụp ở M3a, cùng Hồ sơ và hộp bắt buộc đổi admin.

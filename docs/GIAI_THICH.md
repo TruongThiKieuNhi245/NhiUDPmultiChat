@@ -1,4 +1,4 @@
-# Giải thích M1 / M2 / M2.5 / M2.6 — Socket UDP và Multicast
+# Giải thích M1 / M2 / M2.5 / M2.6 / M2.7 — Socket UDP và Multicast
 
 ## Luồng chạy và đối chiếu chương 6
 
@@ -145,6 +145,34 @@ Các trường bổ sung của snapshot chỉ dùng lúc chạy, **không đổi
 
 Đã đo ảnh chữ 111: trước vá có pixel lệch tỷ lệ RGB do LCD subpixel; sau grayscale AA không còn. Cách đặt AA qua UIManager được đối chiếu [mã nguồn JComponent của OpenJDK 21](https://github.com/openjdk/jdk21u/blob/master/src/java.desktop/share/classes/javax/swing/JComponent.java). Đốm góc ảnh đăng nhập cũ chưa tái hiện riêng; đã sửa việc card khai báo opaque trong khi chỉ tô phần bo góc, tránh pixel nền cũ khi repaint. PNG mới không có đốm; vẫn cần người dùng kiểm tra trên màn hình/DPI thực tế.
 
+## M2.7: sửa bố cục form và chi tiết giao diện
+
+Nguyên nhân ảnh 03: BoxLayout giữ chiều cao hàng được tính lúc chưa có lỗi; khi JLabel lỗi hiện, phần CENTER của BorderLayout bị ép. Assertion mới của UiPreview chạy trên bản trước sửa báo **“O nhap bi nen: cao=12, text=nhikieu”**. `Theme.hangNhap` nay đặt vùng control cao 32px, minimum/maximum của hàng tính theo preferred hiện tại; DangNhapPanel bỏ preferred-size cache của card trước khi đo lại. HopThoai tự tính chiều cao/pack theo nội dung khi có lỗi. Không dành chỗ trắng cho lỗi đang ẩn.
+
+| Chức năng | File | Hàm |
+|---|---|---|
+| Hàng input dùng chung, giữ 32px khi lỗi hiện | ui/Theme | hangNhap, O_NHAP_CAO |
+| Bỏ chiều cao cache cũ của login/signup | ui/DangNhapPanel | them, boCuc, loiServer |
+| Hộp tạo/sửa/vào tự cao theo lỗi | ui/HopThoai | them, loi, boCucForm, coMatKhau |
+| Toast một dòng 48px, nhiều dòng tự cao, giữa dọc | ui/components/ThongBao | Toast constructor, chieuCao, sapXep |
+| Toast tối đa 360px, trên viền ô soạn 12px | ui/Theme, ui/components/ThongBao | TOAST_CAO/TOAST_RONG / sapXep |
+| Đủ thời gian đọc, hover tạm dừng như trước | ui/Theme, ui/components/ThongBao | TOAST_MS/TOAST_LOI_MS / Toast constructor, ganHover |
+| Tham gia là nút nền nhạt/viền, giữa dọc; ẩn nhóm rỗng | ui/DanhSachPhongPanel | nutPhong, themNhom |
+| Vai trò xám 12px, không đậm theo nút cha | ui/ChatMulticastUI, ui/Theme | ganNguoiDung / mauHtml |
+| Ngày dd/MM/yyyy, copy sát mã | ui/HopThoai | dinhDangNgay, thongTinMa |
+| Cả vùng control soạn cùng xám khi khóa | ui/SoanTinPanel, ui/Theme | capNhat / NEN_KHOA |
+| Log Consolas 13, fallback Monospaced | ui/Theme, server/ServerMain | tenFontLog, DON_CACH / constructor |
+| Header tên phòng và nút cùng một hàng | ui/ChatMulticastUI | tieuDePhong |
+| Chứng minh form không nén, font PLAIN, toast không che input | ui/UiPreview | xuatLoiForm, xuatLoiPhong, kiemTraONhap, kiemTraFontNoiDung, kiemTraToast |
+
+Thời gian toast ít nhất 4,5 giây; lỗi ít nhất 6,5 giây; nội dung dài tăng theo số ký tự, tối đa 12 giây; hover dừng đồng hồ. Vị trí neo tính thêm lề trên 16px của SoanTinPanel để mép dưới toast nằm trước viền control 12px, không che ô nhập.
+
+UiPreview xuất **24 PNG**, bổ sung ảnh 20–24 cho các lỗi ở login/signup/tạo/sửa/vào phòng. Lỗi nhập lại mật khẩu được tạo bằng cách điền hai giá trị khác nhau rồi gọi nút Đăng ký thật; lỗi Server/form được đưa qua đường hiển thị lỗi đang dùng. Mỗi ảnh kiểm tra chiều cao JTextField/JPasswordField, font JTextArea là PLAIN; giữ kiểm tra Bạn/badge/MTU cũ. Nhóm công khai rỗng được assertion là không có tiêu đề. Chữ 111 và ô soạn đã dùng Theme.FONT (Font.PLAIN); không đổi sang font đậm. Cỡ/font log được gom trong Theme.
+
+**Phạm vi Đổi mật khẩu:** hộp này chưa được triển khai ở M2.7. Các ô mật khẩu hiện có dùng chung HopThoai.oMatKhau/Theme.hangNhap đã được kiểm tra; hộp Đổi mật khẩu thật, lỗi ba trường và hộp bắt buộc đổi admin sẽ được kiểm tra tại M3a, không dùng ảnh mẫu giả chức năng ở mốc này.
+
+Đã chạy lại SelfTest hồi quy **28 PASS, 0 FAIL**, Maven compile/test-compile thành công. UI test nằm trong UiPreview, tách khỏi SelfTest mạng không Swing. M2.7 không đổi giao thức UDP/multicast hay schema dữ liệu. Thử click/hover/F5 trên IDE và DPI khác vẫn cần kiểm tra tay; nhiều máy LAN chưa thử.
+
 ## Multicast nằm ở đâu, theo từng phòng?
 
 `QuanLyPhong.tao` cấp **239.255.42.X:9000+X**, X từ 1 đến 254; Sảnh dùng X=1. `ServerCore.phatMulticast(roomId, duLieu)` lấy nhóm/cổng của đúng phòng và gọi `MulticastSocket.send(DatagramPacket)`. Socket phát chọn card bằng `MangUtil.timGiaoDienMang`, TTL=1.
@@ -178,6 +206,6 @@ UI không import java.net; logic common/client/server không import Swing, ngo�
 
 M1/M2 đã được người dùng xác nhận. M2.6: **28 PASS, 0 FAIL** trên Java 21, Maven NetBeans; multicast thật chạy qua card Wi-Fi. Có seed mất 20% DATA/ACK, cách ly hai nhóm cùng cổng, lịch sử 50 và RESYNC nhiều lô. Bổ sung lưu đúng loại/không lộ riêng tư, phòng đầy/password/chuyển chủ, biên 1000 byte UTF-8, offline và Server dừng/bật lại để Client bù 75 tin thiếu. Test riêng `.selftest/`, không dùng dữ liệu thật. Xem lệnh và kịch bản 3 Client trong README.
 
-UiPreview xuất 19 PNG bằng các component Swing thật, không socket; đã kiểm tra bố cục ảnh, không khẳng định đã thử chuột/phím toàn bộ. F5/Run File và tương tác ba cửa sổ cần người dùng kiểm tra; nhiều máy LAN, DPI cao chưa thử. 31 file ứng dụng + 4 file test, file dài nhất dưới 400 dòng; compiler bật Xlint:all/failOnWarning.
+UiPreview xuất 24 PNG bằng các component Swing thật, không socket; đã kiểm tra bố cục ảnh, không khẳng định đã thử chuột/phím toàn bộ. F5/Run File và tương tác ba cửa sổ cần người dùng kiểm tra; nhiều máy LAN, DPI cao chưa thử. 31 file ứng dụng + 4 file test, file dài nhất dưới 400 dòng; compiler bật Xlint:all/failOnWarning.
 
 **UDP không đảm bảo**. **Multicast cần chung LAN và cho Java qua Windows Firewall**. **Token/mật khẩu đi qua UDP không mã hóa**, multicast chưa xác thực nguồn; salt/hash chỉ bảo vệ trên đĩa. Tự nối lại cần credentials/IP/cổng còn đúng và lịch sử Server còn. Lịch sử hiện nạp RAM, chưa tối ưu quy mô lớn. Discovery và các chức năng M3–M7 chưa triển khai trong mốc này.

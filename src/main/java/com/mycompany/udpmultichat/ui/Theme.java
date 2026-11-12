@@ -22,11 +22,22 @@ public final class Theme {
     public static final Color THANH_CONG=new Color(0x217347),LOI=new Color(0xBC303A),CANH_BAO=new Color(0x8A5B00),THONG_TIN=new Color(0x245FB3);
     public static final Color NEN_XANH=new Color(0xEDF8F0),NEN_DO=new Color(0xFFF0F1),NEN_VANG=new Color(0xFFF6DC),NEN_TIN=new Color(0xEDF4FF);
     public static final Color OFFLINE=new Color(0x777F8D),AVATAR=new Color(0x4261B9);
+    public static final Color NEN_KHOA=new Color(0xECEEF2);
     public static final Font FONT=new Font("Segoe UI",Font.PLAIN,14),DAM=FONT.deriveFont(Font.BOLD),NHO=FONT.deriveFont(12f);
-    public static final Font DON_CACH=new Font(Font.MONOSPACED,Font.PLAIN,14);
-    public static final int NUT_GUI=36,TOAST_CAO=82,TOAST_RONG=370;
+    public static final Font DON_CACH=new Font(tenFontLog(),Font.PLAIN,13);
+    public static final int NUT_GUI=36,TOAST_CAO=48,TOAST_RONG=360,O_NHAP_CAO=32;
+    public static final int TOAST_MS=4500,TOAST_LOI_MS=6500;
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Theme() { }
+    // Chuoi mau cho JLabel HTML van lay tu token, khong lap ma mau trong UI.
+    public static String mauHtml(Color mau) { return String.format("#%06x",mau.getRGB()&0xffffff); }
+    // Consolas ho tro font don cach tren Windows; fallback tren may khac.
+    private static String tenFontLog() {
+        for (String ten:java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()) {
+            if (ten.equalsIgnoreCase("Consolas")) { return ten; }
+        }
+        return Font.MONOSPACED;
+    }
 
     // Cai LAF truoc khi tao bat ky thanh phan Swing nao.
     public static void caiDat() {
@@ -63,6 +74,22 @@ public final class Theme {
     public static void datLoi(JLabel l,String text) {
         l.setText(text); l.setVisible(!text.isBlank());
         if (l.getParent()!=null) { l.getParent().revalidate(); l.getParent().repaint(); }
+    }
+    // Hang form tinh lai chieu cao tu input + loi, khong luu maximum size cu.
+    @SuppressWarnings("serial")
+    public static JPanel hangNhap(String nhan,javax.swing.JComponent o,JLabel loi) {
+        JPanel hang=new JPanel(new java.awt.BorderLayout(0,S4)) {
+            // BoxLayout khong duoc ep input de danh cho JLabel loi.
+            public java.awt.Dimension getMinimumSize() { return getPreferredSize(); }
+            // Be rong co gian, chieu cao luon theo noi dung hien tai.
+            public java.awt.Dimension getMaximumSize() { return new java.awt.Dimension(Integer.MAX_VALUE,getPreferredSize().height); }
+        };
+        JPanel boc=new JPanel(new java.awt.BorderLayout()); boc.add(o);
+        boc.setPreferredSize(new java.awt.Dimension(200,O_NHAP_CAO));
+        boc.setMinimumSize(new java.awt.Dimension(100,O_NHAP_CAO));
+        hang.setAlignmentX(JPanel.LEFT_ALIGNMENT); hang.setBorder(new EmptyBorder(S8,0,S8,0));
+        hang.add(nhan(nhan,false),java.awt.BorderLayout.NORTH); hang.add(boc,java.awt.BorderLayout.CENTER);
+        hang.add(loi,java.awt.BorderLayout.SOUTH); return hang;
     }
     // Nhan.
     public static JLabel nhan(String ten,boolean dam) {

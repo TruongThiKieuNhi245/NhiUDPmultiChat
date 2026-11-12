@@ -50,9 +50,12 @@ public final class ThongBao implements AutoCloseable {
         if (vung!=null && vung.getParent()!=null && vung.getWidth()>0) {
             r=javax.swing.SwingUtilities.convertRectangle(vung.getParent(),vung.getBounds(),lop);
         }
-        int w=Math.min(Theme.TOAST_RONG,Math.max(220,r.width-Theme.S24)),y=r.y+r.height-Theme.S8;
+        // O soan co le tren 16px; toast cach vien o soan 12px, chi nam tren phan le.
+        int leSoan=vung==null?0:Theme.S16;
+        int w=Math.min(Theme.TOAST_RONG,Math.max(220,r.width-Theme.S24)),y=r.y+r.height+leSoan-Theme.S12;
         for (int i=ds.size()-1;i>=0;i--) {
-            y-=Theme.TOAST_CAO; ds.get(i).setBounds(r.x+(r.width-w)/2,Math.max(r.y,y),w,Theme.TOAST_CAO); y-=Theme.S8;
+            Toast t=ds.get(i); int cao=t.chieuCao(w);
+            y-=cao; t.setBounds(r.x+(r.width-w)/2,Math.max(r.y,y),w,cao); y-=Theme.S8;
         }
         lop.repaint();
     }
@@ -65,21 +68,26 @@ public final class ThongBao implements AutoCloseable {
     @SuppressWarnings("serial")
     private final class Toast extends JPanel {
         private final Timer timer;
+        private final JTextArea text;
         private int con;
         // Tao mot toast co icon, mau va thoi gian tu dong dong.
         Toast(Muc muc,String noiDung) {
             super(new BorderLayout(Theme.S8,0));
+            setName("toast");
             Color mau=switch(muc) { case THANH_CONG -> Theme.THANH_CONG; case LOI -> Theme.LOI; case CANH_BAO -> Theme.CANH_BAO; case THONG_TIN -> Theme.THONG_TIN; };
             setBackground(Theme.THE);
             setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Theme.VIEN),
                 BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0,4,0,0,mau),Theme.le(Theme.S12))));
             var bieuTuong=Theme.nhan("",true); bieuTuong.setForeground(mau); bieuTuong.setIcon(Theme.icon(muc==Muc.THANH_CONG?"ok":"info")); add(bieuTuong,BorderLayout.WEST);
-            JTextArea text=new JTextArea(noiDung); text.setFont(Theme.FONT); text.setForeground(Theme.CHU);
+            text=new JTextArea(noiDung); text.setFont(Theme.FONT); text.setForeground(Theme.CHU);
             text.setOpaque(false); text.setEditable(false); text.setFocusable(false); text.setLineWrap(true); text.setWrapStyleWord(true);
-            add(text,BorderLayout.CENTER);
+            text.setBorder(null); text.setMargin(new java.awt.Insets(0,0,0,0));
+            JPanel giua=new JPanel(new java.awt.GridBagLayout()); giua.setOpaque(false);
+            java.awt.GridBagConstraints c=new java.awt.GridBagConstraints(); c.weightx=1; c.fill=java.awt.GridBagConstraints.HORIZONTAL;
+            giua.add(text,c); add(giua,BorderLayout.CENTER);
             JButton dong=Theme.nut("×",false); dong.setBorder(Theme.le(0)); dong.setPreferredSize(new Dimension(22,22));
             dong.addActionListener(e -> xoa(this)); add(dong,BorderLayout.EAST);
-            con=muc==Muc.LOI?6000:3800;
+            con=Math.max(muc==Muc.LOI?Theme.TOAST_LOI_MS:Theme.TOAST_MS,Math.min(12000,noiDung.codePointCount(0,noiDung.length())*65));
             timer=new Timer(100,e -> { con-=100; if (con<=0) { xoa(this); } }); timer.start();
             MouseAdapter hover=new MouseAdapter() {
                 // Cap nhat khi chuot vao thanh phan.
@@ -91,6 +99,24 @@ public final class ThongBao implements AutoCloseable {
                 }
             };
             ganHover(this,hover);
+        }
+        // Mot dong 48px; van ban dai tu tang chieu cao va can giua doc.
+        int chieuCao(int rong) {
+            int beRong=Math.max(120,rong-100),dong=0;
+            for (String doan:text.getText().split("\n",-1)) { dong+=soDong(doan,beRong); }
+            int cao=dong*text.getFontMetrics(Theme.FONT).getHeight();
+            text.setPreferredSize(new Dimension(beRong,cao));
+            return Math.max(Theme.TOAST_CAO,cao+Theme.S24+2);
+        }
+        // Do theo tu de word-wrap khong cat dong cuoi khi component chua hien tren man hinh.
+        private int soDong(String doan,int rong) {
+            int dong=1,daDung=0;
+            for (String tu:doan.split("(?<=\\s)")) {
+                int dai=text.getFontMetrics(Theme.FONT).stringWidth(tu);
+                if (daDung>0 && daDung+dai>rong) { dong++; daDung=0; }
+                int them=Math.max(0,(dai-1)/rong); dong+=them; daDung+=dai-them*rong;
+            }
+            return dong;
         }
         // Gan hover.
         private void ganHover(Component c,MouseAdapter m) {

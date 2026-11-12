@@ -68,6 +68,7 @@ final class HopThoai extends JPanel {
         JPanel nut=new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT,Theme.S8,0));
         chinh=Theme.nut(vao?"Vào phòng":(sua?"Lưu":"Tạo phòng"),true); nut.add(huy); nut.add(chinh); add(nut,BorderLayout.SOUTH);
         chinh.addActionListener(e -> { if (kiemTra()) { gui.accept(this); } }); huy.addActionListener(e -> dong());
+        boCucForm();
     }
     // Thong tin phong dung cung vo dialog; khong dung JOptionPane.
     static HopThoai thongTin(Phong p,java.util.List<Phong.ThanhVien> ds) { return new HopThoai(p,ds); }
@@ -78,14 +79,21 @@ final class HopThoai extends JPanel {
         JLabel t=Theme.nhan("Thông tin phòng",true); t.setFont(Theme.DAM.deriveFont(20f)); add(t,BorderLayout.NORTH);
         truong.setLayout(new javax.swing.BoxLayout(truong,javax.swing.BoxLayout.Y_AXIS));
         thongTinDong("Tên phòng",p.ten); thongTinDong("Mô tả",p.moTa.isBlank()?"Chưa có mô tả":p.moTa);
-        JPanel maPhong=thongTinDong("Mã phòng",p.maPhong); JButton copy=Theme.nutNhe("Sao chép","");
-        copy.addActionListener(e -> DanhSachPhongPanel.saoChep(p.maPhong)); maPhong.add(copy,BorderLayout.EAST);
+        thongTinMa(p.maPhong);
         thongTinDong("Loại",p.congKhai?"Công khai":"Riêng tư"); thongTinDong("Giới hạn",p.gioiHan+" người");
         thongTinDong("Chủ phòng",ds.stream().filter(n -> n.id().equals(p.chuId)).map(n -> n.ten()+" (@"+n.tenDangNhap()+")").findFirst().orElse(p.tenChu));
         thongTinDong("Ngày tạo",dinhDangNgay(p.ngayTao));
         thongTinDong("Thành viên",Math.max(p.tongThanhVien,ds.size())+" người · "+p.soThanhVien+" đang online");
         add(truong); JPanel nut=new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT)); nut.add(chinh); add(nut,BorderLayout.SOUTH);
         chinh.addActionListener(e -> dong());
+    }
+    // Nut copy bam sat ma, khong bi day sang mep phai cua dialog.
+    private void thongTinMa(String ma) {
+        JPanel hang=thongTinDong("Mã phòng","");
+        var cu=((BorderLayout)hang.getLayout()).getLayoutComponent(BorderLayout.CENTER); hang.remove(cu);
+        JPanel maVaNut=new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT,Theme.S8,0));
+        maVaNut.add(Theme.nhan(ma,false)); JButton copy=Theme.nutNhe("Sao chép","");
+        copy.addActionListener(e -> DanhSachPhongPanel.saoChep(ma)); maVaNut.add(copy); hang.add(maVaNut);
     }
     // Dong thong tin doc duoc xuong dong, khong cat mo ta dai.
     private JPanel thongTinDong(String nhan,String noiDung) {
@@ -96,15 +104,17 @@ final class HopThoai extends JPanel {
     }
     // Ngay luu la ISO instant hoac ngay ISO khi xem truoc.
     private static String dinhDangNgay(String ngay) {
-        try { return java.time.Instant.parse(ngay).atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")); }
-        catch (java.time.format.DateTimeParseException e) { return ngay; }
+        var mau=java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        try { return java.time.Instant.parse(ngay).atZone(java.time.ZoneId.systemDefault()).format(mau); }
+        catch (java.time.format.DateTimeParseException e) {
+            try { return java.time.LocalDate.parse(ngay).format(mau); }
+            catch (java.time.format.DateTimeParseException sai) { return ngay; }
+        }
     }
     // Them.
     private void them(String khoa,String nhan,JComponent o) {
-        JPanel hang=new JPanel(new BorderLayout(0,Theme.S4)); hang.setBorder(BorderFactory.createEmptyBorder(0,0,Theme.S8,0));
-        hang.add(Theme.nhan(nhan,false),BorderLayout.NORTH); hang.add(o,BorderLayout.CENTER);
-        JLabel l=Theme.nhan(" ",false); l.setForeground(Theme.LOI); l.setFont(Theme.NHO); l.setVisible(false); loi.put(khoa,l); hang.add(l,BorderLayout.SOUTH);
-        hang.setMaximumSize(new Dimension(Integer.MAX_VALUE,hang.getPreferredSize().height)); truong.add(hang);
+        JLabel l=Theme.nhan("",false); l.setForeground(Theme.LOI); l.setFont(Theme.NHO); l.setVisible(false); loi.put(khoa,l);
+        truong.add(Theme.hangNhap(nhan,o,l));
     }
     // O mat khau.
     static JPanel oMatKhau(JPasswordField o) {
@@ -138,8 +148,13 @@ final class HopThoai extends JPanel {
     // Loi.
     private void loi(String khoa,String thongBao) {
         JLabel l=loi.get(khoa); Theme.datLoi(l,thongBao);
-        JComponent hang=(JComponent)l.getParent(); hang.setMaximumSize(new Dimension(Integer.MAX_VALUE,hang.getPreferredSize().height));
-        revalidate(); if (dialog!=null) { dialog.pack(); }
+        truong.invalidate(); revalidate();
+        boCucForm(); if (dialog!=null) { dialog.pack(); }
+    }
+    // Chieu cao cua so theo noi dung that, khong ep hang khi them dong loi.
+    private void boCucForm() {
+        truong.invalidate(); setPreferredSize(null);
+        setPreferredSize(new Dimension(470,getLayout().preferredLayoutSize(this).height)); revalidate();
     }
     // Kiem tra.
     private boolean kiemTra() {
@@ -167,5 +182,5 @@ final class HopThoai extends JPanel {
     // Mat khau.
     String matKhau() { return new String(matKhau.getPassword()); }
     // Co mat khau.
-    void coMatKhau() { truong.getComponent(1).setVisible(true); matKhau.setVisible(true); }
+    void coMatKhau() { truong.getComponent(1).setVisible(true); matKhau.setVisible(true); boCucForm(); }
 }

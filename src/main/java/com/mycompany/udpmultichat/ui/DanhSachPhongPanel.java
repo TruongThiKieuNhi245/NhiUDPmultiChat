@@ -122,6 +122,7 @@ final class DanhSachPhongPanel extends JPanel {
     }
     // Moi nhom co tieu de xam can trai; phong rieng admin giam sat o nhom cua toi.
     private void themNhom(String ten,List<Phong> phong,boolean thamGia) {
+        if (!thamGia && phong.isEmpty()) { return; }
         JLabel t=Theme.nhan(ten,true); t.setForeground(Theme.PHU); t.setFont(Theme.NHO); t.setBorder(Theme.le(Theme.S8));
         t.setAlignmentX(LEFT_ALIGNMENT); t.setMaximumSize(new Dimension(Integer.MAX_VALUE,36)); ds.add(t);
         for (Phong p:phong) { ds.add(hang(p,thamGia)); }
@@ -144,7 +145,11 @@ final class DanhSachPhongPanel extends JPanel {
     // Badge chi o thanh ben; phong chua tham gia co nut rieng.
     private JPanel nutPhong(Phong p,boolean thamGia) {
         JPanel ben=new JPanel(new BorderLayout()); ben.setOpaque(false);
-        if (!thamGia) { JButton b=Theme.nutNhe("Tham gia",""); b.setFont(Theme.NHO); b.setEnabled(choPhep); b.addActionListener(e -> vao.accept(p)); ben.add(b); return ben; }
+        if (!thamGia) {
+            JButton b=Theme.nut("Tham gia",false); b.setFont(Theme.NHO); b.setMargin(new java.awt.Insets(4,8,4,8));
+            b.setBackground(Theme.CHON); b.setEnabled(choPhep); b.addActionListener(e -> vao.accept(p));
+            JPanel giua=new JPanel(new java.awt.GridBagLayout()); giua.setOpaque(false); giua.add(b); ben.add(giua); return ben;
+        }
         JButton menu=Theme.nutNhe("","more"); menu.setEnabled(choPhep); menu.setVisible(p.id.equals(dangChon));
         menu.addActionListener(e -> menu(p).show(menu,0,menu.getHeight())); ben.add(menu,BorderLayout.NORTH);
         int so=chuaDoc.apply(p.id); JLabel badge=Theme.nhan(so>0?String.valueOf(so):"",true); badge.setName("badge-"+p.id); badge.setForeground(Theme.CHINH); ben.add(badge,BorderLayout.SOUTH);
