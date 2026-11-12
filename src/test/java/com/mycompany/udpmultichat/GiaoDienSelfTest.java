@@ -55,7 +55,7 @@ final class GiaoDienSelfTest {
     // Kiem tra ngat/ket noi lai va du lieu duoc gui bu.
     private static void testKetNoiLai() throws Exception {
         Path data=Files.createTempDirectory(Path.of(".selftest"),"m25-reconnect-");
-        Files.writeString(data.resolve("config.properties"),"multicast.portBase=23000\n",StandardCharsets.UTF_8);
+        Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=23000\n",StandardCharsets.UTF_8);
         BanNghe nghe=new BanNghe(),ngheB=new BanNghe(); AtomicBoolean boMulticast=new AtomicBoolean();
         ServerCore server=new ServerCore(data,new ServerCore.Listener() {
             // Nhan log qua Listener, chuyen ve luong phu hop.
@@ -67,7 +67,7 @@ final class GiaoDienSelfTest {
             server.batDau(0); int cong=server.cong(); cho(a.kiemTraServer("127.0.0.1",cong));
             cho(a.dangKy("127.0.0.1",cong,"ketnoi_a","abcdef123"));
             cho(a.dangNhap("127.0.0.1",cong,"ketnoi_a","abcdef123"));
-            cho(b.dangNhap("127.0.0.1",cong,"admin","admin123"));
+            cho(b.dangNhap("127.0.0.1",cong,"admin","adminTest123"));
             Phong p=cho(a.taoPhong("Khôi phục","",false,"matkhau",2)); cho(a.vaoPhong(p.id,"")); cho(b.vaoPhong(p.id,""));
             cho(a.guiTin(p.id,"Tin trước restart")); doi(() -> nghe.tin.stream().filter(t -> t.roomId.equals(p.id)).count()==1,3000);
             biChan(a.guiTin(p.id,"ắ".repeat(334)));
@@ -75,7 +75,7 @@ final class GiaoDienSelfTest {
             doi(() -> nghe.thanhVien.stream().anyMatch(n -> n.ten().equals("Admin") && !n.online()),3000);
             server.close(); boMulticast.set(true);
             doi(() -> !a.sanSang(),210000); biChan(a.guiTin(p.id,"không được gửi lúc offline"));
-            server.batDau(cong); cho(b.dangNhap("127.0.0.1",cong,"admin","admin123")); cho(b.vaoPhong(p.id,""));
+            server.batDau(cong); cho(b.dangNhap("127.0.0.1",cong,"admin","adminTest123")); cho(b.vaoPhong(p.id,""));
             for (int i=2;i<=76;i++) { cho(b.guiTin(p.id,"Tin khi A mất mạng "+i)); }
             doi(() -> a.sanSang(),20000);
             doi(() -> nghe.tin.stream().filter(t -> t.roomId.equals(p.id)).count()==76,18000);
@@ -86,7 +86,7 @@ final class GiaoDienSelfTest {
             cho(a.dangXuat()); cho(b.dangXuat());
             can(a.nguoiDung()==null,"Dang xuat khong don client");
             String prefs=Files.readString(com.mycompany.udpmultichat.client.CauHinhClient.tepCauHinh(),StandardCharsets.UTF_8);
-            can(!prefs.contains("abcdef123") && !prefs.contains("admin123") && !prefs.contains("token"),"Prefs luu thong tin bi mat");
+            can(!prefs.contains("abcdef123") && !prefs.contains("adminTest123") && !prefs.contains("token"),"Prefs luu thong tin bi mat");
         } finally { server.close(); }
     }
     // Chan.

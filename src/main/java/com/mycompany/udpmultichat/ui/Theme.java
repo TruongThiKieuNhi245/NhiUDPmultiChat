@@ -29,8 +29,6 @@ public final class Theme {
     public static final int TOAST_MS=4500,TOAST_LOI_MS=6500;
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Theme() { }
-    // Chuoi mau cho JLabel HTML van lay tu token, khong lap ma mau trong UI.
-    public static String mauHtml(Color mau) { return String.format("#%06x",mau.getRGB()&0xffffff); }
     // Consolas ho tro font don cach tren Windows; fallback tren may khac.
     private static String tenFontLog() {
         for (String ten:java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames()) {
@@ -153,21 +151,7 @@ public final class Theme {
             }
         };
     }
-    // Avatar.
-    public static javax.swing.Icon avatar(String ten) {
-        return new javax.swing.Icon() {
-            // Tra be rong icon.
-            public int getIconWidth() { return 36; }
-            // Tra chieu cao icon.
-            public int getIconHeight() { return 36; }
-            // Ve icon Java2D, khong phu thuoc anh ngoai.
-            public void paintIcon(java.awt.Component c,Graphics g,int x,int y) {
-                Graphics2D a=(Graphics2D)g.create(); a.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
-                a.setColor(AVATAR); a.fillOval(x,y,34,34); a.setColor(THE); a.setFont(DAM);
-                a.drawString(ten.isEmpty()?"?":ten.substring(0,1).toUpperCase(java.util.Locale.ROOT),x+12,y+23); a.dispose();
-            }
-        };
-    }
+
     // Card trung tinh dung cho dang nhap, dialog va xem truoc.
     @SuppressWarnings("serial")
     // The.
@@ -184,4 +168,27 @@ public final class Theme {
         Graphics2D g=anh.createGraphics(); boTron(g,32,32,CHINH,BO); g.setColor(THE); g.setFont(DAM);
         g.drawString("U",10,22); g.dispose(); return anh;
     }
+    // Anh tron Java2D dung chung cho ho so, the tai khoan va danh sach/tin nhan.
+    public static javax.swing.Icon avatar(String ten,java.awt.image.BufferedImage anh,int canh) {
+        return new javax.swing.Icon() {
+            // Kich thuoc icon theo noi su dung.
+            public int getIconWidth() { return canh; }
+            // Giu avatar vuong de cat tron.
+            public int getIconHeight() { return canh; }
+            // Renderer chi doc anh da san sang trong RAM.
+            public void paintIcon(java.awt.Component c,Graphics g,int x,int y) {
+                Graphics2D a=(Graphics2D)g.create(); a.translate(x,y);
+                a.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                a.setClip(new java.awt.geom.Ellipse2D.Double(0,0,canh,canh));
+                if (anh!=null) { a.drawImage(anh,0,0,canh,canh,null); }
+                else {
+                    a.setColor(AVATAR); a.fillOval(0,0,canh,canh); a.setColor(THE); a.setFont(DAM.deriveFont(canh*0.42f));
+                    String t=ten.isBlank()?"?":ten.substring(0,ten.offsetByCodePoints(0,1)).toUpperCase(java.util.Locale.ROOT);
+                    var fm=a.getFontMetrics(); a.drawString(t,(canh-fm.stringWidth(t))/2,(canh-fm.getHeight())/2+fm.getAscent());
+                }
+                a.dispose();
+            }
+        };
+    }
+
 }

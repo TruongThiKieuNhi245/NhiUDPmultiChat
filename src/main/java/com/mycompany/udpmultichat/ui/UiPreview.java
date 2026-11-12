@@ -43,6 +43,7 @@ public final class UiPreview {
         login.loiServer("Tên đăng nhập đã tồn tại"); xuat(login,"03-loi-form.png",1120,800);
         xuatLoiForm();
         xuatChat();
+        xuatHoSo();
         xuatVaoCuoi();
         SoanTinPanel soan=new SoanTinPanel(text -> { }); soan.xemTruoc("ắ".repeat(334));
         xuat(soan,"13-tin-qua-dai.png",760,220);
@@ -51,6 +52,31 @@ public final class UiPreview {
         xuat(settings,"14-cai-dat-server.png",1120,800);
         ServerMain server=new ServerMain();
         try { server.duLieuMau(); xuat(server.getRootPane(),"12-server.png",900,620); } finally { server.dispose(); }
+    }
+    // Ho so, mat khau va avatar anh dung component that, khong can Server.
+    private static void xuatHoSo() throws IOException {
+        BufferedImage h=anhMau();
+        NguoiDung n=new NguoiDung("an","minhan","Minh An",VaiTro.THANH_VIEN,"2026-11-13T00:00:00Z","Sinh viên lập trình mạng","mau",false);
+        HoSoDialog f=new HoSoDialog(null,n,false,false); xuatForm(f,"25-ho-so-chua-anh.png");
+        f.xemTruoc(h,false); xuatForm(f,"26-ho-so-co-anh.png");
+        HoSoDialog mk=new HoSoDialog(null,n,true,false); xuatForm(mk,"27-doi-mat-khau.png");
+        mk.xemTruoc(null,true); xuatForm(mk,"28-doi-mat-khau-co-loi.png");
+        HoSoDialog buoc=new HoSoDialog(null,n,true,true); xuatForm(buoc,"29-buoc-doi-mat-khau.png");
+        Phong phong=new Phong("sanh","Sảnh chung","","SANH01","HE_THONG","239.255.42.1",9001,500,true,false,true,2,"2026-11-13");
+        KhungChatPanel chat=new KhungChatPanel(phong); chat.datHoSo(id -> h,id -> n);
+        chat.themTin(new TinNhan(1,"sanh","an","Minh An","111 — Avatar đã được cập nhật cho mọi người.",java.time.Instant.parse("2026-11-13T05:00:00Z").toEpochMilli()),false);
+        ThanhVienPanel thanhVien=new ThanhVienPanel(); thanhVien.datAnh(id -> h);
+        thanhVien.capNhat(List.of(new Phong.ThanhVien("an","minhan","Minh An","THANH_VIEN",true)),"minhan",false);
+        javax.swing.JPanel mau=new javax.swing.JPanel(new java.awt.BorderLayout()); mau.add(chat); mau.add(thanhVien,java.awt.BorderLayout.EAST);
+        xuat(mau,"30-avatar-trong-chat.png",960,400);
+        System.out.println("PASS UiPreview M3a: form mat khau co loi khong nen input; noi dung Font.PLAIN");
+    }
+    // Anh mau Java2D, khong dung tep ngoai hay ky tu emoji phu thuoc font.
+    private static BufferedImage anhMau() {
+        BufferedImage h=new BufferedImage(96,96,BufferedImage.TYPE_INT_RGB); var g=h.createGraphics();
+        g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(Theme.CHON); g.fillRect(0,0,96,96); g.setColor(Theme.CHINH); g.fillOval(15,60,66,60);
+        g.setColor(Theme.CANH_BAO); g.fillOval(29,15,38,45); g.setColor(Theme.CHU); g.fillArc(25,10,46,38,0,180); g.dispose(); return h;
     }
     // Loi that cua login/signup va room form phai giu chieu cao moi o nhap.
     private static void xuatLoiForm() throws IOException {
@@ -117,7 +143,7 @@ public final class UiPreview {
             xuat(frame.getRootPane(),"06-toast-ba-muc.png",1240,800);
             frame.toast(ThongBao.Muc.LOI,"Phòng đã đầy. Hãy liên hệ chủ phòng.");
             xuat(frame.getRootPane(),"07-toast-loi.png",1240,800);
-            xuat(frame.menuAvatar(),"08-menu-nguoi-dung.png",220,50);
+            xuat(frame.menuAvatar(),"08-menu-nguoi-dung.png",240,140);
             HopThoai tao=new HopThoai(null,false); xuatForm(tao,"09-tao-phong.png");
             xuatForm(new HopThoai(nhom,false),"10-sua-phong.png");
             HopThoai vao=new HopThoai(null,true); vao.coMatKhau(); xuatForm(vao,"11-vao-phong.png");

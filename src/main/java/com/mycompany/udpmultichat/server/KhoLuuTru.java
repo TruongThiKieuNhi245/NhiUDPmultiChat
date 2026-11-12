@@ -61,7 +61,7 @@ public final class KhoLuuTru {
         if (!cauHinh.containsKey("admin.salt")) { throw new IOException("Config thiếu admin.salt"); }
         if (BaoMat.dungMatKhau(cauHinh.getProperty("admin.salt"),
                 cauHinh.getProperty("admin.passwordHash"), "admin123")) {
-            log.accept("CẢNH BÁO: admin đang dùng admin123. Hãy đổi mật khẩu trong config (xem README).");
+            log.accept("CẢNH BÁO: admin đang dùng admin123. Client phải đổi mật khẩu mặc định trước khi vào phòng.");
         }
         StringWriter ghi = new StringWriter();
         cauHinh.store(ghi, "UDPmultiChat - UTF-8; admin.password chi dung mot lan khi khoi dong");
@@ -70,6 +70,33 @@ public final class KhoLuuTru {
 
     // Cau hinh.
     public String cauHinh(String khoa) { return cauHinh.getProperty(khoa); }
+
+    // Cap nhat config admin sau khi doi mat khau; khong luu mat khau tho.
+    public synchronized void doiMatKhauAdmin(String salt,String hash) throws IOException {
+        String cuSalt=cauHinh.getProperty("admin.salt"),cuHash=cauHinh.getProperty("admin.passwordHash");
+        cauHinh.setProperty("admin.salt",salt); cauHinh.setProperty("admin.passwordHash",hash);
+        try { StringWriter w=new StringWriter(); cauHinh.store(w,"UDPmultiChat - UTF-8"); ghiAnToan(thuMuc.resolve("config.properties"),w.toString()); }
+        catch (IOException e) { cauHinh.setProperty("admin.salt",cuSalt); cauHinh.setProperty("admin.passwordHash",cuHash); throw e; }
+    }
+    // Ten tep anh chi lay tu ten tai khoan da chuan hoa, khong nhan duong dan Client.
+    private Path tepAnh(String ten) throws IOException {
+        if (!ten.matches("[a-z0-9_]{3,20}")) { throw new IOException("Tên tài khoản không hợp lệ."); }
+        Path p=thuMuc.resolve("avatars"); Files.createDirectories(p); return p.resolve(ten+".png");
+    }
+    // Doc anh da luu; khong ton tai thi tra mang rong.
+    public synchronized byte[] docAnh(String ten) throws IOException {
+        Path p=tepAnh(ten); if (!Files.exists(p)) { return new byte[0]; }
+        if (Files.size(p)>com.mycompany.udpmultichat.common.Protocol.ANH_PNG_TOI_DA) { throw new IOException("Avatar lưu trữ quá lớn."); }
+        return Files.readAllBytes(p);
+    }
+    // Ghi anh qua tep tam cung thu muc roi thay the.
+    public synchronized void ghiAnh(String ten,byte[] data) throws IOException {
+        Path p=tepAnh(ten);
+        if (data.length==0) { Files.deleteIfExists(p); return; }
+        Path tam=p.resolveSibling(p.getFileName()+".tmp"); Files.write(tam,data);
+        try { Files.move(tam,p,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING); }
+        catch (AtomicMoveNotSupportedException e) { Files.move(tam,p,StandardCopyOption.REPLACE_EXISTING); }
+    }
 
     // ===== CSV TAI KHOAN =====
     public synchronized Map<String, TaiKhoan> docNguoiDung() throws IOException {
@@ -81,8 +108,8 @@ public final class KhoLuuTru {
             if (dong.get(i).isBlank()) { continue; }
             try {
                 String[] p = tachCsv(dong.get(i));
-                if (p.length != 7 || ketQua.containsKey(p[1])) { throw new IllegalArgumentException(); }
-                NguoiDung nguoi = new NguoiDung(p[0], p[1], p[2], VaiTro.valueOf(p[3]), p[4]);
+                if ((p.length != 7 && p.length != 9) || ketQua.containsKey(p[1])) { throw new IllegalArgumentException(); }
+                NguoiDung nguoi = new NguoiDung(p[0], p[1], p[2], VaiTro.valueOf(p[3]), p[4],p.length==9?p[7]:"",p.length==9?p[8]:"",false);
                 ketQua.put(p[1], new TaiKhoan(nguoi, p[5], p[6]));
             } catch (RuntimeException e) { throw new IOException("users.csv sai ở dòng " + (i + 1), e); }
         }
@@ -91,11 +118,11 @@ public final class KhoLuuTru {
 
     // Tat ca du lieu tai khoan duoc ghi tren cung mot khoa.
     public synchronized void ghiNguoiDung(Collection<TaiKhoan> danhSach) throws IOException {
-        StringBuilder noiDung = new StringBuilder("id,tenDangNhap,tenHienThi,vaiTro,ngayTao,salt,hash\n");
+        StringBuilder noiDung = new StringBuilder("id,tenDangNhap,tenHienThi,vaiTro,ngayTao,salt,hash,gioiThieu,anhHash\n");
         for (TaiKhoan tk : danhSach) {
-            List<String> truong = new ArrayList<>(List.of(tk.nguoi.cacTruong()));
+            List<String> truong = new ArrayList<>(List.of(tk.nguoi.id,tk.nguoi.tenDangNhap,tk.nguoi.tenHienThi,tk.nguoi.vaiTro.name(),tk.nguoi.ngayTao));
             truong.add(tk.salt);
-            truong.add(tk.hash);
+            truong.add(tk.hash); truong.add(tk.nguoi.gioiThieu); truong.add(tk.nguoi.anhHash);
             noiDung.append(String.join(",", truong.stream().map(KhoLuuTru::csv).toList())).append('\n');
         }
         ghiAnToan(thuMuc.resolve("users.csv"), noiDung.toString());
@@ -115,7 +142,7 @@ public final class KhoLuuTru {
 
     // Ghi phong.
     public synchronized void ghiPhong(List<String[]> danhSach) throws IOException {
-        StringBuilder noiDung = new StringBuilder("id,ten,moTa,maPhong,chuId,nhom,cong,gioiHan,congKhai,coMatKhau,dangMo,soThanhVien,ngayTao,salt,hash\n");
+        StringBuilder noiDung = new StringBuilder("id,ten,moTa,maPhong,chuId,nhom,cong,gioiHan,congKhai,coMatKhau,dangMo,soThanhVien,ngayTao,salt,hash,gioiThieu,anhHash\n");
         for (String[] p : danhSach) {
             noiDung.append(String.join(",", java.util.Arrays.stream(p).map(KhoLuuTru::csv).toList())).append('\n');
         }

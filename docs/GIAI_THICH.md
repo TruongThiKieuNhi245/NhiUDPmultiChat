@@ -1,4 +1,4 @@
-# Giải thích M1 / M2 / M2.5 / M2.6 / M2.7 — Socket UDP và Multicast
+# Giải thích đến M3a — Socket UDP và Multicast
 
 ## Luồng chạy và đối chiếu chương 6
 
@@ -158,7 +158,7 @@ Nguyên nhân ảnh 03: BoxLayout giữ chiều cao hàng được tính lúc ch
 | Toast tối đa 360px, trên viền ô soạn 12px | ui/Theme, ui/components/ThongBao | TOAST_CAO/TOAST_RONG / sapXep |
 | Đủ thời gian đọc, hover tạm dừng như trước | ui/Theme, ui/components/ThongBao | TOAST_MS/TOAST_LOI_MS / Toast constructor, ganHover |
 | Tham gia là nút nền nhạt/viền, giữa dọc; ẩn nhóm rỗng | ui/DanhSachPhongPanel | nutPhong, themNhom |
-| Vai trò xám 12px, không đậm theo nút cha | ui/ChatMulticastUI, ui/Theme | ganNguoiDung / mauHtml |
+| Vai trò xám 12px, không đậm theo nút cha | ui/ChatMulticastUI, ui/Theme | theTaiKhoan, ganNguoiDung (JLabel riêng từ M2.8) |
 | Ngày dd/MM/yyyy, copy sát mã | ui/HopThoai | dinhDangNgay, thongTinMa |
 | Cả vùng control soạn cùng xám khi khóa | ui/SoanTinPanel, ui/Theme | capNhat / NEN_KHOA |
 | Log Consolas 13, fallback Monospaced | ui/Theme, server/ServerMain | tenFontLog, DON_CACH / constructor |
@@ -208,10 +208,62 @@ M1/M2 đã được người dùng xác nhận. M2.6: **28 PASS, 0 FAIL** trên 
 
 UiPreview xuất 24 PNG bằng các component Swing thật, không socket; đã kiểm tra bố cục ảnh, không khẳng định đã thử chuột/phím toàn bộ. F5/Run File và tương tác ba cửa sổ cần người dùng kiểm tra; nhiều máy LAN, DPI cao chưa thử. 31 file ứng dụng + 4 file test, file dài nhất dưới 400 dòng; compiler bật Xlint:all/failOnWarning.
 
-**UDP không đảm bảo**. **Multicast cần chung LAN và cho Java qua Windows Firewall**. **Token/mật khẩu đi qua UDP không mã hóa**, multicast chưa xác thực nguồn; salt/hash chỉ bảo vệ trên đĩa. Tự nối lại cần credentials/IP/cổng còn đúng và lịch sử Server còn. Lịch sử hiện nạp RAM, chưa tối ưu quy mô lớn. Discovery và các chức năng M3–M7 chưa triển khai trong mốc này.
+**UDP không đảm bảo**. **Multicast cần chung LAN và cho Java qua Windows Firewall**. **Token/mật khẩu đi qua UDP không mã hóa**, multicast chưa xác thực nguồn; salt/hash chỉ bảo vệ trên đĩa. Tự nối lại cần credentials/IP/cổng còn đúng và lịch sử Server còn. Lịch sử hiện nạp RAM, chưa tối ưu quy mô lớn. Discovery chưa triển khai. M3a được bổ sung bên dưới; M3b–M7 chờ xác nhận.
 
 ## M2.8
 
 Vai trò thẻ tài khoản dùng JLabel riêng: tên 14px đậm, vai trò 12px thường màu xám (không dùng kích thước HTML). Ô soạn chia vùng nhập toàn chiều rộng và hàng công cụ bên dưới; nền khóa vẽ bo tròn, không còn góc xám vuông. Bộ đếm gần ngưỡng hiển thị số ký tự / giới hạn ước tính từ tỷ lệ ký tự so với dung lượng nội dung hiện tại; giới hạn thật vẫn kiểm tra UTF-8 và gói UDP. Mô tả phòng giới hạn 80 ký tự ở cả Client và Server, thông báo bỏ thuật ngữ byte. Theme.vietHoaDau chuẩn hóa chữ đầu lỗi. Kiểm tra Font.PLAIN của JTextArea trong UiPreview vẫn được giữ; tên người gửi là nhãn riêng.
 
 File/hàm: ChatMulticastUI.theTaiKhoan/ganNguoiDung; SoanTinPanel constructor/capNhat/paintComponent; Theme.vietHoaDau; HopThoai.kiemTra; QuanLyPhong.kiemTraNoiDung. Ảnh 05/18 là offline/nhiều dòng được xuất lại.
+
+
+## M3a: chức năng → file → hàm
+
+| Chức năng | File | Hàm |
+|---|---|---|
+| Tách tên đăng nhập bất biến và tên hiển thị/giới thiệu/hash avatar | common/model/NguoiDung | constructor, cacTruong, tuTruong, voiHoSo |
+| Kiểm tra tên 2–30, giới thiệu ≤100, cấm ký tự điều khiển | server/QuanLyNguoiDung / ui/HoSoDialog | luuHoSo / kiemTra |
+| Lưu hồ sơ bằng một lệnh, phát cho Client chung phòng | server/QuanLyHoSo / server/ServerCore | luu / xuLyHoSo |
+| Nhận hồ sơ trước callback; định danh Bạn/quyền vẫn dùng tài khoản/id | client/ClientCore / ui/ChatMulticastUI | nhanHoSo / onHoSo, ganNguoiDung |
+| Hồ sơ có avatar 96px, Đổi/Xóa, xem trước, Lưu/Hủy, trạng thái tải | ui/HoSoDialog | formHoSo, chonAnh, docAnh, gui, dong |
+| PNG/JPG ≤2 MB, kiểm tra nội dung/diện tích trước giải nén, cắt giữa 96×96 PNG | common/PhanManh | chuanHoa, docAnh |
+| Mảnh 600 byte, Base64, giới hạn index/bộ nhớ, CRC32 | common/PhanManh | manh, crc, BoGhep.nhan/ketQua |
+| Gửi mảnh nền có ACK/gửi lại, dừng trước SAVE khi Hủy | client/HoSoClient / common/ReliableUdp | luu, guiAnh / gui, thuGui |
+| Ảnh tạm theo token, tối đa 128 lượt × 64 KB, hết hạn 60 giây | server/QuanLyHoSo | xuLy, layTam, donDep |
+| Server kiểm tra PNG 96×96 + CRC trước lưu chính thức | server/QuanLyHoSo | luu |
+| Lưu data/avatars/username.png qua file tạm; rollback ảnh cũ nếu lưu hồ sơ lỗi | server/KhoLuuTru / server/QuanLyHoSo | tepAnh, ghiAnh / luu |
+| Tải mảnh theo id + phiên bản, chống trộn ảnh cũ/mới | server/QuanLyHoSo / client/HoSoClient | doc / taiDuLieu |
+| Lazy load và cache LRU tối đa 100 hồ sơ, 100 ảnh, 16 lượt tải/32 lượt hỏi | client/HoSoClient | gap, taiAnh, nhan, gioiHan, xoa |
+| Avatar ảnh thật hoặc chữ cái, tên người gửi cập nhật tại chỗ | ui/Theme / ui/ThanhPhan / ui/KhungChatPanel | avatar / Avatar.paintComponent, BongTin.tenMoi / datHoSo, hoSoMoi |
+| Avatar thành viên và thẻ tài khoản, không tải mạng trong paint | ui/ThanhVienPanel / ui/ChatMulticastUI | datAnh, hang / ganNguoiDung, onHoSo |
+| Ba ô mật khẩu, Hiện/Ẩn, lỗi inline không nén input | ui/HoSoDialog / ui/Theme | formMatKhau, oMatKhau, kiemTra, baoLoi / hangNhap |
+| Kiểm tra mật khẩu cũ, độ dài 6–128, salt/hash mới | server/QuanLyNguoiDung | doiMatKhau, thayTaiKhoan |
+| Đồng bộ hash admin trong config; nạp CSV cũ 7 cột / mới 9 cột | server/KhoLuuTru | doiMatKhauAdmin, docNguoiDung, ghiNguoiDung |
+| Mật khẩu mới trong RAM phục vụ reconnect, xóa char[] cũ | client/ClientCore | doiMatKhau, close |
+| Buộc admin đổi mật khẩu mặc định ở cả Server lẫn UI | server/QuanLyNguoiDung / server/ServerCore / ui/HoSoDialog | congKhai, kiemTraBatBuoc / xuLyGoi / formMatKhau, hien |
+| Chỉ mở Sảnh sau khi đổi mật khẩu bắt buộc | client/ClientCore / ui/ChatMulticastUI | dangNhap, vaoSanh / moMatKhau |
+| Mất kết nối/nối lại lấy lại hồ sơ, không giữ cache cũ | client/ClientCore | khoiPhuc |
+| Kiểm thử hồ sơ/ảnh/mật khẩu/admin, dữ liệu cũ, mất 20% gói | src/test/.../HoSoSelfTest | chayTatCa, kiemTraHoSo, kiemTraAvatar, kiemTraMatGoi, kiemTraMatKhau, kiemTraAdmin, kiemTraCsvCu |
+| Ảnh hộp thật, lỗi ba ô và ảnh mẫu vẽ bằng code | ui/UiPreview | xuatHoSo, anhMau, kiemTraONhap, kiemTraFontNoiDung |
+
+### Luồng UDP của hồ sơ/avatar/mật khẩu
+
+LOGIN trả token + 8 trường hồ sơ công khai (không salt/hash mật khẩu). Client gán danh tính trước Listener. Admin dùng hash tương ứng admin123 nhận `buocDoiMatKhau=true`: Server chỉ cho PING/LOGOUT/PASSWORD_CHANGE, chưa cho PREPARE/READY/SEND. Sau đổi thành công mới vào Sảnh; một tài khoản chỉ có một phiên nên không có phiên khác cần hủy. Phiên hiện tại giữ đăng nhập, cập nhật mật khẩu mới chỉ trong RAM để reconnect.
+
+Chọn ảnh chỉ xử lý tại máy Client. Bấm Lưu: AVATAR_BEGIN → AVATAR_PART từng mảnh 600 byte thô → PROFILE_SAVE (tên, giới thiệu, mã ảnh tạm/KEEP/DELETE). Mỗi request đi qua ReliableUdp, có seq/ACK/gửi lại và RESPONSE nghiệp vụ. Hủy trước PROFILE_SAVE không thay hồ sơ; nếu SAVE đã gửi, có thể đã lưu dù người dùng đóng hộp. Server ghép đủ + CRC và PNG 96×96 hợp lệ mới ghi, sau đó phát PROFILE_CHANGED tới các phiên chung phòng. Không đưa cả ảnh vào multicast hay vào một datagram lớn.
+
+Client gặp user chưa biết gửi PROFILE_GET, có hash ảnh thì AVATAR_READ lần lượt từng mảnh; ghép CRC trùng mới ImageIO đọc PNG. Cache LRU theo id/hash, không dùng tên hiển thị làm khóa. Khi hash thay đổi, renderer chuyển sang bản mới sau khi tải; nếu chưa có thì hiện chữ cái. Ảnh tải nền, UI chỉ đọc RAM rồi repaint trên EDT. Callback ảnh tải xong lấy snapshot mới nhất để tránh đổi tên quay về giá trị cũ. Đăng xuất xóa cache và bỏ kết quả luồng tải thuộc phiên trước.
+
+### Multicast ở M3a
+
+Không thay đường chat: `ServerCore.phatMulticast` vẫn phát đúng nhóm/cổng phòng, `KenhPhong.vongNhan` vẫn lọc roomId. Hồ sơ/avatar/mật khẩu đi **UDP unicast có ACK**, vì cần kiểm tra quyền, truyền mảnh và trả kết quả riêng. Hồ sơ mới được Server gửi bằng UDP unicast tới những Client chung phòng; tin văn bản hiện tại vẫn multicast. Đây là hai nhiệm vụ khác nhau của Socket UDP và Multicast trong chương 6.
+
+### Kiểm chứng, giới hạn và thay đổi file
+
+Maven NetBeans/JDK 21 biên dịch với Xlint/failOnWarning. SelfTest đến M3a: **37 PASS, 0 FAIL**, gồm 9 mục M3a và 28 mục hồi quy. Ảnh nhiều màu truyền nhiều mảnh, so byte/CRC chính xác cả upload/download khi bỏ ngẫu nhiên 20% DATA/ACK với seed `20261113`; lịch trình luồng hệ điều hành có thể khác. Server được kiểm tra trực tiếp để không dựa vào validator Client: ảnh giả, PNG sai kích thước, quá giới hạn bộ đệm, index lớn, CRC sai đều bị từ chối. CSV cũ được viết theo schema 7 cột rồi kiểm tra nạp/nâng cấp thật.
+
+UiPreview xuất **30 PNG**: 25/26 hồ sơ chưa/có avatar, 27/28 mật khẩu bình thường/có lỗi, 29 bắt buộc đổi, 30 thành viên và bong bóng có ảnh mẫu Java2D. Kiểm tra chiều cao input, font PLAIN vẫn chạy trên tất cả ảnh; không khẳng định đã thao tác chuột/phím qua 3 Client. Nhiều máy LAN, DPI khác và Run/Debug IDE cần thử tay.
+
+Bốn file ứng dụng mới: PhanManh, HoSoClient, QuanLyHoSo, HoSoDialog; tổng **35 file ứng dụng + 5 file test**, giữ bốn gói, mỗi file dưới 400 dòng. Không đổi tên/xóa lớp cũ ở M3a; không thêm thư viện. NguoiDung bổ sung snapshot 8 trường, CSV giữ 7 cột cũ và nối 2 cột mới; đóng toàn bộ tiến trình cũ trước khi chạy cùng phiên bản.
+
+**Giới hạn đã biết:** UDP không đảm bảo; hết 3 lần gửi lại vẫn có thể lỗi và cần thử Lưu lại. Multicast cần chung LAN, bật Java qua Windows Firewall. Token/mật khẩu đi qua UDP không mã hóa; CRC32 chỉ kiểm tra lỗi, không xác thực nguồn. Ảnh đầu vào tối đa 2 MB và 16 triệu pixel để giới hạn giải nén; ảnh chuẩn hóa tối đa 64 KB. Cache chỉ ở RAM, logout xóa. Ghi avatar và users.csv là hai file riêng: có rollback khi gặp lỗi I/O trong tiến trình, chưa phải giao dịch chống mất điện giữa hai bước. M3b–M7 chưa thực hiện.

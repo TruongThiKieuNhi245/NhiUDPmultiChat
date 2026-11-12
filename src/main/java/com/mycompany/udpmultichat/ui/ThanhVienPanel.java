@@ -16,6 +16,9 @@ import javax.swing.JScrollPane;
 @SuppressWarnings("serial")
 final class ThanhVienPanel extends JPanel {
     // ===== VAI TRO VA CAC THAO TAC =====
+    private java.util.function.Function<String,java.awt.image.BufferedImage> anh=id -> null;
+    // Gan bo doc cache; khong tai anh trong renderer.
+    void datAnh(java.util.function.Function<String,java.awt.image.BufferedImage> anh) { this.anh=anh; }
     private final JPanel ds=new JPanel();
     private final JLabel tong=Theme.nhan("Thành viên",true);
     // Khoi tao lop va noi cac thanh phan can thiet.
@@ -46,7 +49,7 @@ final class ThanhVienPanel extends JPanel {
     private JPanel hang(Phong.ThanhVien n,String toi,boolean quanLy) {
         JPanel hang=new JPanel(new BorderLayout(Theme.S8,0)); hang.setBorder(Theme.le(Theme.S8)); hang.setMaximumSize(new Dimension(1000,56));
         hang.setAlignmentX(LEFT_ALIGNMENT); hang.setName(n.tenDangNhap());
-        hang.add(new ThanhPhan.Avatar(n.ten(),n.online()),BorderLayout.WEST);
+        hang.add(new ThanhPhan.Avatar(n.ten(),n.online(),() -> anh.apply(n.id())),BorderLayout.WEST);
         JPanel chu=new JPanel(new BorderLayout()); JLabel ten=Theme.nhan(n.ten(),true);
         ten.setToolTipText("@"+n.tenDangNhap());
         ten.setForeground(n.online()?Theme.CHU:Theme.PHU); chu.add(ten,BorderLayout.CENTER);

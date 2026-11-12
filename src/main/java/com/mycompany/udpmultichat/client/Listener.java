@@ -11,6 +11,8 @@ public interface Listener {
     // ===== VAI TRO VA CAC THAO TAC =====
     // Phat truoc moi su kien phong sau dang nhap va khi ho so phien thay doi.
     default void onNguoiDung(NguoiDung nguoi) { }
+    // Snapshot ho so bat ky user chung phong, ke ca khi anh cache vua tai xong.
+    default void onHoSo(NguoiDung nguoi) { }
     // Nhan tin da duoc kiem tra danh tinh va phong.
     void onTinNhan(TinNhan tin,boolean laToi);
     // Nhan thong bao he thong qua Listener.

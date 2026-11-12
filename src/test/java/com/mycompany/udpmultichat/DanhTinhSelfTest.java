@@ -23,12 +23,12 @@ public final class DanhTinhSelfTest {
     public static void main(String[] args) throws Exception {
         MangUtil.dungIPv4(); Files.createDirectories(Path.of(".selftest"));
         System.setProperty("udpmultichat.clientConfig",Files.createTempDirectory(Path.of(".selftest"),"prefs-id-").resolve("client.properties").toString());
-        kiemTra();
+        kiemTra(); kiemTraGoi();
     }
     // Dang nhap sau cung phai biet danh tinh truoc ban danh sach dau tien.
     static void kiemTra() throws Exception {
         Path data=Files.createTempDirectory(Path.of(".selftest"),"m26-identity-");
-        Files.writeString(data.resolve("config.properties"),"multicast.portBase=25000\n");
+        Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=25000\n");
         BanNghe an=new BanNghe(),binh=new BanNghe(),quanTri=new BanNghe();
         ServerCore server=new ServerCore(data,new ServerCore.Listener() {
             // Nhan log qua Listener, chuyen ve luong phu hop.
@@ -39,7 +39,7 @@ public final class DanhTinhSelfTest {
         try (ClientCore a=new ClientCore(an); ClientCore b=new ClientCore(binh); ClientCore ad=new ClientCore(quanTri)) {
             server.batDau(0); int cong=server.cong();
             cho(a.dangKy("localhost",cong,"aaa","abcdef123")); cho(b.dangKy("localhost",cong,"bbb","abcdef123"));
-            quanTri.ganSauFuture(cho(ad.dangNhap("localhost",cong,"admin","admin123")));
+            quanTri.ganSauFuture(cho(ad.dangNhap("localhost",cong,"admin","adminTest123")));
             an.ganSauFuture(cho(a.dangNhap("localhost",cong,"aaa","abcdef123")));
             binh.ganSauFuture(cho(b.dangNhap("localhost",cong,"bbb","abcdef123")));
             doi(() -> binh.thanhVien.size()==3,4000);
@@ -61,7 +61,7 @@ public final class DanhTinhSelfTest {
     static void kiemTraGoi() {
         String id=com.mycompany.udpmultichat.common.BaoMat.ngauNhien(12),user=com.mycompany.udpmultichat.common.BaoMat.ngauNhien(12);
         String text="ắ".repeat(333)+"a";
-        TinNhan tin=new TinNhan(Long.MAX_VALUE,id,user,"TaiKhoanToiDa20KyTuab",text,Long.MAX_VALUE);
+        TinNhan tin=new TinNhan(Long.MAX_VALUE,id,user,new String(Character.toChars(0x1F642)).repeat(30),text,Long.MAX_VALUE);
         com.mycompany.udpmultichat.common.Goi.kiemTraTin(tin);
         String sync=com.mycompany.udpmultichat.common.Goi.ghep(com.mycompany.udpmultichat.common.Goi.noi(
             new String[]{Protocol.MUC_DONG_BO,id,"x".repeat(36)},com.mycompany.udpmultichat.common.Goi.tach(tin.dongGoi())));

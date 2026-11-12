@@ -1,4 +1,4 @@
-# UDPmultiChat — mốc M2.8
+# UDPmultiChat — mốc M3a
 
 Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmultichat.ClientMain` và `com.mycompany.udpmultichat.server.ServerMain`. Giao diện dùng **FlatLaf 3.7.2**, giấy phép Apache 2.0 ([trang chính thức](https://www.formdev.com/flatlaf/)); đây là thư viện duy nhất của ứng dụng, được bổ sung theo yêu cầu M2.5.
 
@@ -16,28 +16,28 @@ Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmulti
 
 - M2.7: sửa ô nhập bị ép còn 12px khi hiện lỗi; dùng hàng form chung giữ input 32px và tăng chiều cao theo lỗi. Toast gọn (một dòng 48px), giữa dọc, tối đa 360px, cách viền ô soạn 12px. Nút Tham gia có nền/viền, ẩn nhóm công khai rỗng, vai trò xám 12px, ngày dd/MM/yyyy/copy sát mã, nền soạn xám khi khóa, log Consolas 13 và header thẳng hàng.
 
-**Sảnh chung** luôn công khai, mở, không mật khẩu; không được Sửa/Xóa/Rời/Đóng. Phòng tạo hoặc sửa dùng tên 3–30 ký tự, mô tả tối đa 240 byte UTF-8, giới hạn 2–500 thành viên. Sảnh hệ thống giữ giới hạn cũ 1000 nếu dữ liệu được tạo từ M2.
+**Sảnh chung** luôn công khai, mở, không mật khẩu; không được Sửa/Xóa/Rời/Đóng. Phòng tạo hoặc sửa dùng tên 3–30 ký tự, mô tả tối đa 80 ký tự, giới hạn 2–500 thành viên. Sảnh hệ thống giữ giới hạn cũ 1000 nếu dữ liệu được tạo từ M2.
 
-Mốc tiếp theo, mỗi mốc đều commit và dừng chờ xác nhận. Sau commit M2.8 tiếp tục M3a theo yêu cầu ngày 13/11/2026; sau M3a dừng chờ xác nhận:
+M2.8 và M3a đã hoàn thành với hai commit riêng. Dừng chờ xác nhận trước M3b; các mốc tiếp theo vẫn giữ phạm vi:
 
 | Mốc | Phần việc |
 |---|---|
-| M3a | Hồ sơ: tách tên đăng nhập cố định/tên hiển thị 2–30 ký tự, giới thiệu 100 ký tự; avatar PNG/JPG ≤2 MB, cắt giữa/96×96 PNG, mảnh ~600 byte/ACK/CRC32, phiên bản/cache có giới hạn, cập nhật realtime; đổi mật khẩu và buộc admin đổi admin123 |
+| M3a (xong) | Hồ sơ: tách tên đăng nhập cố định/tên hiển thị 2–30 ký tự, giới thiệu 100 ký tự; avatar PNG/JPG ≤2 MB, cắt giữa/96×96 PNG, mảnh ~600 byte/ACK/CRC32, phiên bản/cache có giới hạn, cập nhật realtime; đổi mật khẩu và buộc admin đổi admin123 |
 | M3b | Sticker bằng hình vẽ/PNG (không emoji font), typing, tìm kiếm, thu hồi, trạng thái gửi/gửi lại, ngày/gộp tin, trả lời trích dẫn, sao chép/cuộn có điều kiện; tắt thông báo theo phòng |
 | M4 | File UDP tối đa 10 MB cấu hình được, ACK/CRC32/tiến trình/hủy, chống path traversal, tải xuống, xem trước ảnh, chỉ thành viên phòng được tải |
 | M5 | Dashboard đầy đủ bảng user (vai trò/online/phòng/ngày tạo/khóa-cấm, thêm/sửa/xóa/khóa/mở/đặt lại mật khẩu/đổi vai trò), bảng phòng (thành viên/tin/file, CRUD/đóng/mở), kick/mute có hạn/ban/gỡ cấm, broadcast, chống spam, thống kê, nhật ký thao tác, báo cáo CSV BOM + HTML (tổng user, user theo phòng, top chat) |
 | M6 | Sáng/Tối, co giãn, phím tắt, xuất lịch sử một phòng ra .txt, hoàn thiện launch Server/Client 1/2/3 và tài liệu |
 | M7 | Rà soát toàn bộ, sửa lỗi, chạy lại SelfTest/UiPreview, báo cáo đối chiếu yêu cầu |
 
-Hồ sơ/đổi mật khẩu/Sáng-Tối chưa hoạt động nên đã ẩn khỏi menu tài khoản. Nút emoji/+ là vị trí chờ ở ô soạn, hiện vô hiệu. Quản trị thành viên thực hiện ở M5. Discovery tự tìm Server chưa triển khai; hiện nhập IP thủ công.
+Menu tài khoản có **Hồ sơ của tôi / Đổi mật khẩu / Đăng xuất**. Sáng/Tối chưa triển khai nên vẫn ẩn. Nút emoji/+ là vị trí chờ ở ô soạn, hiện vô hiệu. Quản trị thành viên thực hiện ở M5. Discovery tự tìm Server chưa triển khai; hiện nhập IP thủ công.
 
 ## Chạy bằng VS Code / NetBeans
 
 1. Mở thư mục chứa `pom.xml`, dùng JDK 21 và Extension Pack for Java/Maven for Java. `.vscode/settings.json` trỏ JDK/Maven của máy hiện tại; máy khác cần sửa đường dẫn.
-2. Đóng **toàn bộ Server/Client bản cũ**: snapshot thành viên/phòng M2.6 có thêm trường, cần chạy cùng phiên bản. Nhấn **Ctrl+Shift+D**, chọn **Server**, F5; bấm **Bắt đầu** trong cửa sổ giám sát.
+2. Đóng **toàn bộ Server/Client bản cũ**: gói đăng nhập/hồ sơ M3a có thêm trường, cần chạy cùng phiên bản. Nhấn **Ctrl+Shift+D**, chọn **Server**, F5; bấm **Bắt đầu** trong cửa sổ giám sát.
 3. Lần lượt chọn **Client 1**, **Client 2**, **Client 3**, F5 cho mỗi cấu hình; giữ các phiên trước đang chạy. Đây là ba tiến trình riêng, cùng chạy ClientMain.
 4. IP mặc định `localhost`, cổng 5000. Đổi IP tại **Cài đặt máy chủ**, bấm **Kiểm tra kết nối**. Tạo tài khoản ở tab Đăng ký, sau đó đăng nhập.
-5. Admin mặc định **admin / admin123**. Tên tài khoản 3–20 chữ `a-z`, số hoặc `_`, không phân biệt hoa/thường; mật khẩu 6–128 ký tự.
+5. Admin mặc định **admin / admin123**; phải đổi mật khẩu trước khi vào phòng (hộp không có Đóng/Hủy, Esc không thoát). Tên tài khoản 3–20 chữ `a-z`, số hoặc `_`, không phân biệt hoa/thường; mật khẩu 6–128 ký tự.
 
 Nút Run ngay trong ClientMain/ServerMain cũng dùng được. NetBeans: Open Project, chọn JDK 21, Run File trên một trong hai class này. Main mặc định trong POM là ClientMain; không còn class ChatMulticastUI ở package gốc.
 
@@ -86,14 +86,15 @@ Cách chạy trực tiếp, không cần FlatLaf vì SelfTest không tạo Swing
 java '-Djava.net.preferIPv4Stack=true' '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' -cp 'target/test-classes;target/classes' com.mycompany.udpmultichat.SelfTest
 ```
 
-Bốn file test ở `src/test/java`: SelfTest, PhongSelfTest, GiaoDienSelfTest, DanhTinhSelfTest. Dữ liệu riêng `.selftest/`, cấu hình Client test cũng tách riêng; không dùng data thật. UDP điều khiển dùng cổng tạm, multicast test dùng gốc 19000/21000/23000/25000. Chạy một phiên SelfTest mỗi lần.
+Năm file test ở `src/test/java`: SelfTest, PhongSelfTest, GiaoDienSelfTest, DanhTinhSelfTest, HoSoSelfTest. Dữ liệu riêng `.selftest/`, cấu hình Client test cũng tách riêng; không dùng data thật. UDP điều khiển dùng cổng tạm, multicast test dùng gốc 19000/21000/23000/25000/27000/29000. Chạy một phiên SelfTest mỗi lần.
 
-Kết quả chạy lại ở M2.7 trên máy hiện tại: **28 PASS, 0 FAIL**, gồm:
+Kết quả chạy lại đến M3a trên máy hiện tại: **37 PASS, 0 FAIL**, gồm:
 
+- Hồ sơ phát realtime sang Client khác, avatar tải lên/tải về CRC trùng kể cả mất 20% gói; từ chối ảnh giả/quá lớn/sai kích thước, hủy/xóa ảnh, mật khẩu cũ sai/đúng và 6–128 ký tự, buộc đổi admin mặc định, nạp lại hồ sơ/hash và chuyển users.csv cũ 7 cột.
 - Tài khoản, timeout, mất ngẫu nhiên 20% DATA/ACK với seed `20261112/20261113` (thứ tự lập lịch hệ điều hành vẫn có thể khác).
 - CRUD/quyền/mật khẩu/phòng đầy, phòng riêng không lộ, lưu đúng loại, chuyển quyền và nạp lại sau restart.
 - Multicast thật qua card Wi-Fi: cách ly phòng, cả hai nhóm dùng cùng cổng; lịch sử đúng 50; RESYNC tin giữa/tin cuối và hơn 50 tin liên tiếp.
-- Tin Việt quá 1000 byte bị chặn ở Client và Server; biên 1000 byte được nhận. Thử nội dung 1000 byte qua multicast thật và kiểm tra gói RESYNC bọc ReliableUdp dài **1280 byte** với ID/tên tối đa hiện hành; nhiều escape vượt gói bị chặn.
+- Tin Việt quá 1000 byte bị chặn ở Client và Server; biên 1000 byte được nhận. Thử nội dung 1000 byte qua multicast thật và kiểm tra gói RESYNC bọc ReliableUdp dài **1379 byte** với ID tối đa và tên hiển thị 30 ký tự loại 4 byte; nhiều escape vượt gói bị chặn.
 - Client vào sau cùng có đúng một nhãn Bạn ngay snapshot đầu; profile phát trước các sự kiện phòng, laToi đúng, chủ phòng sửa được còn người ngoài không được Sửa/Xóa; cờ membership chia nhóm đúng theo từng tài khoản.
 - HELLO, thành viên offline, Server dừng/bật lại, Client tự nối lại và bù 75 tin đã thiếu, không trùng/sai thứ tự; cấu hình Client không có mật khẩu/token.
 
@@ -106,23 +107,24 @@ $mvnChat = 'C:\Program Files\Apache NetBeans\java\maven\bin\mvn.cmd'
 & $mvnChat -q compile exec:java '-Dexec.mainClass=com.mycompany.udpmultichat.ui.UiPreview'
 ```
 
-Xuất **24 PNG** vào [docs/screenshots](docs/screenshots/README.md): đăng nhập/đăng ký/lỗi inline, chat, mất kết nối, toast, menu tài khoản, hộp thoại phòng, Server và giới hạn tin, thông tin phòng, Client bbb vào cuối có Bạn, cửa sổ 960×600, ô soạn 5 dòng và số 111 và năm ảnh lỗi form bổ sung (20–24). Công cụ vẽ chính component Swing đang dùng lên BufferedImage với dữ liệu mẫu; không mở socket, không phải ảnh chụp thao tác desktop. Cần môi trường đồ họa để tạo JFrame. Đã xem PNG và chạy kiểm tra component thật: đổi profile vẽ lại đúng Bạn kể cả trùng tên hiển thị, chuyển phòng xóa badge không cần mạng, nút Tạo phòng không cắt chữ, chữ số không có viền RGB do LCD AA; mọi input vẫn đủ cao khi có lỗi, nội dung JTextArea là Font.PLAIN, toast không che ô soạn và nhóm công khai rỗng được ẩn. Đây không thay thế thử tương tác thực tế.
+Xuất **30 PNG** vào [docs/screenshots](docs/screenshots/README.md): đăng nhập/đăng ký/lỗi inline, chat, mất kết nối, toast, menu tài khoản, hộp thoại phòng, Server và giới hạn tin, thông tin phòng, Client bbb vào cuối có Bạn, cửa sổ 960×600, ô soạn 5 dòng và số 111 và năm ảnh lỗi form bổ sung (20–24); sáu ảnh hồ sơ/mật khẩu/avatar (25–30). Công cụ vẽ chính component Swing đang dùng lên BufferedImage với dữ liệu mẫu; không mở socket, không phải ảnh chụp thao tác desktop. Cần môi trường đồ họa để tạo JFrame. Đã xem PNG và chạy kiểm tra component thật: đổi profile vẽ lại đúng Bạn kể cả trùng tên hiển thị, chuyển phòng xóa badge không cần mạng, nút Tạo phòng không cắt chữ, chữ số không có viền RGB do LCD AA; mọi input vẫn đủ cao khi có lỗi, nội dung JTextArea là Font.PLAIN, toast không che ô soạn và nhóm công khai rỗng được ẩn. Đây không thay thế thử tương tác thực tế.
 
 ## Dữ liệu
 
 ```text
 data/
 ├── config.properties    # Cau hinh admin, multicast.portBase=9000
-├── users.csv            # Tai khoan, salt/hash
+├── users.csv            # Tai khoan, salt/hash, gioiThieu, anhHash
 ├── rooms.csv            # Phong, loai, ma, salt/hash mat khau phong
 ├── members.properties   # Tu cach thanh vien ben vung roomId.userId
-└── rooms/<roomId>.log    # Tin nhan UTF-8 da escape
+├── rooms/<roomId>.log    # Tin nhan UTF-8 da escape
+└── avatars/<username>.png # Avatar PNG 96x96
 client.properties        # Chi username/server lan dang nhap thanh cong gan nhat
 ```
 
 Chỉ chạy một Server cho mỗi data, từ thư mục project. Token/trạng thái online chỉ trong RAM. CSV/properties ghi file tạm rồi thay thế, có thử lại ngắn khi Windows tạm khóa file; log ghi tuần tự và force xuống đĩa. Phòng đã xóa không còn trong danh sách; log cũ giữ để bảo toàn dữ liệu. Khi nâng từ M2, chỉ chủ phòng có thể khôi phục tư cách thành viên từ dữ liệu cũ; người khác cần vào bằng mã một lần để ghi membership mới.
 
-Đổi admin trước khi M3 có menu đổi mật khẩu: dừng Server, thêm `admin.password=MatKhauMoiDu6KyTu` vào config rồi bật lại. Server chuyển thành salt/hash và xóa giá trị thô sau khi đọc. Nếu đổi khi Client đang mất kết nối, Client phải đăng xuất và đăng nhập bằng mật khẩu mới.
+Đổi mật khẩu qua menu tài khoản. Nếu cần khôi phục admin khi quên mật khẩu: dừng Server, thêm `admin.password=MatKhauMoiDu6KyTu` vào config rồi bật lại. Server chuyển thành salt/hash và xóa giá trị thô sau khi đọc. Nếu đổi khi Client đang mất kết nối, Client phải đăng xuất và đăng nhập bằng mật khẩu mới.
 
 `target/`, `data/`, `reports/`, `.selftest/`, log, `client.properties` và file tạm được bỏ qua bởi Git. Commit chỉ ở repository cục bộ, không tự push lên GitHub.
 
@@ -145,7 +147,7 @@ Chỉ chạy một Server cho mỗi data, từ thư mục project. Token/trạng
 
 ## Cấu trúc và tài liệu chỉ code
 
-31 file Java ứng dụng + 4 file test ở mốc này, mỗi file dưới 400 dòng (dài nhất 368); các hàm được tách dưới khoảng 40 dòng. Comment đầu file ghi Vai trò/Ai gọi/Gọi ai; từng hàm có comment không dấu. Giữ bốn gói common/client/server/ui; UI không có Socket, logic không import Swing (ngoại lệ ServerMain). Quyền phòng gộp trong QuanLyPhong, lưu trữ gộp trong KhoLuuTru, DTO thành viên gộp trong Phong. Dialog tách khỏi DanhSachPhongPanel sang HopThoai để dùng chung và giữ file ngắn. Màu/font/nút/vẽ icon gom vào Theme, Avatar/BongTin còn trong ThanhPhan. Các phần M3–M5 sẽ ưu tiên mở rộng các lớp theo nhiệm vụ hiện có.
+35 file Java ứng dụng + 5 file test ở mốc này, mỗi file dưới 400 dòng (dài nhất ClientCore 393 dòng); các hàm được tách dưới khoảng 40 dòng. Comment đầu file ghi Vai trò/Ai gọi/Gọi ai; từng hàm có comment không dấu. Giữ bốn gói common/client/server/ui; UI không có Socket, logic không import Swing (ngoại lệ ServerMain). Quyền phòng gộp trong QuanLyPhong, lưu trữ gộp trong KhoLuuTru, DTO thành viên gộp trong Phong. Dialog tách khỏi DanhSachPhongPanel sang HopThoai để dùng chung và giữ file ngắn. Màu/font/nút/vẽ icon gom vào Theme, Avatar/BongTin còn trong ThanhPhan. Các phần M3–M5 sẽ ưu tiên mở rộng các lớp theo nhiệm vụ hiện có.
 
 Xem [docs/GIAI_THICH.md](docs/GIAI_THICH.md) để tra bảng chức năng → file → hàm và đối chiếu UDP/Multicast chương 6.
 
@@ -160,3 +162,26 @@ M2.7 chỉ thay bố cục/thành phần giao diện; không đổi định dạ
 Vai trò thẻ tài khoản dùng JLabel riêng: tên 14px đậm, vai trò 12px thường màu xám (không dùng kích thước HTML). Ô soạn chia vùng nhập toàn chiều rộng và hàng công cụ bên dưới; nền khóa vẽ bo tròn, không còn góc xám vuông. Bộ đếm gần ngưỡng hiển thị số ký tự / giới hạn ước tính từ tỷ lệ ký tự so với dung lượng nội dung hiện tại; giới hạn thật vẫn kiểm tra UTF-8 và gói UDP. Mô tả phòng giới hạn 80 ký tự ở cả Client và Server, thông báo bỏ thuật ngữ byte. Theme.vietHoaDau chuẩn hóa chữ đầu lỗi. Kiểm tra Font.PLAIN của JTextArea trong UiPreview vẫn được giữ; tên người gửi là nhãn riêng.
 
 File/hàm: ChatMulticastUI.theTaiKhoan/ganNguoiDung; SoanTinPanel constructor/capNhat/paintComponent; Theme.vietHoaDau; HopThoai.kiemTra; QuanLyPhong.kiemTraNoiDung. Ảnh 05/18 là offline/nhiều dòng được xuất lại.
+
+
+## M3a — hồ sơ, avatar và mật khẩu
+
+- Tên đăng nhập/id cố định; tên hiển thị (2–30 ký tự) và giới thiệu (tối đa 100 ký tự) đổi được. Nhãn Bạn, quyền và tin của mình vẫn dựa vào tên đăng nhập/id. Server kiểm tra lại tất cả dữ liệu.
+- Bấm thẻ tài khoản → **Hồ sơ của tôi**. Chọn PNG/JPG ≤2 MB; ảnh được kiểm tra nội dung, cắt vuông giữa và thu nhỏ 96×96 PNG. Đổi/Xóa chỉ xem trước cục bộ, chỉ bấm Lưu mới truyền. Khi tải có trạng thái phần trăm, Hủy dừng trước lệnh lưu; nếu lệnh lưu đã gửi thì có thể đã được Server xử lý.
+- `PhanManh` chia 600 byte thô → Base64, gói cuối dưới 1400 byte, ghép đủ và CRC32 trùng mới chấp nhận. Server giữ ảnh tạm tối đa 60 giây, không thay ảnh chính trước PROFILE_SAVE. Cache Client tối đa 100 hồ sơ + 100 ảnh, tối đa 16 lượt tải ảnh và 32 yêu cầu hồ sơ đồng thời; không lưu ảnh xuống đĩa Client ở mốc này. `anhHash` là CRC32 phiên bản, dùng kiểm tra thay đổi và lỗi truyền, không phải chữ ký bảo mật.
+- Lưu thành công: Server phát PROFILE_CHANGED bằng UDP unicast tin cậy tới chính mình và Client chung phòng, cập nhật snapshot thành viên/phòng; tin chat vẫn qua multicast. Tên trong bong bóng đang mở đổi theo hồ sơ, dữ liệu tin gốc không bị sửa. Client tải ảnh nền và vẽ lại thành viên/bong bóng/thẻ tài khoản sau khi cache sẵn sàng.
+- **Đổi mật khẩu** có ba ô, Hiện/Ẩn riêng, lỗi ngay dưới ô, Enter gửi. Mật khẩu 6–128 ký tự; kiểm tra mật khẩu cũ ở Server; salt/hash mới và config admin được lưu. Chỉ cho một phiên/tài khoản nên không có phiên khác để hủy; phiên hiện tại giữ đăng nhập và dùng mật khẩu mới trong RAM khi nối lại.
+- Admin đang dùng `admin123` nhận cờ bắt buộc đổi từ hash hiện tại; Server chỉ nhận PING/LOGOUT/PASSWORD_CHANGE cho tới khi đổi, không chỉ dựa vào việc khóa UI. Hộp không có Hủy/Đóng và Esc bị vô hiệu; mật khẩu mới phải khác mặc định.
+- Nạp CSV 7 cột cũ rồi bổ sung hai cột giới thiệu/hash ảnh; không đổi id, mật khẩu hay dữ liệu phòng cũ. Phải đóng cả Server/Client cũ để chạy cùng giao thức M3a.
+
+File mới: `common/PhanManh.java`, `client/HoSoClient.java`, `server/QuanLyHoSo.java`, `ui/HoSoDialog.java` và `src/test/.../HoSoSelfTest.java`. Mỗi lớp tách theo đúng nhiệm vụ để tổng 35 file ứng dụng, không trộn Swing với mạng; không thêm thư viện. Các file DTO, Protocol, ClientCore/Listener, ServerCore/QuanLyNguoiDung/KhoLuuTru, Theme/ThanhPhan, ChatMulticastUI/ThanhVienPanel/KhungChatPanel/UiPreview và bốn test cũ đã cập nhật.
+
+### Thử tay M3a (1 Server + 3 Client)
+
+1. Chạy Server rồi Client 1/2/3 bằng F5; đăng nhập admin mặc định: thử Esc/X, mật khẩu cũ sai, mới quá ngắn/nhập lại sai, rồi đổi hợp lệ. Hộp chỉ đóng sau thành công, sau đó vào Sảnh.
+2. Đăng nhập hai tài khoản thường chung Sảnh. A mở Hồ sơ: đổi tên/giới thiệu, chọn ảnh ngang JPG/PNG; kiểm tra cắt giữa, avatar tròn và xem trước. Chưa bấm Lưu thì B chưa đổi; Lưu xong B thấy tên/ảnh mới trên thành viên và bong bóng, nhãn Bạn vẫn đúng.
+3. Thử tệp giả ảnh và >2 MB; thử Hủy sau khi chọn ảnh, Xóa ảnh rồi Lưu. Avatar rỗng trở về chữ cái; đổi/xóa của A không ảnh hưởng B.
+4. Đổi mật khẩu thường: ba ô không bị nén khi có lỗi, từng nút Hiện hoạt động; đăng xuất, mật khẩu cũ bị từ chối, mật khẩu mới đăng nhập được. Dừng/bật Server, kiểm tra tên/giới thiệu/avatar và mật khẩu admin mới còn.
+5. Xem ảnh 25–30 trong docs/screenshots; thử tiếp soạn nhiều dòng/offline/font từ M2.8. Chạy SelfTest để kiểm tra CRC và mất 20% gói có seed; không mô phỏng mất mạng bằng tắt Wi-Fi khi đang demo phòng chung.
+
+Đã biên dịch Java 21 bằng Maven NetBeans, SelfTest chạy mạng thật trên một máy và UiPreview xuất PNG từ component thật. Chưa kiểm tra thao tác chuột/phím toàn bộ ba cửa sổ trong IDE, nhiều máy LAN hoặc DPI khác. M3b–M7 còn chờ xác nhận.

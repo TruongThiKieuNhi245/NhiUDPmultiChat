@@ -20,6 +20,19 @@ final class KhungChatPanel extends JPanel {
     private static final DateTimeFormatter GIO=DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
     private final JPanel ds=new JPanel(); private final JScrollPane cuon;
     private Phong phong;
+    private java.util.function.Function<String,java.awt.image.BufferedImage> anh=id -> null;
+    private java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo=id -> null;
+    private final java.util.Map<String,java.util.List<ThanhPhan.BongTin>> bong=new java.util.HashMap<>();
+    private final java.util.Map<String,java.util.List<ThanhPhan.Avatar>> avatar=new java.util.HashMap<>();
+    // Cache duoc doc truc tiep tren EDT, khong chan mang.
+    void datHoSo(java.util.function.Function<String,java.awt.image.BufferedImage> anh,java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo) {
+        this.anh=anh; this.hoSo=hoSo;
+    }
+    // Ve lai ten va avatar, giu nguyen thu tu tin va vi tri cuon.
+    void hoSoMoi(com.mycompany.udpmultichat.common.model.NguoiDung n) {
+        bong.getOrDefault(n.id,java.util.List.of()).forEach(b -> b.tenMoi(n.tenHienThi));
+        avatar.getOrDefault(n.id,java.util.List.of()).forEach(a -> a.tenMoi(n.tenHienThi)); ds.revalidate(); ds.repaint();
+    }
     // Khoi tao lop va noi cac thanh phan can thiet.
     KhungChatPanel(Phong phong) {
         super(new BorderLayout()); this.phong=phong; ds.setLayout(new BoxLayout(ds,BoxLayout.Y_AXIS)); ds.setBackground(Theme.THE);
@@ -33,8 +46,13 @@ final class KhungChatPanel extends JPanel {
     // Them tin.
     void themTin(TinNhan t,boolean toi) {
         JPanel hang=new JPanel(new FlowLayout(toi?FlowLayout.RIGHT:FlowLayout.LEFT,Theme.S16,Theme.S8)); hang.setOpaque(false);
-        if (!toi) { hang.add(new ThanhPhan.Avatar(t.ten,null)); }
-        hang.add(new ThanhPhan.BongTin(t.ten,t.noiDung,GIO.format(Instant.ofEpochMilli(t.thoiGian)),toi)); them(hang);
+        var n=hoSo.apply(t.userId); String ten=n==null?t.ten:n.tenHienThi;
+        if (!toi) {
+            ThanhPhan.Avatar a=new ThanhPhan.Avatar(ten,null,() -> anh.apply(t.userId));
+            avatar.computeIfAbsent(t.userId,id -> new java.util.ArrayList<>()).add(a); hang.add(a);
+        }
+        ThanhPhan.BongTin b=new ThanhPhan.BongTin(ten,t.noiDung,GIO.format(Instant.ofEpochMilli(t.thoiGian)),toi);
+        bong.computeIfAbsent(t.userId,id -> new java.util.ArrayList<>()).add(b); hang.add(b); them(hang);
     }
     // He thong.
     void heThong(String text) {

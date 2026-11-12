@@ -35,6 +35,11 @@ public final class Protocol {
     public static final int TIN_TOI_DA = 1000;
     public static final String LOI_TIN_DAI = "Tin nhắn quá dài. Hãy rút gọn hoặc tách thành nhiều tin.";
     public static final String CHUYEN_CHU = "TRANSFER", KET_NOI_LAI = "RECONNECT", THU_SERVER = "HELLO";
+    // ===== HO SO, MAT KHAU VA ANH CHIA MANH =====
+    public static final int MANH_ANH=600, ANH_DAU_VAO=2*1024*1024, ANH_PNG_TOI_DA=65536, CACHE_ANH=100;
+    public static final String HO_SO="PROFILE_GET", LUU_HO_SO="PROFILE_SAVE", HO_SO_MOI="PROFILE_CHANGED";
+    public static final String DOI_MAT_KHAU="PASSWORD_CHANGE", ANH_BAT_DAU="AVATAR_BEGIN", ANH_MANH="AVATAR_PART";
+    public static final String ANH_HUY="AVATAR_CANCEL", ANH_DOC="AVATAR_READ";
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Protocol() { }
 }

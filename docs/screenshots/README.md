@@ -45,3 +45,19 @@ M2.7 tái hiện bản cũ bằng assertion (ô tên còn 12px), sau sửa toàn
 Vai trò thẻ tài khoản dùng JLabel riêng: tên 14px đậm, vai trò 12px thường màu xám (không dùng kích thước HTML). Ô soạn chia vùng nhập toàn chiều rộng và hàng công cụ bên dưới; nền khóa vẽ bo tròn, không còn góc xám vuông. Bộ đếm gần ngưỡng hiển thị số ký tự / giới hạn ước tính từ tỷ lệ ký tự so với dung lượng nội dung hiện tại; giới hạn thật vẫn kiểm tra UTF-8 và gói UDP. Mô tả phòng giới hạn 80 ký tự ở cả Client và Server, thông báo bỏ thuật ngữ byte. Theme.vietHoaDau chuẩn hóa chữ đầu lỗi. Kiểm tra Font.PLAIN của JTextArea trong UiPreview vẫn được giữ; tên người gửi là nhãn riêng.
 
 File/hàm: ChatMulticastUI.theTaiKhoan/ganNguoiDung; SoanTinPanel constructor/capNhat/paintComponent; Theme.vietHoaDau; HopThoai.kiemTra; QuanLyPhong.kiemTraNoiDung. Ảnh 05/18 là offline/nhiều dòng được xuất lại.
+
+
+## M3a
+
+UiPreview xuất lại 30 ảnh từ component thật; ảnh 08 là menu ba mục Hồ sơ/Đổi mật khẩu/Đăng xuất. Ảnh 25–30:
+
+| Ảnh | Nội dung |
+|---|---|
+| [25-ho-so-chua-anh.png](25-ho-so-chua-anh.png) | Hồ sơ, avatar chữ cái 96px |
+| [26-ho-so-co-anh.png](26-ho-so-co-anh.png) | Avatar ảnh mẫu vẽ bằng Java2D, Đổi/Xóa và tên/giới thiệu |
+| [27-doi-mat-khau.png](27-doi-mat-khau.png) | Ba ô và nút Hiện riêng |
+| [28-doi-mat-khau-co-loi.png](28-doi-mat-khau-co-loi.png) | Ba lỗi inline, không nén ô |
+| [29-buoc-doi-mat-khau.png](29-buoc-doi-mat-khau.png) | Lý do bắt buộc, chỉ một nút hành động, không Hủy |
+| [30-avatar-trong-chat.png](30-avatar-trong-chat.png) | Cùng ảnh trong thành viên/bong bóng, nhãn Bạn và chấm online chỉ ở thành viên |
+
+Các ảnh form dùng chính HoSoDialog đang chạy, không dựng bản giả. Ảnh 29 chụp nội dung dialog; cấm nút X và Esc được cài trong HoSoDialog.hien, cần thử tay cửa sổ thật. Công cụ không mở kết nối mạng. Các kiểm tra chiều cao input, font PLAIN, Bạn/badge và toast vẫn chạy.

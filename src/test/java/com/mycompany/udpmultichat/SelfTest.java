@@ -47,7 +47,12 @@ public final class SelfTest {
         GiaoDienSelfTest.chayTatCa();
         chay("M2.6 danh tinh truoc su kien, Client cuoi co mot Ban, laToi va quyen",DanhTinhSelfTest::kiemTra);
         chay("M2.6 goi 1000 byte va escape nam trong MTU",DanhTinhSelfTest::kiemTraGoi);
-        System.out.println("KET QUA M1/M2/M2.5/M2.6: " + pass + " PASS, " + fail + " FAIL");
+        HoSoSelfTest.chayTatCa();
+        ketLuan();
+    }
+    // Bao loi exit code ca khi chay rieng nhom M3a.
+    static void ketLuan() {
+        System.out.println("KET QUA den M3a: " + pass + " PASS, " + fail + " FAIL");
         if (fail > 0) { throw new IllegalStateException("Co muc kiem thu FAIL; xem log o tren"); }
     }
 
@@ -114,7 +119,7 @@ public final class SelfTest {
         // Tao thu muc rieng, cac Client chua dang nhap.
         PhienThu() throws Exception {
             data=Files.createTempDirectory(Path.of(".selftest"),"m1-");
-            Files.writeString(data.resolve("config.properties"),"multicast.portBase=19000\n",StandardCharsets.UTF_8);
+            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=19000\n",StandardCharsets.UTF_8);
             System.out.println("Data kiem thu: "+data.toAbsolutePath());
             server=new ServerCore(data,new ServerCore.Listener() {
                 // Nhan log qua Listener, chuyen ve luong phu hop.
@@ -137,7 +142,7 @@ public final class SelfTest {
             biChan(a.dangNhap("127.0.0.1", cong, "sinhvien_a", "saimatkhau"));
             cho(a.dangNhap("127.0.0.1", cong, "sinhvien_a", "abcdef123"));
             biChan(c.dangNhap("127.0.0.1", cong, "sinhvien_a", "abcdef123"));
-            can(cho(b.dangNhap("127.0.0.1", cong, "admin", "admin123")).vaiTro == VaiTro.ADMIN, "Sai quyen admin");
+            can(cho(b.dangNhap("127.0.0.1", cong, "admin", "adminTest123")).vaiTro == VaiTro.ADMIN, "Sai quyen admin");
             cho(c.dangNhap("127.0.0.1", cong, "sinhvien_c", "abcdef456"));
             doi(() -> ngheA.online.size() == 3 && ngheB.online.size() == 3, 3000);
         }
@@ -182,8 +187,8 @@ public final class SelfTest {
             cho(a.dangXuat()); cho(b.dangXuat()); cho(c.dangXuat());
             String tep = Files.readString(data.resolve("users.csv"), StandardCharsets.UTF_8);
             String config = Files.readString(data.resolve("config.properties"), StandardCharsets.UTF_8);
-            can(!tep.contains("abcdef123") && !tep.contains("admin123"), "Luu mat khau tho trong users.csv");
-            can(!config.contains("admin123") && !config.contains("admin.password="), "Luu mat khau tho trong config");
+            can(!tep.contains("abcdef123") && !tep.contains("adminTest123"), "Luu mat khau tho trong users.csv");
+            can(!config.contains("adminTest123") && !config.contains("admin.password="), "Luu mat khau tho trong config");
             server.close(); server.batDau(0);
             cho(a.dangNhap("127.0.0.1", server.cong(), "sinhvien_a", "abcdef123"));
             biChan(b.dangKy("127.0.0.1", server.cong(), "sinhvien_a", "abcdef123"));

@@ -38,6 +38,7 @@ public final class ServerCore implements AutoCloseable {
     private final Listener listener;
     private QuanLyNguoiDung nguoiDung;
     private QuanLyPhong phong;
+    private QuanLyHoSo hoSo;
     private ReliableUdp udp;
     private MulticastSocket multicast;
     private ScheduledExecutorService dongHo;
@@ -54,7 +55,7 @@ public final class ServerCore implements AutoCloseable {
         try {
             NetworkInterface card=MangUtil.timGiaoDienMang();
             KhoLuuTru kho=new KhoLuuTru(thuMuc,listener::onLog);
-            nguoiDung=new QuanLyNguoiDung(kho);
+            nguoiDung=new QuanLyNguoiDung(kho); hoSo=new QuanLyHoSo(kho,nguoiDung);
             phong=new QuanLyPhong(kho,nguoiDung::danhSach);
             multicast=new MulticastSocket();
             multicast.setNetworkInterface(card); multicast.setTimeToLive(1);
@@ -108,6 +109,10 @@ public final class ServerCore implements AutoCloseable {
             }
             if (p.length<3) { throw new IllegalArgumentException("Thiếu token phiên"); }
             Phien phien=nguoiDung.kiemTra(p[2],nguon);
+            nguoiDung.kiemTraBatBuoc(phien,p[0]);
+            if (java.util.Set.of(Protocol.HO_SO,Protocol.LUU_HO_SO,Protocol.DOI_MAT_KHAU,Protocol.ANH_BAT_DAU,Protocol.ANH_MANH,Protocol.ANH_HUY,Protocol.ANH_DOC).contains(p[0])) {
+                xuLyHoSo(phien,p); return;
+            }
             switch (p[0]) {
                 case Protocol.PING:
                     duTruong(p,3); nguoiDung.ping(phien); guiMocTin(phien);
@@ -136,11 +141,21 @@ public final class ServerCore implements AutoCloseable {
         } else {
             quetPhien();
             Phien moi=nguoiDung.dangNhap(p[2],p[3],nguon);
-            traLoi(nguon,p[1],true,Goi.noi(new String[]{moi.token},moi.nguoi.cacTruong(),
-                    phong.lay(Protocol.SANH_ID).cacTruong()));
+            traLoi(nguon,p[1],true,Goi.noi(new String[]{moi.token},moi.nguoi.cacTruong()));
             listener.onLog("Đăng nhập: "+moi.nguoi.tenDangNhap);
         }
         baoThongKe();
+    }
+
+    // Ho so moi duoc phat den chinh minh va cac phien chung phong.
+    private void xuLyHoSo(Phien p,String[] g) throws IOException {
+        String[] k=hoSo.xuLy(p,g); traLoi(p.diaChi,g[1],true,k);
+        if (g[0].equals(Protocol.LUU_HO_SO) || g[0].equals(Protocol.DOI_MAT_KHAU)) {
+            String goi=Goi.ghep(Goi.noi(new String[]{Protocol.HO_SO_MOI},p.nguoi.cacTruong()));
+            nguoiDung.danhSach().stream().filter(n -> n==p || n.phong.stream().anyMatch(p.phong::contains)).forEach(n -> guiSuKien(n,goi));
+            for (String id:p.phong) { capNhatThanhVien(id); }
+            capNhatPhong(); listener.onLog(p.nguoi.tenDangNhap+(g[0].equals(Protocol.LUU_HO_SO)?" đã cập nhật hồ sơ.":" đã đổi mật khẩu."));
+        }
     }
 
     // ===== CRUD PHONG =====
@@ -316,7 +331,7 @@ public final class ServerCore implements AutoCloseable {
     // Quet phien.
     private synchronized void quetPhien() {
         if (!dangChay) { return; }
-        phong.donDatCho();
+        phong.donDatCho(); hoSo.donDep();
         for (Phien p : nguoiDung.xoaHetHan()) {
             guiSuKien(p,Goi.ghep(Protocol.HET_PHIEN,"Không có heartbeat quá 15 giây. Hãy đăng nhập lại."));
             roiTatCa(p,"đã mất kết nối (hết heartbeat).");
