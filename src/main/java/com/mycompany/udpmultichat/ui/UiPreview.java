@@ -40,7 +40,8 @@ public final class UiPreview {
         login.xemTruocDangNhap();
         xuat(login,"01-dang-nhap.png",1120,800);
         login.xemTruocDangKy(); xuat(login,"02-dang-ky.png",1120,800);
-        login.loiServer("Tên đăng nhập đã tồn tại"); xuat(login,"03-loi-form.png",1120,800);
+        login.loiServer("Tên đăng nhập hoặc mật khẩu không đúng."); xuat(login,"03-loi-form.png",1120,800);
+        kiemTraGanLoi(); FormKiemTra.chay();
         xuatLoiForm();
         xuatChat();
         xuatHoSo();
@@ -78,10 +79,17 @@ public final class UiPreview {
         g.setColor(Theme.CHON); g.fillRect(0,0,96,96); g.setColor(Theme.CHINH); g.fillOval(15,60,66,60);
         g.setColor(Theme.CANH_BAO); g.fillOval(29,15,38,45); g.setColor(Theme.CHU); g.fillArc(25,10,46,38,0,180); g.dispose(); return h;
     }
+    // Tai hien loi Mo ta bi gan vao Ten phong truoc khi sua.
+    private static void kiemTraGanLoi() {
+        HopThoai f=new HopThoai(null,false); f.loiServer("Mô tả tối đa 80 ký tự.");
+        if (!f.cacLoi().equals(java.util.Map.of("mota","Mô tả tối đa 80 ký tự."))) {
+            throw new AssertionError("TAI HIEN: loi Mo ta gan sai o: "+f.cacLoi());
+        }
+    }
     // Loi that cua login/signup va room form phai giu chieu cao moi o nhap.
     private static void xuatLoiForm() throws IOException {
         DangNhapPanel login=new DangNhapPanel(t -> { },ip -> { }); login.xemTruocDangNhap();
-        login.loiServer("Tên đăng nhập đã tồn tại"); login.loiServer("Mật khẩu cần 6–128 ký tự.");
+        login.loiServer("Tên đăng nhập hoặc mật khẩu không đúng.");
         login.ketQuaThu("Server chưa phản hồi.",false); xuat(login,"20-dang-nhap-nhieu-loi.png",1120,900);
         DangNhapPanel signup=new DangNhapPanel(t -> { },ip -> { }); signup.xemTruocDangKy();
         java.util.List<javax.swing.JPasswordField> mk=new java.util.ArrayList<>(); timMatKhau(signup,mk);
@@ -98,7 +106,8 @@ public final class UiPreview {
     }
     // Tat ca truong text cua form phong deu co dong loi cung luc.
     private static void xuatLoiPhong(HopThoai f,String ten) throws IOException {
-        f.loiServer("Tên phòng cần 3–30 ký tự."); f.loiServer("Mô tả tối đa 80 ký tự.");
+        FormKiemTra.dienLoi(f);
+        f.loiServer("Tên phòng cần 3-30 ký tự."); f.loiServer("Mô tả tối đa 80 ký tự.");
         f.loiServer("Giới hạn cần 2–500 người."); f.loiServer("Mật khẩu tối đa 128 ký tự."); xuatForm(f,ten);
     }
     // Duyet component that de dien nhap lai mat khau, khong dung reflection.
@@ -173,6 +182,7 @@ public final class UiPreview {
         } finally { frame.dispose(); }
         SoanTinPanel soan=new SoanTinPanel(t -> { }); soan.xemTruoc("Dòng thứ nhất\nDòng thứ hai\nDòng thứ ba\nDòng thứ tư\nDòng thứ năm");
         xuat(soan,"18-soan-nhieu-dong.png",760,220);
+        soan.xemTruoc("Dòng\n".repeat(6)+"Cuối"); xuat(soan,"31-soan-co-thanh-cuon.png",760,220);
         javax.swing.JPanel so=new javax.swing.JPanel(new java.awt.FlowLayout());
         so.add(new ThanhPhan.BongTin("aaa","111","12:30",false)); so.add(new ThanhPhan.BongTin("bbb","111","12:30",true));
         xuat(so,"19-chu-so.png",420,130);
@@ -220,7 +230,7 @@ public final class UiPreview {
     // Ve ca cay component len BufferedImage; khong chup desktop hoac gui du lieu ra ngoai.
     private static void xuat(JComponent c,String ten,int rong,int cao) throws IOException {
         c.setSize(rong,cao); boCuc(c);
-        kiemTraONhap(c);
+        kiemTraONhap(c); FormKiemTra.kiemTraCuon(c);
         kiemTraFontNoiDung(c);
         kiemTraToast(c,c);
         kiemTraNutTao(c);

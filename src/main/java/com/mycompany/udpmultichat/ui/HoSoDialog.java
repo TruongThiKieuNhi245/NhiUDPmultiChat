@@ -27,7 +27,7 @@ public final class HoSoDialog extends JPanel {
     private final JPasswordField[] mk={new JPasswordField(),new JPasswordField(),new JPasswordField()};
     private final JLabel[] loi={loi(),loi(),loi()};
     private final JLabel trangThai=Theme.nhan("",false),loiChung=loi();
-    private final JLabel anh=new JLabel();
+    private final JLabel anh=new JLabel(),demGioiThieu=Theme.nhan("0/100",false),goiYMk=Theme.nhan("Mật khẩu mới cần 6-128 ký tự.",false);
     private final JButton luu,huy=Theme.nut("Hủy",false),doiAnh=Theme.nut("Đổi ảnh",false),xoaAnh=Theme.nut("Xóa ảnh",false);
     private final AtomicBoolean daHuy=new AtomicBoolean();
     private BufferedImage xemTruoc;
@@ -58,9 +58,23 @@ public final class HoSoDialog extends JPanel {
         hang.add(anh); hang.add(doiAnh); hang.add(xoaAnh); form.add(hang);
         doiAnh.addActionListener(e -> chonAnh()); xoaAnh.addActionListener(e -> { anhMoi=null; xoa=true; xemTruoc=null; capNhatAnh(); });
         ten.setText(nguoi.tenHienThi); gioiThieu.setText(nguoi.gioiThieu);
-        form.add(Theme.hangNhap("Tên hiển thị",ten,loi[0])); form.add(Theme.hangNhap("Giới thiệu",gioiThieu,loi[1]));
+        form.add(Theme.hangNhap("Tên hiển thị",ten,loi[0])); form.add(Theme.hangNhap("Giới thiệu",oGioiThieu(),loi[1]));
         String vai=nguoi.vaiTro==com.mycompany.udpmultichat.common.model.VaiTro.ADMIN?"Quản trị viên":"Thành viên";
         form.add(doc("Tên đăng nhập",nguoi.tenDangNhap)); form.add(doc("Vai trò",vai)); form.add(doc("Ngày tạo",ngay(nguoi.ngayTao)));
+    }
+    // Bo dem nam cuoi o nhap gioi thieu, khong chen dong form moi.
+    private JPanel oGioiThieu() {
+        demGioiThieu.setFont(Theme.NHO); demGioiThieu.setForeground(Theme.PHU);
+        Runnable dem=() -> demGioiThieu.setText(gioiThieu.getText().codePointCount(0,gioiThieu.getText().length())+"/100"); dem.run();
+        gioiThieu.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            // Dem sau khi them ky tu.
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { dem.run(); }
+            // Dem sau khi xoa ky tu.
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { dem.run(); }
+            // Dem khi tai lieu doi thuoc tinh.
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { dem.run(); }
+        });
+        JPanel p=new JPanel(new BorderLayout(Theme.S8,0)); p.add(gioiThieu); p.add(demGioiThieu,BorderLayout.EAST); return p;
     }
     // Truong chi doc khong cho doi dinh danh hay quyen tu Client.
     private JPanel doc(String nhan,String noiDung) {
@@ -77,15 +91,17 @@ public final class HoSoDialog extends JPanel {
     private void formMatKhau(JPanel form) {
         if (batBuoc) {
             JLabel lyDo=Theme.nhan("Bạn đang dùng mật khẩu mặc định. Hãy đổi để tiếp tục.",false);
-            lyDo.setForeground(Theme.CANH_BAO); lyDo.setAlignmentX(LEFT_ALIGNMENT); form.add(lyDo);
+            JPanel canhBao=new JPanel(new BorderLayout(Theme.S8,0)); canhBao.setBackground(Theme.NEN_VANG);
+            canhBao.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Theme.CANH_BAO),Theme.le(Theme.S12)));
+            lyDo.setIcon(Theme.icon("warning")); lyDo.setForeground(Theme.CANH_BAO); canhBao.add(lyDo); canhBao.setAlignmentX(LEFT_ALIGNMENT); form.add(canhBao);
         }
         String[] nhan={"Mật khẩu cũ","Mật khẩu mới","Nhập lại mật khẩu mới"};
         for (int i=0;i<mk.length;i++) { form.add(Theme.hangNhap(nhan[i],oMatKhau(mk[i]),loi[i])); }
-        JLabel goiY=Theme.nhan("Mật khẩu mới cần 6–128 ký tự.",false); goiY.setFont(Theme.NHO); goiY.setForeground(Theme.PHU); form.add(goiY);
+        goiYMk.setFont(Theme.NHO); goiYMk.setForeground(Theme.PHU); form.add(goiYMk);
     }
     // Moi o co nut Hien rieng; giu echo char do LAF quy dinh.
     private JPanel oMatKhau(JPasswordField o) {
-        JPanel p=new JPanel(new BorderLayout(Theme.S4,0)); JButton hien=Theme.nutNhe("Hiện",""); char kyTu=o.getEchoChar();
+        JPanel p=new JPanel(new BorderLayout(Theme.S4,0)); JButton hien=Theme.nut("Hiện",false); char kyTu=o.getEchoChar();
         hien.addActionListener(e -> { boolean an=o.getEchoChar()!=0; o.setEchoChar(an?'\0':kyTu); hien.setText(an?"Ẩn":"Hiện"); });
         p.add(o); p.add(hien,BorderLayout.EAST); return p;
     }
@@ -96,16 +112,19 @@ public final class HoSoDialog extends JPanel {
         for (JLabel l:loi) { Theme.datLoi(l,""); } Theme.datLoi(loiChung,"");
         if (!matKhau) {
             int n=ten.getText().strip().codePointCount(0,ten.getText().strip().length());
-            if (n<2 || n>30) { Theme.datLoi(loi[0],"Tên hiển thị cần 2–30 ký tự."); }
+            if (ten.getText().codePoints().anyMatch(cp -> cp>Character.MAX_VALUE)) { Theme.datLoi(loi[0],"Tên hiển thị không hỗ trợ biểu tượng cảm xúc"); }
+            else if (n<2 || n>30) { Theme.datLoi(loi[0],"Tên hiển thị cần 2–30 ký tự."); }
             if (gioiThieu.getText().codePointCount(0,gioiThieu.getText().length())>100) { Theme.datLoi(loi[1],"Giới thiệu tối đa 100 ký tự."); }
         } else {
-            for (int i=0;i<mk.length;i++) {
-                char[] s=mk[i].getPassword(); if (s.length<6 || s.length>128) { Theme.datLoi(loi[i],"Mật khẩu cần 6–128 ký tự."); } java.util.Arrays.fill(s,'\0');
-            }
+            char[] cu=mk[0].getPassword(),m=mk[1].getPassword();
+            if (cu.length==0) { Theme.datLoi(loi[0],"Hãy nhập mật khẩu hiện tại."); }
+            if (m.length<6 || m.length>128) { Theme.datLoi(loi[1],"Mật khẩu mới cần 6-128 ký tự."); }
+            java.util.Arrays.fill(cu,'\0'); java.util.Arrays.fill(m,'\0');
             char[] moi=mk[1].getPassword(),lai=mk[2].getPassword();
-            if (!java.util.Arrays.equals(moi,lai)) { Theme.datLoi(loi[2],"Mật khẩu nhập lại chưa khớp."); }
+            if (lai.length==0 || !java.util.Arrays.equals(moi,lai)) { Theme.datLoi(loi[2],"Mật khẩu nhập lại chưa khớp."); }
             java.util.Arrays.fill(moi,'\0'); java.util.Arrays.fill(lai,'\0');
         }
+        goiYMk.setVisible(!loi[1].isVisible());
         form.invalidate(); invalidate(); revalidate(); if (dialog!=null) { dialog.pack(); }
         for (JLabel l:loi) { if (l.isVisible()) { return false; } } return true;
     }
@@ -128,7 +147,7 @@ public final class HoSoDialog extends JPanel {
         }));
     }
     // Icon tron dung cung renderer voi avatar trong chat.
-    private void capNhatAnh() { anh.setIcon(Theme.avatar(nguoi.tenHienThi,xemTruoc,96)); }
+    private void capNhatAnh() { anh.setIcon(Theme.avatar(nguoi.tenHienThi,xemTruoc,96)); xoaAnh.setEnabled(!ban && (xemTruoc!=null || (!xoa && !nguoi.anhHash.isEmpty()))); }
     // ===== GUI BAT DONG BO =====
     private void gui() {
         if (ban || !kiemTra() || core==null) { return; }
@@ -150,16 +169,17 @@ public final class HoSoDialog extends JPanel {
     }
     // Gan loi Server vao dung o, loi mang vao dong chung.
     private void baoLoi(String text) {
-        if (matKhau && text.contains("cũ")) { Theme.datLoi(loi[0],text); }
+        if (matKhau && (text.contains("cũ") || text.contains("hiện tại"))) { Theme.datLoi(loi[0],text); }
         else if (matKhau && text.contains("Mật khẩu")) { Theme.datLoi(loi[1],text); }
         else if (text.contains("Tên hiển thị")) { Theme.datLoi(loi[0],text); }
         else if (text.contains("Giới thiệu")) { Theme.datLoi(loi[1],text); }
         else { Theme.datLoi(loiChung,text); }
+        goiYMk.setVisible(!loi[1].isVisible());
         form.invalidate(); invalidate(); revalidate(); if (dialog!=null) { dialog.pack(); }
     }
     // Chi khoa form dang luu, nut Huy van hoat dong; khong khoa cua so chat.
     private void ban(boolean b) {
-        ban=b; luu.setEnabled(!b); doiAnh.setEnabled(!b); xoaAnh.setEnabled(!b); ten.setEnabled(!b); gioiThieu.setEnabled(!b);
+        ban=b; luu.setEnabled(!b); doiAnh.setEnabled(!b); xoaAnh.setEnabled(!b && (xemTruoc!=null || (!xoa && !nguoi.anhHash.isEmpty()))); ten.setEnabled(!b); gioiThieu.setEnabled(!b);
         for (var o:mk) { o.setEnabled(!b); }
     }
     // Bat buoc khong co X/Huy/Esc; default button la hanh dong duy nhat.

@@ -46,7 +46,7 @@ final class SoanTinPanel extends JPanel {
     SoanTinPanel(Consumer<String> khiGui) {
         super(new BorderLayout(0,Theme.S4)); setBorder(Theme.le(Theme.S16)); setBackground(Theme.THE);
         vien.setOpaque(false); o.setFont(Theme.FONT); o.setLineWrap(true); o.setWrapStyleWord(true);
-        vien.setName("khung-soan");
+        vien.setName("khung-soan"); cuon.setName("cuon-soan");
         o.setMargin(new Insets(4,4,4,4)); cuon.setBorder(null); cuon.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         vien.add(cuon,BorderLayout.CENTER);
         JPanel congCu=new JPanel(new BorderLayout()); congCu.setOpaque(false); congCu.add(nutDinhKem(),BorderLayout.WEST);
@@ -124,6 +124,7 @@ final class SoanTinPanel extends JPanel {
         vien.setBackground(nen); o.setBackground(nen); cuon.getViewport().setBackground(nen);
         int dong=0,rong=Math.max(150,o.getWidth()-8);
         for (String d:text.split("\n",-1)) { dong+=Math.max(1,(o.getFontMetrics(Theme.FONT).stringWidth(d)+rong-1)/rong); }
+        cuon.setVerticalScrollBarPolicy(dong>5?JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED:JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         cuon.setPreferredSize(new Dimension(100,Math.max(24,Math.min(5,dong)*20+4))); vien(); revalidate();
     }
 }

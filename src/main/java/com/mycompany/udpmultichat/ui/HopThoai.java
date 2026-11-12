@@ -43,7 +43,7 @@ final class HopThoai extends JPanel {
 
     // Khoi tao lop va noi cac thanh phan can thiet.
     HopThoai(Phong p,boolean vao) {
-        super(new BorderLayout(0,Theme.S16)); this.vao=vao; sua=p!=null;
+        super(new BorderLayout(0,Theme.S16)); matKhau.setName("mk"); this.vao=vao; sua=p!=null;
         setBorder(Theme.le(Theme.S24)); setPreferredSize(new Dimension(470,vao?280:(sua?570:490)));
         var tieuDe=Theme.nhan(vao?"Vào phòng bằng mã":(sua?"Sửa phòng":"Tạo phòng"),true);
         tieuDe.setFont(Theme.DAM.deriveFont(20f)); add(tieuDe,BorderLayout.NORTH);
@@ -113,7 +113,7 @@ final class HopThoai extends JPanel {
     }
     // Them.
     private void them(String khoa,String nhan,JComponent o) {
-        JLabel l=Theme.nhan("",false); l.setForeground(Theme.LOI); l.setFont(Theme.NHO); l.setVisible(false); loi.put(khoa,l);
+        JLabel l=Theme.nhan("",false); l.setForeground(Theme.LOI); l.setFont(Theme.NHO); l.setVisible(false); loi.put(khoa,l); l.setName("loi-"+khoa); o.setName(khoa);
         truong.add(Theme.hangNhap(nhan,o,l));
     }
     // O mat khau.
@@ -135,14 +135,18 @@ final class HopThoai extends JPanel {
     void dong() { if (dialog!=null) { dialog.dispose(); } }
     // Ban.
     void ban(boolean ban) { chinh.setEnabled(!ban); huy.setEnabled(!ban); }
+    // Snapshot loi theo khoa de kiem tra dung o, khong phu thuoc chi so component.
+    Map<String,String> cacLoi() {
+        Map<String,String> k=new LinkedHashMap<>(); loi.forEach((ten,l) -> { if (l.isVisible()) { k.put(ten,l.getText()); } }); return k;
+    }
     // Loi server.
     void loiServer(String thongBao) {
         ban(false);
-        if (vao && thongBao.contains("Mật khẩu")) {
+        if (vao && thongBao.toLowerCase(java.util.Locale.ROOT).contains("mật khẩu")) {
             truong.getComponent(1).setVisible(true); matKhau.setVisible(true); matKhau.requestFocusInWindow(); revalidate();
         }
-        String truong=vao?(thongBao.contains("Mật khẩu")?"mk":"ma"):
-            (thongBao.contains("Mật khẩu")?"mk":(thongBao.contains("Giới hạn")?"gioihan":(thongBao.contains("mô tả")?"mota":"ten")));
+        String truong=vao?(thongBao.toLowerCase(java.util.Locale.ROOT).contains("mật khẩu")?"mk":"ma"):
+            (thongBao.toLowerCase(java.util.Locale.ROOT).contains("mật khẩu")?"mk":(thongBao.toLowerCase(java.util.Locale.ROOT).contains("giới hạn")?"gioihan":(thongBao.toLowerCase(java.util.Locale.ROOT).contains("mô tả")?"mota":"ten")));
         loi(truong,thongBao);
     }
     // Loi.
@@ -157,16 +161,18 @@ final class HopThoai extends JPanel {
         setPreferredSize(new Dimension(470,getLayout().preferredLayoutSize(this).height)); revalidate();
     }
     // Kiem tra.
-    private boolean kiemTra() {
+    boolean kiemTra() {
         for (String khoa:loi.keySet()) { loi(khoa,""); }
         if (vao) {
             if (!ma.getText().strip().matches("[A-Za-z0-9]{6}")) { loi("ma","Mã phòng cần đúng 6 ký tự chữ/số."); return false; }
+            if (matKhau.getPassword().length>128) { loi("mk","Mật khẩu tối đa 128 ký tự."); return false; }
             return true;
         }
         String t=ten.getText().strip(); int n=t.codePointCount(0,t.length());
-        if (n<3 || n>30) { loi("ten","Tên phòng cần 3–30 ký tự."); return false; }
+        if (n<3 || n>30) { loi("ten","Tên phòng cần 3-30 ký tự."); return false; }
         if (moTa.getText().codePointCount(0,moTa.getText().length())>80) { loi("mota","Mô tả tối đa 80 ký tự."); return false; }
-        if (matKhau.getPassword().length>128) { loi("mk","Mật khẩu tối đa 128 ký tự."); return false; }
+        if ((Integer)gioiHan.getValue()<2 || (Integer)gioiHan.getValue()>500) { loi("gioihan","Giới hạn cần 2-500 người."); return false; }
+        if ((!sua || cheDo.getSelectedIndex()==1) && matKhau.getPassword().length>128) { loi("mk","Mật khẩu tối đa 128 ký tự."); return false; }
         return true;
     }
     // Doc form va chuyen che do mat khau thanh KEEP/SET/xoa.

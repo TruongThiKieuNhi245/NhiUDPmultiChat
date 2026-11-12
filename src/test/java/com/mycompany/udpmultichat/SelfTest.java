@@ -142,6 +142,8 @@ public final class SelfTest {
             biChan(a.dangNhap("127.0.0.1", cong, "sinhvien_a", "saimatkhau"));
             cho(a.dangNhap("127.0.0.1", cong, "sinhvien_a", "abcdef123"));
             biChan(c.dangNhap("127.0.0.1", cong, "sinhvien_a", "abcdef123"));
+            try { cho(b.dangNhap("127.0.0.1",cong,"khong_ton_tai","saimatkhau")); throw new AssertionError("Login sai van duoc"); }
+            catch (java.util.concurrent.ExecutionException e) { can(ClientCore.loiDeHieu(e).equals("Tên đăng nhập hoặc mật khẩu không đúng."),"Login tiet lo tai khoan"); }
             can(cho(b.dangNhap("127.0.0.1", cong, "admin", "adminTest123")).vaiTro == VaiTro.ADMIN, "Sai quyen admin");
             cho(c.dangNhap("127.0.0.1", cong, "sinhvien_c", "abcdef456"));
             doi(() -> ngheA.online.size() == 3 && ngheB.online.size() == 3, 3000);

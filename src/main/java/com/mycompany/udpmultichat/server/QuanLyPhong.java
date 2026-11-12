@@ -295,11 +295,10 @@ public final class QuanLyPhong {
 
     // Kiem tra noi dung.
     private static void kiemTraNoiDung(String ten,String moTa,int gioiHan) {
-        if (ten.strip().codePointCount(0,ten.strip().length())<3 || ten.strip().codePointCount(0,ten.strip().length())>30
-                || moTa.codePointCount(0,moTa.length())>80 || ten.contains("\n") || ten.contains("\r")
-                || moTa.contains("\n") || moTa.contains("\r") || gioiHan<2 || gioiHan>500) {
-            throw new IllegalArgumentException("Tên cần 3–30 ký tự, mô tả tối đa 80 ký tự một dòng; giới hạn 2–500 người");
-        }
+        int n=ten.strip().codePointCount(0,ten.strip().length());
+        if (n<3 || n>30 || ten.contains("\n") || ten.contains("\r")) { throw new IllegalArgumentException("Tên phòng cần 3-30 ký tự, không xuống dòng."); }
+        if (moTa.codePointCount(0,moTa.length())>80 || moTa.contains("\n") || moTa.contains("\r")) { throw new IllegalArgumentException("Mô tả tối đa 80 ký tự, không xuống dòng."); }
+        if (gioiHan<2 || gioiHan>500) { throw new IllegalArgumentException("Giới hạn cần 2-500 người."); }
     }
     // Kiem tra mat khau.
     private static void kiemTraMatKhau(String matKhau) {

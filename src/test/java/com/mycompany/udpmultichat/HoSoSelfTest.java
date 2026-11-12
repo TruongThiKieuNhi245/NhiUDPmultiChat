@@ -66,6 +66,7 @@ public final class HoSoSelfTest {
         can(n.tenDangNhap.equals("nguoi_a") && n.id.equals(id),"Doi ten lam doi danh tinh");
         doi(() -> b.hoSo().lay(id)!=null && b.hoSo().lay(id).gioiThieu.equals("Sinh viên mạng"),4000);
         biChan(a.hoSo().luu("x","",null,false,new AtomicBoolean(),i -> { }));
+        biChan(a.hoSo().luu("Tên "+new String(Character.toChars(0x1F600)),"",null,false,new AtomicBoolean(),i -> { }));
         biChan(a.hoSo().luu("Hợp lệ","x".repeat(101),null,false,new AtomicBoolean(),i -> { }));
     }
     // Upload chi commit khi SAVE; Huy truoc SAVE khong doi avatar.

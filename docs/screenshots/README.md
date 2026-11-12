@@ -61,3 +61,12 @@ UiPreview xuất lại 30 ảnh từ component thật; ảnh 08 là menu ba mụ
 | [30-avatar-trong-chat.png](30-avatar-trong-chat.png) | Cùng ảnh trong thành viên/bong bóng, nhãn Bạn và chấm online chỉ ở thành viên |
 
 Các ảnh form dùng chính HoSoDialog đang chạy, không dựng bản giả. Ảnh 29 chụp nội dung dialog; cấm nút X và Esc được cài trong HoSoDialog.hien, cần thử tay cửa sổ thật. Công cụ không mở kết nối mạng. Các kiểm tra chiều cao input, font PLAIN, Bạn/badge và toast vẫn chạy.
+
+
+## M3a.1 — sửa lỗi từ ảnh
+
+Assertion đã tái hiện lỗi `Mô tả` bị gán khóa `ten`: hàm HopThoai.loiServer tìm chuỗi `mô tả` phân biệt hoa/thường. Đã chuẩn hóa khi phân loại lỗi và tách thông báo Server theo từng trường. FormKiemTra.chay nhập riêng tên 1 ký tự, mô tả 81 ký tự, giới hạn 1, mật khẩu 129 ký tự vào form thật để xác nhận chỉ đúng ô có lỗi; kiểm tra cả tạo/sửa/vào, cả validator và thông báo Server. Ảnh 22/23 dùng đúng lỗi tên và mô tả.
+
+SoanTinPanel.capNhat chỉ cho thanh cuộn dọc hiện khi vượt 5 dòng kể cả dòng tự ngắt; UiPreview xác nhận ô một dòng không lộ thanh cuộn và thêm ảnh 31-soan-co-thanh-cuon.png. Nút Hiện mật khẩu dùng nút viền; lỗi cũ/mới/nhập lại phân biệt đúng, ẩn gợi ý khi ô mới có lỗi. Hồ sơ vô hiệu Xóa ảnh khi chưa có ảnh, bộ đếm giới thiệu n/100. Login thật trả cùng thông báo “Tên đăng nhập hoặc mật khẩu không đúng.”; thông báo tồn tại chỉ dùng khi đăng ký. Admin mặc định có khung cảnh báo vàng. Tên hiển thị ngoài BMP bị từ chối ở cả Client/Server với thông báo rõ để người dùng sửa, không âm thầm mất ký tự.
+
+File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemTraCuon; ui/SoanTinPanel.capNhat; ui/HoSoDialog.formHoSo/formMatKhau/kiemTra/oGioiThieu; server/QuanLyPhong.kiemTraNoiDung; server/QuanLyNguoiDung.dangNhap/luuHoSo; ui/UiPreview.xuatLoiForm. SelfTest hồi quy 37 PASS; UiPreview 31 PNG. Thao tác thật nhiều máy LAN và DPI khác vẫn cần thử tay.

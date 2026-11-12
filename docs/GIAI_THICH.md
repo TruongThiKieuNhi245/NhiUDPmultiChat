@@ -267,3 +267,12 @@ UiPreview xuất **30 PNG**: 25/26 hồ sơ chưa/có avatar, 27/28 mật khẩu
 Bốn file ứng dụng mới: PhanManh, HoSoClient, QuanLyHoSo, HoSoDialog; tổng **35 file ứng dụng + 5 file test**, giữ bốn gói, mỗi file dưới 400 dòng. Không đổi tên/xóa lớp cũ ở M3a; không thêm thư viện. NguoiDung bổ sung snapshot 8 trường, CSV giữ 7 cột cũ và nối 2 cột mới; đóng toàn bộ tiến trình cũ trước khi chạy cùng phiên bản.
 
 **Giới hạn đã biết:** UDP không đảm bảo; hết 3 lần gửi lại vẫn có thể lỗi và cần thử Lưu lại. Multicast cần chung LAN, bật Java qua Windows Firewall. Token/mật khẩu đi qua UDP không mã hóa; CRC32 chỉ kiểm tra lỗi, không xác thực nguồn. Ảnh đầu vào tối đa 2 MB và 16 triệu pixel để giới hạn giải nén; ảnh chuẩn hóa tối đa 64 KB. Cache chỉ ở RAM, logout xóa. Ghi avatar và users.csv là hai file riêng: có rollback khi gặp lỗi I/O trong tiến trình, chưa phải giao dịch chống mất điện giữa hai bước. M3b–M7 chưa thực hiện.
+
+
+## M3a.1 — sửa lỗi từ ảnh
+
+Assertion đã tái hiện lỗi `Mô tả` bị gán khóa `ten`: hàm HopThoai.loiServer tìm chuỗi `mô tả` phân biệt hoa/thường. Đã chuẩn hóa khi phân loại lỗi và tách thông báo Server theo từng trường. FormKiemTra.chay nhập riêng tên 1 ký tự, mô tả 81 ký tự, giới hạn 1, mật khẩu 129 ký tự vào form thật để xác nhận chỉ đúng ô có lỗi; kiểm tra cả tạo/sửa/vào, cả validator và thông báo Server. Ảnh 22/23 dùng đúng lỗi tên và mô tả.
+
+SoanTinPanel.capNhat chỉ cho thanh cuộn dọc hiện khi vượt 5 dòng kể cả dòng tự ngắt; UiPreview xác nhận ô một dòng không lộ thanh cuộn và thêm ảnh 31-soan-co-thanh-cuon.png. Nút Hiện mật khẩu dùng nút viền; lỗi cũ/mới/nhập lại phân biệt đúng, ẩn gợi ý khi ô mới có lỗi. Hồ sơ vô hiệu Xóa ảnh khi chưa có ảnh, bộ đếm giới thiệu n/100. Login thật trả cùng thông báo “Tên đăng nhập hoặc mật khẩu không đúng.”; thông báo tồn tại chỉ dùng khi đăng ký. Admin mặc định có khung cảnh báo vàng. Tên hiển thị ngoài BMP bị từ chối ở cả Client/Server với thông báo rõ để người dùng sửa, không âm thầm mất ký tự.
+
+File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemTraCuon; ui/SoanTinPanel.capNhat; ui/HoSoDialog.formHoSo/formMatKhau/kiemTra/oGioiThieu; server/QuanLyPhong.kiemTraNoiDung; server/QuanLyNguoiDung.dangNhap/luuHoSo; ui/UiPreview.xuatLoiForm. SelfTest hồi quy 37 PASS; UiPreview 31 PNG. Thao tác thật nhiều máy LAN và DPI khác vẫn cần thử tay.

@@ -49,11 +49,11 @@ public final class QuanLyNguoiDung {
 
     // Dang nhap.
     public synchronized Phien dangNhap(String ten, String matKhau, InetSocketAddress diaChi) {
-        ten = chuanHoaTen(ten);
-        kiemTraMatKhau(matKhau);
+        try { ten=chuanHoaTen(ten); kiemTraMatKhau(matKhau); }
+        catch (IllegalArgumentException e) { throw new IllegalArgumentException("Tên đăng nhập hoặc mật khẩu không đúng."); }
         TaiKhoan tk = taiKhoan.get(ten);
         if (tk == null || !BaoMat.dungMatKhau(tk.salt, tk.hash, matKhau)) {
-            throw new IllegalArgumentException("Sai tên đăng nhập hoặc mật khẩu");
+            throw new IllegalArgumentException("Tên đăng nhập hoặc mật khẩu không đúng.");
         }
         for (Phien p : phien.values()) {
             if (p.nguoi.id.equals(tk.nguoi.id)) {
@@ -109,6 +109,7 @@ public final class QuanLyNguoiDung {
     }
     // Luu ho so va cap nhat snapshot cua phien dang hoat dong.
     public synchronized NguoiDung luuHoSo(Phien p,String ten,String gt,String anh) throws IOException {
+        if (ten.codePoints().anyMatch(cp -> cp>Character.MAX_VALUE)) { throw new IllegalArgumentException("Tên hiển thị không hỗ trợ biểu tượng cảm xúc"); }
         ten=ten.strip(); gt=gt.strip();
         if (ten.codePointCount(0,ten.length())<2 || ten.codePointCount(0,ten.length())>30 || ten.chars().anyMatch(Character::isISOControl)) { throw new IllegalArgumentException("Tên hiển thị cần 2–30 ký tự, không xuống dòng."); }
         if (gt.codePointCount(0,gt.length())>100 || gt.chars().anyMatch(Character::isISOControl)) { throw new IllegalArgumentException("Giới thiệu tối đa 100 ký tự, không xuống dòng."); }
@@ -119,7 +120,7 @@ public final class QuanLyNguoiDung {
     // Kiem tra mat khau cu; tai khoan chi co mot phien nen khong con phien khac.
     public synchronized NguoiDung doiMatKhau(Phien p,String cu,String moi) throws IOException {
         kiemTraMatKhau(moi); TaiKhoan tk=taiKhoan.get(p.nguoi.tenDangNhap);
-        if (!BaoMat.dungMatKhau(tk.salt,tk.hash,cu)) { throw new IllegalArgumentException("Mật khẩu cũ không đúng."); }
+        if (!BaoMat.dungMatKhau(tk.salt,tk.hash,cu)) { throw new IllegalArgumentException("Mật khẩu hiện tại không đúng."); }
         if (p.nguoi.tenDangNhap.equalsIgnoreCase(kho.cauHinh("admin.username").trim()) && moi.equals("admin123")) { throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu mặc định."); }
         String salt=BaoMat.ngauNhien(16),hash=BaoMat.bam(salt,moi);
         NguoiDung n=tk.nguoi.voiHoSo(tk.nguoi.tenHienThi,tk.nguoi.gioiThieu,tk.nguoi.anhHash,false);
