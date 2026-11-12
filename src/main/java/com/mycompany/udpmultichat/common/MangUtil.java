@@ -39,7 +39,7 @@ public final class MangUtil {
             if (!ni.isLoopback() && !laCardAo) { return ni; }
             if (duPhong == null) { duPhong = ni; }
         }
-        if (duPhong == null) { throw new SocketException("Khong tim thay card multicast IPv4"); }
+        if (duPhong == null) { throw new SocketException("Không tìm thấy card multicast IPv4"); }
         return duPhong;
     }
 

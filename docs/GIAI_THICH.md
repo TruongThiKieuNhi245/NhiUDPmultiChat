@@ -1,64 +1,97 @@
-# Giải thích M1 — Socket UDP và Multicast
+# Giải thích M1/M2 — Socket UDP và Multicast
 
 ## Luồng chạy
 
-`ClientMain.main` mở Swing. `ServerMain.main` mở giám sát; nút Bắt đầu gọi `ServerCore.batDau` trên luồng nền.
+ClientMain mở Swing. ServerMain mở giám sát; nút Bắt đầu gọi ServerCore trên luồng nền. Server giữ trạng thái thật và kiểm tra mọi quyền, Client không tự quyết định vai trò.
 
 ```text
-Giao diện → ClientCore → ReliableUdp (UDP unicast :5000)
-                               ↓
-                     ServerCore kiểm tra phiên
-                               ↓
-                 MulticastSocket.send → 239.255.42.1:9001
-                               ↓
-                     KenhPhong.receive → Listener → Swing EDT
+UI → ClientCore → ReliableUdp → UDP unicast :5000 → ServerCore
+                                                     ↓
+                                       QuanLyPhong kiểm tra, lưu tin
+                                                     ↓
+                 MulticastSocket.send → nhóm/cổng của phòng A hoặc B
+                                                     ↓
+           KenhPhong lọc roomId → DongBoTinNhan → Listener → Swing EDT
 ```
 
-## Chỉ code khi thầy hỏi
+## Chức năng → file → hàm (M1)
 
-| Nội dung | File / hàm |
-|---|---|
-| Tạo DatagramSocket, nhận DatagramPacket | `ServerCore.batDau`, `ClientCore.ketNoi`, `ReliableUdp.vongNhan` |
-| Gửi UDP unicast | `ReliableUdp.guiRaw` |
-| ACK, seq, gửi lại 500 ms, loại trùng | `ReliableUdp.gui`, `thuGui`, `nhanTinCay` |
-| Tạo socket, chọn card, vào nhóm multicast | `MangUtil.timGiaoDienMang`, `MangUtil.vaoNhom`, `KenhPhong` |
-| Server phát tin cho cả nhóm | `ServerCore.guiTin`, `phatMulticast` |
-| Client nhận và lọc roomId | `KenhPhong.vongNhan` |
-| Rời nhóm và đóng socket | `KenhPhong.close` |
-| Escape và UTF-8 | `Goi.ghep`, `tach`, `thanhByte` và hàm nhận hai loại socket |
-| Đăng ký / kiểm tra mật khẩu | `QuanLyNguoiDung.dangKy`, `dangNhap`, `BaoMat.bam` |
-| Chặn hai nơi, kiểm tra token + địa chỉ | `QuanLyNguoiDung.dangNhap`, `kiemTra` |
-| Heartbeat, offline sau 15 giây | `ClientCore.batHeartbeat`, `ping`, `ServerCore.quetPhien` |
-| Lưu/nạp tài khoản, ghi file an toàn | `KhoLuuTru.docNguoiDung`, `ghiNguoiDung`, `ghiAnToan` |
-| Giao diện không bị chặn bởi mạng | `ChatMulticastUI.thucHien`, `ServerMain.doiTrangThai` |
-| Chuyển sự kiện mạng sang EDT | Các hàm `on...` trong `ChatMulticastUI` và `ServerMain` |
+| Chức năng | File | Hàm |
+|---|---|---|
+| Mở chương trình | ClientMain / server.ServerMain | main |
+| DatagramSocket, DatagramPacket | ReliableUdp | vongNhan, guiRaw |
+| Seq, ACK, gửi lại 500 ms, loại trùng | ReliableUdp | gui, thuGui, nhanTinCay |
+| Chọn card IPv4 thật | MangUtil | dungIPv4, timGiaoDienMang |
+| Đăng ký/đăng nhập, chặn hai nơi | QuanLyNguoiDung | dangKy, dangNhap |
+| Salt + SHA-256 | BaoMat | ngauNhien, bam, dungMatKhau |
+| Token + địa chỉ UDP | QuanLyNguoiDung | kiemTra |
+| Heartbeat, hết phiên | ClientCore / ServerCore | batHeartbeat, ping / quetPhien |
+| Tách mạng khỏi Swing | Listener / ChatMulticastUI | on... / thucHien |
+| Lưu tài khoản/config | KhoLuuTru | docNguoiDung, ghiNguoiDung, napCauHinh, ghiAnToan |
 
-## Gói điều khiển
+## Chức năng → file → hàm (M2)
 
-Lớp ngoài: `R|seq|noiDung` hoặc `A|seq`. Seq có UUID phiên vận chuyển + bộ đếm; bên nhận loại trùng theo địa chỉ/port gửi + seq. Phần nội dung lại là các trường được escape, ví dụ `LOGIN|requestId|ten|matKhau`. Gói trả lời: `RESPONSE|requestId|OK/ERR|...`.
+| Chức năng | File | Hàm |
+|---|---|---|
+| DTO phòng không lộ mật khẩu/hash | common/model/Phong | cacTruong, tuTruong |
+| Tạo phòng + nhóm/cổng riêng + mã 6 ký tự | server/QuanLyPhong | tao, taoMa |
+| Sửa, đổi mật khẩu/loại/giới hạn | server/QuanLyPhong | sua |
+| Xóa, đóng/mở | server/QuanLyPhong | xoa, dongMo |
+| Quyền chủ phòng theo từng phòng, admin toàn hệ thống | server/QuanLyPhong | duocQuanLy, kiemTraQuyen |
+| Bảo vệ Sảnh chung | server/QuanLyPhong | constructor, sua, xoa, dongMo |
+| Vào bằng id công khai hoặc mã riêng tư | server/QuanLyPhong | datCho |
+| Đặt chỗ 10 giây, không vượt capacity | server/QuanLyPhong | datCho, xacNhanVao, donDatCho, soChoDaDung |
+| Nhiều phòng trên một tài khoản | QuanLyNguoiDung.Phien / ClientCore | phong, choVao / vaoPhong, moKenh, roiPhong |
+| Gửi tin đúng nhóm/cổng phòng | server/ServerCore | guiTin, phatMulticast |
+| Lưu tin trước khi phát, msgId riêng mỗi phòng | server/QuanLyPhong | themTin, mocTin |
+| Danh sách phòng realtime, lọc phòng riêng | ServerCore / QuanLyPhong | capNhatPhong, guiDanhSachPhong / danhSachCho |
+| Thành viên/role riêng từng phòng | ServerCore / ClientCore | capNhatThanhVien / nhanThanhVien |
+| Mỗi phòng một MulticastSocket nhận | client/KenhPhong | constructor, vongNhan, close |
+| Chặn nhận lẫn nhóm trên Windows | client/KenhPhong | vongNhan: so sánh roomId trước khi xử lý MSG/SYSTEM |
+| Lịch sử 50 tin | QuanLyPhong / ServerCore | layTin / guiLichSu (HISTORY) |
+| Bù theo lô 50 khi thiếu msgId | ClientCore / ServerCore | hoiDongBo, dongBoPhong / guiLichSu (RESYNC) |
+| Phát hiện mất tin cuối | ServerCore / DongBoTinNhan | guiMocTin / nhanMoc |
+| Sắp thứ tự, loại trùng giữa multicast và unicast bù | client/DongBoTinNhan | nhan, nhanMuc, nhanKetThuc, phatLienTiep |
+| CSV phòng, log tin UTF-8, nạp lại sau restart | server/KhoLuuTru | docPhong, ghiPhong, docTin, ghiTin |
+| + Tạo phòng, nhập mã, menu Sửa/Xóa/Đóng-mở | ui/DanhSachPhongPanel | nhap, vaoBangMa, vaoPhong, menu |
+| Nhiều tab, đóng tab khi phòng bị xóa | ui/ChatMulticastUI | onVaoPhong, onRoiPhong |
+| Badge tin chưa đọc; lịch sử không tăng badge | ui/ChatMulticastUI | onTinNhan, capNhatDangChon, capNhatTieuDeTab |
+| Thông báo có dấu, IP chỉ tooltip | ServerCore / KhungChatPanel | sanSang, roiPhong / heThong, capNhat |
+| Kiểm thử phòng/cách ly/lịch sử/RESYNC | src/test/.../PhongSelfTest | chayTatCa, testCungCong |
 
-ACK chỉ báo gói đã vào hàng xử lý. Quyền, thành công hay lỗi do RESPONSE quyết định. Mỗi gói gửi lần đầu và được gửi lại tối đa ba lần, 500 ms/lần. Socket nhận chạy riêng nên chờ ACK không chặn nhận hay chặn Swing. Bộ nhớ chờ ACK và hàng xử lý có giới hạn.
+## Multicast nằm ở đâu, theo từng phòng?
 
-Đăng nhập trả token, hồ sơ công khai và địa chỉ Sảnh chung. Client vào nhóm trước, sau đó gửi READY; Server mới thông báo vào phòng. Mỗi snapshot online có phiên bản và chỉ số để ghép lại khi các gói đến khác thứ tự.
+`QuanLyPhong.tao` cấp địa chỉ **239.255.42.X** và cổng **9000+X**. Sảnh chung dùng X=1. Không có một nhóm cố định để phát toàn bộ tin các phòng. `ServerCore.phatMulticast(roomId, duLieu)` lấy đúng Phong, rồi gọi `MulticastSocket.send(DatagramPacket)` tới nhóm/cổng đó. Socket phát được chọn card IPv4 bằng `MangUtil.timGiaoDienMang`, TTL=1.
 
-## Gói chat multicast
+Client có bản đồ `ClientCore.cacKenh`, mỗi roomId một `KenhPhong`. Constructor gọi `MangUtil.vaoNhom` để tạo MulticastSocket, setReuseAddress/bind, setNetworkInterface và `joinGroup`. `KenhPhong.vongNhan` gọi receive, giải mã UTF-8, so sánh roomId rồi mới chuyển tin. `KenhPhong.close` gọi leaveGroup/close khi rời phòng, xóa phòng, đăng xuất hoặc mất kết nối. Windows có thể đưa gói nhóm khác vào socket cùng cổng; kiểm tra roomId vẫn bắt buộc dù địa chỉ/cổng riêng.
 
-`MSG|roomId|msgId|userId|ten|thoiGian|noiDung`. Server tự cấp msgId, danh tính và thời gian sau khi kiểm tra token. Client chỉ gửi SEND tới Server, không tự phát tin chat multicast. Mọi gói hệ thống cũng có roomId. Tin bị nhận hai lần được loại theo msgId; sắp xếp/RESYNC hoàn thiện ở M2.
+Lịch sử và RESYNC dùng **UDP unicast có ACK** để gửi bù đáng tin cậy. Tin chat trực tiếp dùng multicast. Các tin bù và tin trực tiếp đi chung DongBoTinNhan để tránh hiển thị hai lần hoặc sai thứ tự.
 
-## Đối chiếu bài học
+## Gói và luồng vào phòng
 
-UDP dùng địa chỉ IP + port, gửi/nhận từng datagram qua DatagramSocket/DatagramPacket; không thiết lập kết nối TCP. Multicast dùng địa chỉ nhóm lớp D, MulticastSocket, chọn giao diện mạng, joinGroup/send/receive/leaveGroup/close; TTL=1 để giới hạn phạm vi mạng cục bộ. ReliableUdp bổ sung độ tin cậy ở tầng ứng dụng, không biến UDP thành TCP.
+Mọi datagram text UTF-8 dưới 1400 byte. `Goi.ghep/tach` escape `|`, `\`, CR/LF; `Goi.noi` nối mảng trường phẳng để tránh nhiều lớp escape không cần thiết.
 
-## Ranh giới và giới hạn M1
+- Ngoài cùng: `R|seq|noiDung` hoặc `A|seq`. ACK chỉ báo đã nhận vào hàng xử lý; `RESPONSE|requestId|OK/ERR|...` mới là kết quả nghiệp vụ.
+- Chat: `MSG|roomId|msgId|userId|ten|thoiGian|noiDung`. Server tự cấp danh tính/thời gian/msgId sau kiểm tra token + membership.
+- Vào: `PREPARE` kiểm tra mã/mật khẩu/capacity và đặt chỗ 10 giây → Client joinGroup → `READY` xác nhận membership → `HISTORY` lấy 50 tin. Socket phải vào nhóm trước READY để hạn chế bỏ lỡ tin mới. Vào lại phòng đã có tab chỉ chuyển tab, không nhân đôi socket.
+- Snapshot `ROOMS`/`ONLINE` có phiên bản, tổng số, chỉ số. Ghép đủ mới cập nhật UI, bỏ phiên bản cũ; chỉ gửi các phòng người đó được thấy. Lô dữ liệu đi từng gói chờ ACK, không chặn luồng nhận.
+- `SYNC_ITEM` kèm roomId/mã đồng bộ và trường MSG; `SYNC_END` kèm mốc đầu/cuối/số lượng/head. Client ghép đủ lô, trộn với buffer multicast, phát tăng dần msgId; lô cũ và msgId trùng bị bỏ. Nếu còn thiếu, xin lô sau.
+- Mỗi PING, Server gửi `HEAD|roomId|lastMsgId` cho từng phòng đang ở; vì thế không cần có tin tiếp theo mới phát hiện tin cuối bị mất.
 
-UI chỉ Swing/AWT; ClientCore, KenhPhong, ServerCore và common không import Swing. Riêng ServerMain là cửa sổ giám sát, nối với ServerCore qua Listener. Chỉ có Sảnh chung ở M1; CRUD phòng, lịch sử và RESYNC sẽ ở M2. Không có TCP/ServerSocket/WebSocket.
+## Phân quyền, lưu trữ và ranh giới
 
-UDP vẫn có thể mất gói; multicast cần LAN và Windows Firewall cho Java. Mật khẩu/token qua UDP chưa mã hóa. Chạy SelfTest bằng lệnh trong README; dùng thư mục dữ liệu kiểm thử riêng, không dùng data thật.
+ADMIN là quyền toàn hệ thống. Chủ phòng được xác định bằng `Phong.chuId == user.id`, không đổi vai trò toàn hệ thống của user khi tạo phòng. Đóng phòng giữ membership/lịch sử nhưng chặn gửi và vào mới; xóa phòng gửi ROOM_LEFT tin cậy để Client đóng tab/socket. Sảnh chung không được xóa/đổi loại/đóng. Log phòng đã xóa giữ trên đĩa, id mới không tái sử dụng; nhóm/cổng cũ có thể được cấp lại và roomId ngăn lẫn gói.
 
-## K?t qu? x?c minh M1
+KhoLuuTru giữ schema users.csv M1, thêm rooms.csv và rooms/<roomId>.log. CSV hỗ trợ dấu phẩy/dấu nháy; nội dung một dòng, tin xuống dòng dùng escape. Config/CSV ghi file tạm + thay thế; log append qua FileChannel rồi force, lỗi ghi trả lại chiều dài cũ. Không dùng tên phòng làm đường dẫn. Mọi truy cập trạng thái Server từ luồng nhận/heartbeat được bảo vệ cùng khóa ServerCore.
 
-- Maven NetBeans 3.9.16 + Temurin 21.0.12.1: compile/test-compile th?nh c?ng.
-- To?n b? source qua `javac -Xlint:all -Werror --release 21`; Maven b?t failOnWarning.
-- SelfTest: **11 PASS, 0 FAIL**, g?m multicast th?t tr?n card Wi-Fi, m?t 20% DATA/ACK (10 l?n g?i l?i, 4 g?i tr?ng ???c lo?i), h?t heartbeat, kh?i ??ng l?i v? Client ph?t hi?n Server d?ng.
-- C? 19 file Java ?ng d?ng + 1 SelfTest; file d?i nh?t 252 d?ng. JSON VS Code h?p l?; ki?m tra t? ??ng ranh gi?i Swing/m?ng v? comment d?ng kh?ng d?u ?? qua.
-- Hai c?a s? Client/Server ?? kh?i ??ng v? kh?ng ghi l?i stderr, sau ?? ???c ??ng. C?ng c? Windows ki?m tra tr?c quan l?i kh?i t?o, n?n ch?a x?c nh?n b? c?c b?ng ?nh hay thao t?c n?t b?m. Ch?a ch?y tr?c ti?p F5 trong VS Code ho?c Run File trong NetBeans; c?n th? tay theo README.
+UI không import java.net; client/common và ServerCore/manager không import javax.swing. ServerMain là giao diện giám sát nối ServerCore.Listener. Mọi thao tác mạng được đẩy ra luồng nền, cập nhật Swing bằng invokeLater. KhungChatPanel chỉ vẽ một phòng; DanhSachPhongPanel chứa cả dialog để giảm số file.
+
+## Đối chiếu chương 6
+
+UDP dùng IP + port và DatagramSocket/DatagramPacket, không thiết lập kết nối TCP. Multicast dùng địa chỉ nhóm lớp D, MulticastSocket và chuỗi joinGroup/send/receive/leaveGroup/close. ReliableUdp bổ sung độ tin cậy ở tầng ứng dụng, không đổi sang TCP. Không có TCP, ServerSocket hay WebSocket.
+
+## Kiểm chứng và giới hạn
+
+M1 đã được người dùng xác nhận chat hai Client qua ảnh chụp. M2 kiểm tra tự động bằng SelfTest theo lệnh README: tài khoản, mất 20% DATA/ACK có seed, cách ly cả hai socket cùng cổng, CRUD/quyền/mật khẩu/capacity, lịch sử 50, RESYNC tin cuối và hơn 50 tin mất liên tiếp, restart. Cổng test 19000/21000 tách khỏi cổng chat thật; không dùng data thật.
+
+UDP không đảm bảo tuyệt đối; RESYNC cần Server còn truy cập được. Multicast cần LAN và Java được phép qua Windows Firewall. Mật khẩu/token qua UDP không mã hóa; multicast chưa xác thực nguồn phát. Lịch sử hiện giữ trong RAM, chưa tối ưu quy mô lớn. VS Code có cấu hình Server/Client 1/2/3; việc bấm F5/Run File trên IDE cần thử tay. Kết quả M2: **24 PASS, 0 FAIL** trên Java 21/Maven NetBeans. Đã chạy multicast thật trên card Wi-Fi: cách ly phòng/cùng cổng, quyền/mật khẩu/capacity, lịch sử 50, mất tin giữa/tin cuối, mất 70 tin cần hai lô RESYNC và vào phòng trong lúc tin mới đến. Kiểm tra nguồn: 24 file Java ứng dụng + 2 file test, dài nhất 308 dòng; comment dòng không dấu và ranh giới UI/mạng đã qua. Maven bật Xlint:all/failOnWarning, test-compile thành công. JSON launch có đúng Server/Client 1/Client 2/Client 3 và mọi class đích tồn tại. Chưa thao tác trực tiếp F5/Run File hoặc kiểm tra trực quan giao diện M2; cần thử tay theo README.

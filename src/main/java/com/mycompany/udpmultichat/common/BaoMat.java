@@ -24,7 +24,7 @@ public final class BaoMat {
             byte[] duLieu = (salt + ":" + matKhau).getBytes(StandardCharsets.UTF_8);
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(duLieu));
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Java khong ho tro SHA-256", e);
+            throw new IllegalStateException("Java không hỗ trợ SHA-256", e);
         }
     }
 

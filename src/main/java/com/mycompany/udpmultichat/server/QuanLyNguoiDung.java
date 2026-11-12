@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/** Gop tai khoan va phien trong M1; Server la noi quyet dinh quyen va online. */
+/** Gop tai khoan va phien; Server la noi quyet dinh quyen va online. */
 public final class QuanLyNguoiDung {
     private final KhoLuuTru kho;
     private final Map<String, TaiKhoan> taiKhoan;
@@ -36,7 +36,7 @@ public final class QuanLyNguoiDung {
     public synchronized NguoiDung dangKy(String ten, String matKhau) throws IOException {
         ten = chuanHoaTen(ten);
         kiemTraMatKhau(matKhau);
-        if (taiKhoan.containsKey(ten)) { throw new IllegalArgumentException("Ten dang nhap da ton tai"); }
+        if (taiKhoan.containsKey(ten)) { throw new IllegalArgumentException("Tên đăng nhập đã tồn tại"); }
         String salt = BaoMat.ngauNhien(16);
         NguoiDung nguoi = new NguoiDung(BaoMat.ngauNhien(12), ten, ten, VaiTro.THANH_VIEN,
                 Instant.now().toString());
@@ -51,11 +51,11 @@ public final class QuanLyNguoiDung {
         kiemTraMatKhau(matKhau);
         TaiKhoan tk = taiKhoan.get(ten);
         if (tk == null || !BaoMat.dungMatKhau(tk.salt, tk.hash, matKhau)) {
-            throw new IllegalArgumentException("Sai ten dang nhap hoac mat khau");
+            throw new IllegalArgumentException("Sai tên đăng nhập hoặc mật khẩu");
         }
         for (Phien p : phien.values()) {
             if (p.nguoi.id.equals(tk.nguoi.id)) {
-                throw new IllegalArgumentException("Tai khoan dang dang nhap o noi khac; cho het phien neu mat mang");
+                throw new IllegalArgumentException("Tài khoản đang đăng nhập ở nơi khác; chờ hết phiên nếu mất mạng");
             }
         }
         Phien moi = new Phien(BaoMat.ngauNhien(24), tk.nguoi, diaChi);
@@ -67,10 +67,10 @@ public final class QuanLyNguoiDung {
     public synchronized Phien kiemTra(String token, InetSocketAddress diaChi) {
         Phien p = phien.get(token);
         if (p == null || !p.diaChi.equals(diaChi)) {
-            throw new IllegalArgumentException("Phien khong hop le. Hay dang nhap lai");
+            throw new IllegalArgumentException("Phiên không hợp lệ. Hãy đăng nhập lại");
         }
         if (System.nanoTime() - p.pingCuoi > Protocol.HET_PHIEN_MS * 1_000_000L) {
-            throw new IllegalArgumentException("Phien da het han. Hay dang nhap lai");
+            throw new IllegalArgumentException("Phiên đã hết hạn. Hãy đăng nhập lại");
         }
         return p;
     }
@@ -92,14 +92,14 @@ public final class QuanLyNguoiDung {
     private static String chuanHoaTen(String ten) {
         String ketQua = ten.trim().toLowerCase(Locale.ROOT);
         if (!ketQua.matches("[a-z0-9_]{3,20}")) {
-            throw new IllegalArgumentException("Ten can 3-20 chu cai a-z, so hoac dau gach duoi");
+            throw new IllegalArgumentException("Tên cần 3–20 chữ cái a-z, số hoặc dấu gạch dưới");
         }
         return ketQua;
     }
 
     private static void kiemTraMatKhau(String matKhau) {
         if (matKhau.length() < 6 || matKhau.length() > 128) {
-            throw new IllegalArgumentException("Mat khau can 6-128 ky tu");
+            throw new IllegalArgumentException("Mật khẩu cần 6–128 ký tự");
         }
     }
 
@@ -110,6 +110,8 @@ public final class QuanLyNguoiDung {
         final InetSocketAddress diaChi;
         long pingCuoi = System.nanoTime();
         boolean sanSang;
+        final java.util.Set<String> phong = new java.util.LinkedHashSet<>();
+        final Map<String, Long> choVao = new LinkedHashMap<>();
         Phien(String token, NguoiDung nguoi, InetSocketAddress diaChi) {
             this.token = token; this.nguoi = nguoi; this.diaChi = diaChi;
         }

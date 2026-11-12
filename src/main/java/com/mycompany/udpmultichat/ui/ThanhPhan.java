@@ -220,7 +220,7 @@ final class ThanhPhan {
             // Ten (them "(ban)" neu la minh)
             g2.setColor(MAU_CHU);
             g2.setFont(FONT);
-            String hienThi = ten.equals(tenToi.get()) ? ten + " (ban)" : ten;
+            String hienThi = (ten.equals(tenToi.get()) || (!tenToi.get().isEmpty() && ten.startsWith(tenToi.get()+" ("))) ? ten + " (ban)" : ten;
             FontMetrics fm2 = g2.getFontMetrics();
             g2.drawString(hienThi, 54, 8 + (30 - fm2.getHeight()) / 2 + fm2.getAscent());
             g2.dispose();

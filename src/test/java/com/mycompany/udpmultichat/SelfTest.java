@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
-/** Kiem thu M1 khong Swing, dung data rieng; M2-M5 se bo sung phong, file va bao cao. */
+/** Kiem thu M1/M2 khong Swing, data va cong multicast rieng; cac moc sau bo sung tiep. */
 public final class SelfTest {
     private static int pass, fail;
     private SelfTest() { }
@@ -39,7 +39,8 @@ public final class SelfTest {
         chay("ACK, gui lai, loai trung voi mat goi 20% (seed co dinh)", SelfTest::testReliable);
         chay("Mat 100%: dung sau 3 lan gui lai, khong treo", SelfTest::testHetLuot);
         testServerClient();
-        System.out.println("KET QUA M1: " + pass + " PASS, " + fail + " FAIL");
+        PhongSelfTest.chayTatCa();
+        System.out.println("KET QUA M1/M2: " + pass + " PASS, " + fail + " FAIL");
         if (fail > 0) { throw new IllegalStateException("Co muc kiem thu FAIL; xem log o tren"); }
     }
 
@@ -81,6 +82,7 @@ public final class SelfTest {
     private static void testServerClient() throws Exception {
         Path goc = Path.of(".selftest"); Files.createDirectories(goc);
         Path data = Files.createTempDirectory(goc, "m1-");
+        Files.writeString(data.resolve("config.properties"),"multicast.portBase=19000\n",StandardCharsets.UTF_8);
         System.out.println("Data kiem thu: " + data.toAbsolutePath());
         AtomicInteger soOnline = new AtomicInteger();
         ServerCore.Listener theoDoi = new ServerCore.Listener() {
@@ -122,7 +124,8 @@ public final class SelfTest {
                 try (MulticastSocket gia = new MulticastSocket()) {
                     gia.setNetworkInterface(MangUtil.timGiaoDienMang()); gia.setTimeToLive(1);
                     byte[] dataSai = Goi.thanhByte(new TinNhan(99999, "phong_khac", "gia", "Gia", "KHONG_HIEN", 1).dongGoi());
-                    gia.send(new DatagramPacket(dataSai, dataSai.length, InetAddress.getByName(Protocol.SANH_NHOM), Protocol.SANH_CONG));
+                    var sanh=a.phongDaVao().stream().filter(r -> r.id.equals(Protocol.SANH_ID)).findFirst().orElseThrow();
+                    gia.send(new DatagramPacket(dataSai, dataSai.length, InetAddress.getByName(sanh.nhom), sanh.cong));
                 }
                 can(ngheB.tin.poll(600, TimeUnit.MILLISECONDS) == null, "Nhan lan tin phong khac");
             });
@@ -160,28 +163,28 @@ public final class SelfTest {
     }
 
     // ===== TIEN ICH KIEM THU =====
-    private static <T> T cho(CompletableFuture<T> viec) throws Exception { return viec.get(9, TimeUnit.SECONDS); }
+    static <T> T cho(CompletableFuture<T> viec) throws Exception { return viec.get(9, TimeUnit.SECONDS); }
 
-    private static void biChan(CompletableFuture<?> viec) throws Exception {
+    static void biChan(CompletableFuture<?> viec) throws Exception {
         try { cho(viec); throw new AssertionError("Yeu cau dang le phai bi tu choi"); }
         catch (java.util.concurrent.ExecutionException dung) { /* Server/transport da tu choi. */ }
     }
 
-    private static void doi(BooleanSupplier dieuKien, long toiDaMs) throws Exception {
+    static void doi(BooleanSupplier dieuKien, long toiDaMs) throws Exception {
         long hetHan = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(toiDaMs);
         while (!dieuKien.getAsBoolean() && System.nanoTime() < hetHan) { Thread.sleep(25); }
         can(dieuKien.getAsBoolean(), "Het thoi gian cho dieu kien");
     }
 
-    private static void can(boolean dieuKien, String lyDo) { if (!dieuKien) { throw new AssertionError(lyDo); } }
+    static void can(boolean dieuKien, String lyDo) { if (!dieuKien) { throw new AssertionError(lyDo); } }
     private static void loiNen(String loi) { System.err.println("  UDP: " + loi); }
 
-    private static void chay(String ten, ViecTest viec) {
+    static void chay(String ten, ViecTest viec) {
         try { viec.chay(); pass++; System.out.println("PASS " + ten); }
         catch (Exception | AssertionError e) { fail++; System.err.println("FAIL " + ten + ": " + e); }
     }
 
-    @FunctionalInterface private interface ViecTest { void chay() throws Exception; }
+    @FunctionalInterface interface ViecTest { void chay() throws Exception; }
 
     /** Thu su kien Client vao hang doi an toan giua cac luong. */
     private static final class BanNghe implements Listener {

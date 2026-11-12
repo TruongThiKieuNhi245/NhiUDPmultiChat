@@ -10,8 +10,6 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.function.Consumer;
 
 /** Mot socket nhan multicast cho mot phong; luon loc roomId truoc khi hien thi. */
@@ -20,7 +18,6 @@ public final class KenhPhong implements AutoCloseable {
     private final int cong;
     private final MulticastSocket socket;
     private final NetworkInterface giaoDien;
-    private final Set<Long> daNhan = new LinkedHashSet<>();
     private final Consumer<TinNhan> nhanTin;
     private final Consumer<String> heThong, baoLoi;
     private volatile boolean dangChay = true;
@@ -48,17 +45,14 @@ public final class KenhPhong implements AutoCloseable {
                 if (p.length < 2 || !roomId.equals(p[1])) { continue; }
                 if (Protocol.TIN.equals(p[0])) {
                     TinNhan tin = TinNhan.tuTruong(p);
-                    if (daNhan.add(tin.msgId)) {
-                        if (daNhan.size() > 512) { daNhan.remove(daNhan.iterator().next()); }
-                        nhanTin.accept(tin);
-                    }
+                    nhanTin.accept(tin);
                 } else if (Protocol.HE_THONG.equals(p[0]) && p.length == 3) {
                     heThong.accept(p[2]);
                 }
             } catch (IllegalArgumentException e) {
                 // Goi la hoac khong dung dinh dang thi bo qua.
             } catch (IOException e) {
-                if (dangChay) { baoLoi.accept("Loi nhan multicast: " + e.getMessage()); }
+                if (dangChay) { baoLoi.accept("Lỗi nhận multicast: " + e.getMessage()); }
             }
         }
     }
@@ -67,7 +61,7 @@ public final class KenhPhong implements AutoCloseable {
     @Override public void close() {
         dangChay = false;
         try { socket.leaveGroup(new InetSocketAddress(nhom, cong), giaoDien); }
-        catch (IOException e) { baoLoi.accept("Loi roi phong: " + e.getMessage()); }
+        catch (IOException e) { baoLoi.accept("Lỗi rời phòng: " + e.getMessage()); }
         finally { socket.close(); }
     }
 }

@@ -44,7 +44,7 @@ public final class ReliableUdp implements AutoCloseable {
     // Ty le mat va seed chi dung cho kiem thu; mac dinh khong bo goi.
     public ReliableUdp(DatagramSocket socket, BiConsumer<InetSocketAddress, String> xuLy,
                        Consumer<String> baoLoi, double tyLeMat, long seed) {
-        if (tyLeMat < 0 || tyLeMat > 1) { throw new IllegalArgumentException("Ty le mat sai"); }
+        if (tyLeMat < 0 || tyLeMat > 1) { throw new IllegalArgumentException("Tỷ lệ mất sai"); }
         this.socket = socket;
         this.xuLy = xuLy;
         this.baoLoi = baoLoi;
@@ -62,9 +62,9 @@ public final class ReliableUdp implements AutoCloseable {
     // ===== GUI KHONG CHAN LUONG GOI =====
     // Hoan thanh khi co ACK; nghiep vu can goi RESPONSE rieng.
     public CompletableFuture<Void> gui(InetSocketAddress dich, String noiDung) {
-        if (!dangChay) { return CompletableFuture.failedFuture(new IOException("UDP da dong")); }
+        if (!dangChay) { return CompletableFuture.failedFuture(new IOException("UDP đã đóng")); }
         if (dangCho.size() >= 512) {
-            return CompletableFuture.failedFuture(new IOException("Qua nhieu yeu cau dang cho"));
+            return CompletableFuture.failedFuture(new IOException("Quá nhiều yêu cầu đang chờ"));
         }
         String ma = phien + "-" + seq.incrementAndGet();
         try {
@@ -85,7 +85,7 @@ public final class ReliableUdp implements AutoCloseable {
     private void thuGui(String ma, ChoAck cho, int lan) {
         if (cho.ketQua.isDone()) { return; }
         if (!dangChay || lan > Protocol.GUI_LAI_TOI_DA) {
-            cho.ketQua.completeExceptionally(new IOException("Khong nhan duoc ACK sau 4 lan gui"));
+            cho.ketQua.completeExceptionally(new IOException("Không nhận được ACK sau 4 lần gửi"));
             return;
         }
         try {
@@ -114,7 +114,7 @@ public final class ReliableUdp implements AutoCloseable {
                     nhanTinCay(nguon, truong[1], truong[2]);
                 }
             } catch (IOException | RuntimeException e) {
-                if (dangChay) { baoLoi.accept("Loi UDP: " + e.getMessage()); }
+                if (dangChay) { baoLoi.accept("Lỗi UDP: " + e.getMessage()); }
             }
         }
     }
@@ -129,7 +129,7 @@ public final class ReliableUdp implements AutoCloseable {
             try {
                 xuLyNen.execute(() -> {
                     try { xuLy.accept(nguon, noiDung); }
-                    catch (RuntimeException e) { baoLoi.accept("Loi xu ly goi: " + e.getMessage()); }
+                    catch (RuntimeException e) { baoLoi.accept("Lỗi xử lý gói: " + e.getMessage()); }
                 });
                 daNhan.put(khoa, System.nanoTime());
             } catch (RejectedExecutionException e) { return; }
@@ -155,7 +155,7 @@ public final class ReliableUdp implements AutoCloseable {
         socket.close();
         dongHo.shutdownNow();
         xuLyNen.shutdownNow();
-        dangCho.values().forEach(c -> c.ketQua.completeExceptionally(new IOException("UDP da dong")));
+        dangCho.values().forEach(c -> c.ketQua.completeExceptionally(new IOException("UDP đã đóng")));
         dangCho.clear();
         daNhan.clear();
     }

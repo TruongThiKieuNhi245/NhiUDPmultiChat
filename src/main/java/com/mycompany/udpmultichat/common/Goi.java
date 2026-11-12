@@ -30,7 +30,7 @@ public final class Goi {
                     case 'n': truong.append('\n'); break;
                     case 'r': truong.append('\r'); break;
                     case '\\': truong.append('\\'); break;
-                    default: throw new IllegalArgumentException("Escape khong hop le");
+                    default: throw new IllegalArgumentException("Escape không hợp lệ");
                 }
                 escape = false;
             } else if (kyTu == '\\') {
@@ -42,8 +42,15 @@ public final class Goi {
                 truong.append(kyTu);
             }
         }
-        if (escape) { throw new IllegalArgumentException("Goi bi cat escape"); }
+        if (escape) { throw new IllegalArgumentException("Gói bị cắt escape"); }
         ketQua.add(truong.toString());
+        return ketQua.toArray(String[]::new);
+    }
+
+    // Noi cac mang truong ma khong ghep text trung gian.
+    public static String[] noi(String[]... cacMang) {
+        List<String> ketQua = new ArrayList<>();
+        for (String[] mang : cacMang) { ketQua.addAll(List.of(mang)); }
         return ketQua.toArray(String[]::new);
     }
 
@@ -51,7 +58,7 @@ public final class Goi {
     public static byte[] thanhByte(String duLieu) {
         byte[] ketQua = duLieu.getBytes(StandardCharsets.UTF_8);
         if (ketQua.length > Protocol.GOI_TOI_DA) {
-            throw new IllegalArgumentException("Goi vuot 1399 byte UTF-8; hay rut ngan noi dung");
+            throw new IllegalArgumentException("Gói vượt 1399 byte UTF-8; hãy rút ngắn nội dung");
         }
         return ketQua;
     }

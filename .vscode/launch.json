@@ -13,7 +13,7 @@
         },
         {
             "type": "java",
-            "name": "Client",
+            "name": "Client 1",
             "request": "launch",
             "mainClass": "com.mycompany.udpmultichat.ClientMain",
             "projectName": "UDPmultiChat",
@@ -23,7 +23,17 @@
         },
         {
             "type": "java",
-            "name": "Client (cua so thu 2/3)",
+            "name": "Client 2",
+            "request": "launch",
+            "mainClass": "com.mycompany.udpmultichat.ClientMain",
+            "projectName": "UDPmultiChat",
+            "cwd": "${workspaceFolder}",
+            "vmArgs": "-Djava.net.preferIPv4Stack=true",
+            "preLaunchTask": "Maven: compile"
+        },
+        {
+            "type": "java",
+            "name": "Client 3",
             "request": "launch",
             "mainClass": "com.mycompany.udpmultichat.ClientMain",
             "projectName": "UDPmultiChat",

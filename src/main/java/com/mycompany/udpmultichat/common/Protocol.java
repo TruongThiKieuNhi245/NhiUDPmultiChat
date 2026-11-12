@@ -15,5 +15,22 @@ public final class Protocol {
     public static final String PING = "PING", DANG_XUAT = "LOGOUT", GUI_TIN = "SEND";
     public static final String TRA_LOI = "RESPONSE", ONLINE = "ONLINE", TIN = "MSG";
     public static final String HE_THONG = "SYSTEM", HET_PHIEN = "EXPIRED";
+    // ===== LENH PHONG VA DONG BO =====
+    public static final String SAN_SANG = "READY";
+    public static final String LAY_PHONG = "LIST";
+    public static final String TAO_PHONG = "CREATE";
+    public static final String SUA_PHONG = "UPDATE";
+    public static final String XOA_PHONG = "DELETE";
+    public static final String TRANG_THAI_PHONG = "STATE";
+    public static final String CHUAN_BI_VAO = "PREPARE";
+    public static final String HUY_VAO = "CANCEL";
+    public static final String ROI_PHONG = "LEAVE";
+    public static final String DA_ROI_PHONG = "ROOM_LEFT";
+    public static final String LICH_SU = "HISTORY";
+    public static final String DONG_BO = "RESYNC";
+    public static final String MUC_DONG_BO = "SYNC_ITEM";
+    public static final String HET_DONG_BO = "SYNC_END";
+    public static final String MOC_TIN = "HEAD";
+    public static final String DANH_SACH_PHONG = "ROOMS";
     private Protocol() { }
 }
