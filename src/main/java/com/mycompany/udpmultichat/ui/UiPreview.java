@@ -72,7 +72,7 @@ public final class UiPreview {
     }
     // Tat ca truong text cua form phong deu co dong loi cung luc.
     private static void xuatLoiPhong(HopThoai f,String ten) throws IOException {
-        f.loiServer("Tên phòng cần 3–30 ký tự."); f.loiServer("mô tả tối đa 240 byte UTF-8.");
+        f.loiServer("Tên phòng cần 3–30 ký tự."); f.loiServer("Mô tả tối đa 80 ký tự.");
         f.loiServer("Giới hạn cần 2–500 người."); f.loiServer("Mật khẩu tối đa 128 ký tự."); xuatForm(f,ten);
     }
     // Duyet component that de dien nhap lai mat khau, khong dung reflection.

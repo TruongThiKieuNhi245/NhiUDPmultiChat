@@ -165,7 +165,7 @@ final class HopThoai extends JPanel {
         }
         String t=ten.getText().strip(); int n=t.codePointCount(0,t.length());
         if (n<3 || n>30) { loi("ten","Tên phòng cần 3–30 ký tự."); return false; }
-        if (moTa.getText().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>240) { loi("mota","Mô tả tối đa 240 byte UTF-8."); return false; }
+        if (moTa.getText().codePointCount(0,moTa.getText().length())>80) { loi("mota","Mô tả tối đa 80 ký tự."); return false; }
         if (matKhau.getPassword().length>128) { loi("mk","Mật khẩu tối đa 128 ký tự."); return false; }
         return true;
     }

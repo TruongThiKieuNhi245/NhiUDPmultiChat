@@ -296,9 +296,9 @@ public final class QuanLyPhong {
     // Kiem tra noi dung.
     private static void kiemTraNoiDung(String ten,String moTa,int gioiHan) {
         if (ten.strip().codePointCount(0,ten.strip().length())<3 || ten.strip().codePointCount(0,ten.strip().length())>30
-                || moTa.getBytes(StandardCharsets.UTF_8).length>240 || ten.contains("\n") || ten.contains("\r")
+                || moTa.codePointCount(0,moTa.length())>80 || ten.contains("\n") || ten.contains("\r")
                 || moTa.contains("\n") || moTa.contains("\r") || gioiHan<2 || gioiHan>500) {
-            throw new IllegalArgumentException("Tên cần 3–30 ký tự, mô tả tối đa 240 byte một dòng; giới hạn 2–500 người");
+            throw new IllegalArgumentException("Tên cần 3–30 ký tự, mô tả tối đa 80 ký tự một dòng; giới hạn 2–500 người");
         }
     }
     // Kiem tra mat khau.

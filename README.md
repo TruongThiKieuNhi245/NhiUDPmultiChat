@@ -1,4 +1,4 @@
-# UDPmultiChat — mốc M2.7
+# UDPmultiChat — mốc M2.8
 
 Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmultichat.ClientMain` và `com.mycompany.udpmultichat.server.ServerMain`. Giao diện dùng **FlatLaf 3.7.2**, giấy phép Apache 2.0 ([trang chính thức](https://www.formdev.com/flatlaf/)); đây là thư viện duy nhất của ứng dụng, được bổ sung theo yêu cầu M2.5.
 
@@ -18,7 +18,7 @@ Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmulti
 
 **Sảnh chung** luôn công khai, mở, không mật khẩu; không được Sửa/Xóa/Rời/Đóng. Phòng tạo hoặc sửa dùng tên 3–30 ký tự, mô tả tối đa 240 byte UTF-8, giới hạn 2–500 thành viên. Sảnh hệ thống giữ giới hạn cũ 1000 nếu dữ liệu được tạo từ M2.
 
-Mốc tiếp theo, mỗi mốc đều commit và dừng chờ xác nhận. Chỉ bắt đầu M3a sau khi người dùng duyệt M2.7:
+Mốc tiếp theo, mỗi mốc đều commit và dừng chờ xác nhận. Sau commit M2.8 tiếp tục M3a theo yêu cầu ngày 13/11/2026; sau M3a dừng chờ xác nhận:
 
 | Mốc | Phần việc |
 |---|---|
@@ -154,3 +154,9 @@ Trong tài khoản admin, phòng riêng chưa tham gia vẫn hiển thị để 
 Đốm góc thẻ đăng nhập trong ảnh cũ chưa tái hiện riêng được ở lần thử này. Đã sửa điểm vẽ có thể để lại pixel cũ: card bo góc trước đây khai báo opaque nhưng không tô kín các góc; nay transparent, nền cha vẽ đầy đủ. PNG mới không có đốm. Chữ số viền màu đã xác nhận là LCD subpixel AA trong PNG, đổi grayscale AA tập trung ở Theme và kiểm tra pixel.
 
 M2.7 chỉ thay bố cục/thành phần giao diện; không đổi định dạng gói hay dữ liệu M2.6. Hộp Đổi mật khẩu chưa tồn tại ở mốc này: các JPasswordField hiện có đã được kiểm tra, còn ba ô của hộp Đổi mật khẩu thật sẽ được kiểm tra và chụp ở M3a, cùng Hồ sơ và hộp bắt buộc đổi admin.
+
+## M2.8
+
+Vai trò thẻ tài khoản dùng JLabel riêng: tên 14px đậm, vai trò 12px thường màu xám (không dùng kích thước HTML). Ô soạn chia vùng nhập toàn chiều rộng và hàng công cụ bên dưới; nền khóa vẽ bo tròn, không còn góc xám vuông. Bộ đếm gần ngưỡng hiển thị số ký tự / giới hạn ước tính từ tỷ lệ ký tự so với dung lượng nội dung hiện tại; giới hạn thật vẫn kiểm tra UTF-8 và gói UDP. Mô tả phòng giới hạn 80 ký tự ở cả Client và Server, thông báo bỏ thuật ngữ byte. Theme.vietHoaDau chuẩn hóa chữ đầu lỗi. Kiểm tra Font.PLAIN của JTextArea trong UiPreview vẫn được giữ; tên người gửi là nhãn riêng.
+
+File/hàm: ChatMulticastUI.theTaiKhoan/ganNguoiDung; SoanTinPanel constructor/capNhat/paintComponent; Theme.vietHoaDau; HopThoai.kiemTra; QuanLyPhong.kiemTraNoiDung. Ảnh 05/18 là offline/nhiều dòng được xuất lại.

@@ -53,6 +53,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private final ThongBao toast=new ThongBao(getLayeredPane());
     private final JLabel tenPhong=Theme.nhan("Chọn phòng để trò chuyện",true),chiTiet=Theme.nhan(" ",false),ketNoi=Theme.nhan(" ",false);
     private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã",""),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more");
+    private final JLabel tenTaiKhoan=Theme.nhan("",true),vaiTaiKhoan=Theme.nhan("",false),anhTaiKhoan=Theme.nhan("",false);
     private NguoiDung toi;
     private boolean dong,dangGui,online=true;
     private List<Phong> danhSach=List.of();
@@ -92,16 +93,21 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         avatar.setHorizontalAlignment(JButton.LEFT); avatar.setPreferredSize(new Dimension(220,60));
         avatar.setLayout(new BorderLayout()); JLabel muiTen=Theme.nhan("",false); muiTen.setIcon(Theme.icon("up"));
         muiTen.addMouseListener(new java.awt.event.MouseAdapter() { public void mouseClicked(java.awt.event.MouseEvent e) { avatar.doClick(); } });
-        avatar.add(muiTen,BorderLayout.EAST); boc.add(avatar); return boc;
+        vaiTaiKhoan.setFont(Theme.NHO); vaiTaiKhoan.setForeground(Theme.PHU);
+        JPanel chu=new JPanel(new GridLayout(2,1)); chu.setOpaque(false); chu.add(tenTaiKhoan); chu.add(vaiTaiKhoan);
+        JPanel the=new JPanel(new BorderLayout(Theme.S8,0)); the.setOpaque(false); the.add(anhTaiKhoan,BorderLayout.WEST); the.add(chu);
+        avatar.setText(""); avatar.add(the); avatar.add(muiTen,BorderLayout.EAST);
+        for (var c:new java.awt.Component[]{the,chu,anhTaiKhoan,tenTaiKhoan,vaiTaiKhoan}) {
+            c.addMouseListener(new java.awt.event.MouseAdapter() { public void mouseClicked(java.awt.event.MouseEvent e) { avatar.doClick(); } });
+        }
+        boc.add(avatar); return boc;
     }
     // Danh tinh duoc nhan truoc kenh phong, va ve lai moi noi phu thuoc vao minh.
     private void ganNguoiDung(NguoiDung n) {
         toi=n;
         if (n!=null) {
-            String ten=n.tenHienThi.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
-            avatar.setIcon(Theme.avatar(n.tenHienThi));
-            avatar.setFont(Theme.FONT);
-            avatar.setText("<html><b>"+ten+"</b><br><span style='font-size:12px;color:"+Theme.mauHtml(Theme.PHU)+"'>"+(n.vaiTro==VaiTro.ADMIN?"Quản trị viên":"Thành viên")+"</span></html>");
+            anhTaiKhoan.setIcon(Theme.avatar(n.tenHienThi)); tenTaiKhoan.setText(n.tenHienThi);
+            vaiTaiKhoan.setText(n.vaiTro==VaiTro.ADMIN?"Quản trị viên":"Thành viên");
             setTitle("UDP Chat — "+n.tenHienThi);
         }
         phongPanel.capNhat(danhSach); capNhatPhongDangXem();

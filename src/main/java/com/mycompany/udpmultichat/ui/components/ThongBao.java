@@ -35,7 +35,7 @@ public final class ThongBao implements AutoCloseable {
     // Ham nay phai duoc goi tren EDT.
     public void hien(Muc muc,String noiDung) {
         if (ds.size()==3) { xoa(ds.get(0)); }
-        Toast t=new Toast(muc,noiDung); ds.add(t); lop.add(t,JLayeredPane.POPUP_LAYER); sapXep();
+        Toast t=new Toast(muc,Theme.vietHoaDau(noiDung)); ds.add(t); lop.add(t,JLayeredPane.POPUP_LAYER); sapXep();
     }
     // Dat vung chat de toast nam ngay tren o soan, khong che toolbar/header.
     public void datVung(javax.swing.JComponent vung) {

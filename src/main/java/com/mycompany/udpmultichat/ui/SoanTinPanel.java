@@ -34,7 +34,10 @@ final class SoanTinPanel extends JPanel {
     private final JLabel dem=Theme.nhan("",false);
     private final JTextArea loi=new JTextArea();
     private final JScrollPane cuon=new JScrollPane(o);
-    private final JPanel vien=new JPanel(new BorderLayout(Theme.S8,0));
+    private final JPanel vien=new JPanel(new BorderLayout(0,Theme.S4)) {
+        // Nen khoa cung bo tron voi vien, khong to day cac goc vuong.
+        protected void paintComponent(Graphics g) { Theme.boTron(g,getWidth(),getHeight(),choPhep?Theme.THE:Theme.NEN_KHOA,10); }
+    };
     private boolean choPhep,dangGui;
     private String loiGui="";
 
@@ -42,14 +45,15 @@ final class SoanTinPanel extends JPanel {
     // Cac nut nam o SOUTH cua cot rieng nen khong cao theo textarea.
     SoanTinPanel(Consumer<String> khiGui) {
         super(new BorderLayout(0,Theme.S4)); setBorder(Theme.le(Theme.S16)); setBackground(Theme.THE);
-        vien.setBackground(Theme.THE); o.setFont(Theme.FONT); o.setLineWrap(true); o.setWrapStyleWord(true);
+        vien.setOpaque(false); o.setFont(Theme.FONT); o.setLineWrap(true); o.setWrapStyleWord(true);
         vien.setName("khung-soan");
         o.setMargin(new Insets(4,4,4,4)); cuon.setBorder(null); cuon.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        vien.add(nutDinhKem(),BorderLayout.WEST); vien.add(cuon,BorderLayout.CENTER);
-        JPanel benPhai=new JPanel(new BorderLayout()); benPhai.setOpaque(false); benPhai.add(gui,BorderLayout.SOUTH); vien.add(benPhai,BorderLayout.EAST);
+        vien.add(cuon,BorderLayout.CENTER);
+        JPanel congCu=new JPanel(new BorderLayout()); congCu.setOpaque(false); congCu.add(nutDinhKem(),BorderLayout.WEST);
+        congCu.add(gui,BorderLayout.EAST); vien.add(congCu,BorderLayout.SOUTH);
         add(vien,BorderLayout.CENTER); JPanel duoi=new JPanel(new BorderLayout()); duoi.setOpaque(false);
         dem.setFont(Theme.NHO); duoi.add(dem,BorderLayout.NORTH);
-        loi.setFont(Theme.NHO); loi.setForeground(Theme.LOI); loi.setOpaque(false); loi.setEditable(false); loi.setLineWrap(true); loi.setWrapStyleWord(true);
+        loi.setMargin(new Insets(0,0,0,0)); loi.setBorder(null); loi.setFont(Theme.NHO); loi.setForeground(Theme.LOI); loi.setOpaque(false); loi.setEditable(false); loi.setLineWrap(true); loi.setWrapStyleWord(true);
         duoi.add(loi,BorderLayout.CENTER); add(duoi,BorderLayout.SOUTH);
         theoDoiNhap(); ganPhim(khiGui); capNhat();
     }
@@ -111,7 +115,8 @@ final class SoanTinPanel extends JPanel {
     private void capNhat() {
         String text=o.getText(); int bytes=text.strip().getBytes(StandardCharsets.UTF_8).length;
         boolean qua=bytes>Protocol.TIN_TOI_DA; int kyTu=text.codePointCount(0,text.length());
-        dem.setText(kyTu+" ký tự"+(qua?"":" · Sắp đạt giới hạn tin nhắn")); dem.setVisible(bytes>=Protocol.TIN_TOI_DA*4/5);
+        int toiDa=bytes==0?Protocol.TIN_TOI_DA:(int)((long)Protocol.TIN_TOI_DA*kyTu/bytes);
+        dem.setText(kyTu+"/"+toiDa); dem.setVisible(bytes>=Protocol.TIN_TOI_DA*4/5);
         dem.setForeground(qua?Theme.LOI:Theme.PHU); String thongBao=qua?Protocol.LOI_TIN_DAI:loiGui;
         loi.setText(thongBao); loi.setVisible(!thongBao.isBlank()); loi.setRows(thongBao.isBlank()?0:2);
         gui.setEnabled(choPhep && !dangGui && !text.isBlank() && !qua); o.setEnabled(choPhep && !dangGui);
@@ -119,6 +124,6 @@ final class SoanTinPanel extends JPanel {
         vien.setBackground(nen); o.setBackground(nen); cuon.getViewport().setBackground(nen);
         int dong=0,rong=Math.max(150,o.getWidth()-8);
         for (String d:text.split("\n",-1)) { dong+=Math.max(1,(o.getFontMetrics(Theme.FONT).stringWidth(d)+rong-1)/rong); }
-        cuon.setPreferredSize(new Dimension(100,Math.max(28,Math.min(5,dong)*20+8))); vien(); revalidate();
+        cuon.setPreferredSize(new Dimension(100,Math.max(24,Math.min(5,dong)*20+4))); vien(); revalidate();
     }
 }

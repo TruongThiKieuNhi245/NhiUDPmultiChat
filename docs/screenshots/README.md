@@ -39,3 +39,9 @@ Công cụ vẽ **chính component Swing của ứng dụng** lên BufferedImage
 24 PNG đã được xuất lại bằng UI M2.7. UiPreview còn xác nhận trên component thật: đổi profile vẽ lại đúng một Bạn, hai tên hiển thị trùng nhau không nhầm tài khoản, chuyển phòng xóa badge ngay, nút Tạo phòng không bị cắt và kiểm tra pixel chữ trắng trên nền xanh không có viền RGB.
 
 M2.7 tái hiện bản cũ bằng assertion (ô tên còn 12px), sau sửa toàn bộ ảnh qua kiểm tra chiều cao input (32px cho hàng form; editor bên trong spinner trừ viền), font nội dung PLAIN và vị trí toast. Ảnh 03, 06/07, 15 và các ảnh khác đã xuất lại. Toast một dòng khoảng 48px, nhiều dòng tự cao lên, rộng tối đa 360px. Ảnh hộp Đổi mật khẩu thật thuộc mốc M3a, chưa có tại M2.7.
+
+## M2.8
+
+Vai trò thẻ tài khoản dùng JLabel riêng: tên 14px đậm, vai trò 12px thường màu xám (không dùng kích thước HTML). Ô soạn chia vùng nhập toàn chiều rộng và hàng công cụ bên dưới; nền khóa vẽ bo tròn, không còn góc xám vuông. Bộ đếm gần ngưỡng hiển thị số ký tự / giới hạn ước tính từ tỷ lệ ký tự so với dung lượng nội dung hiện tại; giới hạn thật vẫn kiểm tra UTF-8 và gói UDP. Mô tả phòng giới hạn 80 ký tự ở cả Client và Server, thông báo bỏ thuật ngữ byte. Theme.vietHoaDau chuẩn hóa chữ đầu lỗi. Kiểm tra Font.PLAIN của JTextArea trong UiPreview vẫn được giữ; tên người gửi là nhãn riêng.
+
+File/hàm: ChatMulticastUI.theTaiKhoan/ganNguoiDung; SoanTinPanel constructor/capNhat/paintComponent; Theme.vietHoaDau; HopThoai.kiemTra; QuanLyPhong.kiemTraNoiDung. Ảnh 05/18 là offline/nhiều dòng được xuất lại.

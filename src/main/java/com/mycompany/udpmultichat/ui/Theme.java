@@ -72,7 +72,7 @@ public final class Theme {
     }
     // Loi form chi chiem cho khi co noi dung.
     public static void datLoi(JLabel l,String text) {
-        l.setText(text); l.setVisible(!text.isBlank());
+        l.setText(vietHoaDau(text)); l.setVisible(!text.isBlank());
         if (l.getParent()!=null) { l.getParent().revalidate(); l.getParent().repaint(); }
     }
     // Hang form tinh lai chieu cao tu input + loi, khong luu maximum size cu.
@@ -90,6 +90,10 @@ public final class Theme {
         hang.setAlignmentX(JPanel.LEFT_ALIGNMENT); hang.setBorder(new EmptyBorder(S8,0,S8,0));
         hang.add(nhan(nhan,false),java.awt.BorderLayout.NORTH); hang.add(boc,java.awt.BorderLayout.CENTER);
         hang.add(loi,java.awt.BorderLayout.SOUTH); return hang;
+    }
+    // Chuan hoa chu dau thong bao, khong doi noi dung ten/tin nhan.
+    public static String vietHoaDau(String text) {
+        return text.isEmpty()?text:text.substring(0,1).toUpperCase(java.util.Locale.ROOT)+text.substring(1);
     }
     // Nhan.
     public static JLabel nhan(String ten,boolean dam) {
