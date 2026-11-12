@@ -1,0 +1,13 @@
+{
+    "files.encoding": "utf8",
+    "maven.executable.path": "C:\\Program Files\\Apache NetBeans\\java\\maven\\bin\\mvn.cmd",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.debug.settings.onBuildFailureProceed": false,
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "C:\\Program Files\\Eclipse Adoptium\\jdk-21.0.12.101-hotspot",
+            "default": true
+        }
+    ]
+}

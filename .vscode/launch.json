@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Server",
+            "request": "launch",
+            "mainClass": "com.mycompany.udpmultichat.server.ServerMain",
+            "projectName": "UDPmultiChat",
+            "cwd": "${workspaceFolder}",
+            "vmArgs": "-Djava.net.preferIPv4Stack=true",
+            "preLaunchTask": "Maven: compile"
+        },
+        {
+            "type": "java",
+            "name": "Client",
+            "request": "launch",
+            "mainClass": "com.mycompany.udpmultichat.ClientMain",
+            "projectName": "UDPmultiChat",
+            "cwd": "${workspaceFolder}",
+            "vmArgs": "-Djava.net.preferIPv4Stack=true",
+            "preLaunchTask": "Maven: compile"
+        },
+        {
+            "type": "java",
+            "name": "Client (cua so thu 2/3)",
+            "request": "launch",
+            "mainClass": "com.mycompany.udpmultichat.ClientMain",
+            "projectName": "UDPmultiChat",
+            "cwd": "${workspaceFolder}",
+            "vmArgs": "-Djava.net.preferIPv4Stack=true",
+            "preLaunchTask": "Maven: compile"
+        }
+    ]
+}
