@@ -48,11 +48,12 @@ public final class SelfTest {
         chay("M2.6 danh tinh truoc su kien, Client cuoi co mot Ban, laToi va quyen",DanhTinhSelfTest::kiemTra);
         chay("M2.6 goi 1000 byte va escape nam trong MTU",DanhTinhSelfTest::kiemTraGoi);
         HoSoSelfTest.chayTatCa();
+        TinNhanSelfTest.chayTatCa();
         ketLuan();
     }
     // Bao loi exit code ca khi chay rieng nhom M3a.
     static void ketLuan() {
-        System.out.println("KET QUA den M3a: " + pass + " PASS, " + fail + " FAIL");
+        System.out.println("KET QUA den M3b: " + pass + " PASS, " + fail + " FAIL");
         if (fail > 0) { throw new IllegalStateException("Co muc kiem thu FAIL; xem log o tren"); }
     }
 

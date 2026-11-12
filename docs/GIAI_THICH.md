@@ -1,4 +1,4 @@
-# Giải thích đến M3a — Socket UDP và Multicast
+# Giải thích đến M3b — Socket UDP và Multicast
 
 ## Luồng chạy và đối chiếu chương 6
 
@@ -276,3 +276,62 @@ Assertion đã tái hiện lỗi `Mô tả` bị gán khóa `ten`: hàm HopThoai
 SoanTinPanel.capNhat chỉ cho thanh cuộn dọc hiện khi vượt 5 dòng kể cả dòng tự ngắt; UiPreview xác nhận ô một dòng không lộ thanh cuộn và thêm ảnh 31-soan-co-thanh-cuon.png. Nút Hiện mật khẩu dùng nút viền; lỗi cũ/mới/nhập lại phân biệt đúng, ẩn gợi ý khi ô mới có lỗi. Hồ sơ vô hiệu Xóa ảnh khi chưa có ảnh, bộ đếm giới thiệu n/100. Login thật trả cùng thông báo “Tên đăng nhập hoặc mật khẩu không đúng.”; thông báo tồn tại chỉ dùng khi đăng ký. Admin mặc định có khung cảnh báo vàng. Tên hiển thị ngoài BMP bị từ chối ở cả Client/Server với thông báo rõ để người dùng sửa, không âm thầm mất ký tự.
 
 File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemTraCuon; ui/SoanTinPanel.capNhat; ui/HoSoDialog.formHoSo/formMatKhau/kiemTra/oGioiThieu; server/QuanLyPhong.kiemTraNoiDung; server/QuanLyNguoiDung.dangNhap/luuHoSo; ui/UiPreview.xuatLoiForm. SelfTest hồi quy 37 PASS; UiPreview 31 PNG. Thao tác thật nhiều máy LAN và DPI khác vẫn cần thử tay.
+
+
+## M3b rút gọn: chức năng → file → hàm
+
+| Chức năng | File | Hàm |
+|---|---|---|
+| Mã sticker hợp lệ, hạn 10 phút/typing/8 giây | common/Protocol | stickerHopLe, MA_STICKER, THU_HOI_MS, TYPING_MS, CHO_TIN_MS |
+| 12 hình Java2D, 128px; popup 3 nhóm và hover tên | ui/StickerKho | ve, mat, tim, tay, phao, pizza, cafe, bangChon |
+| Nút mặt cười mở picker, text gõ kích hoạt callback | ui/SoanTinPanel / ui/ChatMulticastUI | nutDinhKem, theoDoiNhap, datChucNang / guiSticker |
+| Mã Client 128-bit, loại T/S/D, cờ thu hồi, nạp log cũ 7 trường | common/model/TinNhan | taoMa, constructor, dongGoi, tuTruong, daThuHoi |
+| Server kiểm tra STK, room + user + mã để loại trùng | server/QuanLyTinNhan / server/QuanLyPhong | them, nap / themTin |
+| Lưu trước multicast; retry phát lại cùng msgId | server/ServerCore | guiTin, phatMulticast |
+| Hàng gửi WAIT/SENT/ERROR; RESPONSE và multicast cùng msgId mới SENT | client/TroChuyenClient | gui, guiCoMa, thuGui, nhanMulticast, hoanTat, thatBai |
+| Timeout 8 giây, Gửi lại cùng mã, Xóa hàng lỗi cục bộ | client/TroChuyenClient / ui/HangTin | guiLai, xoaTinLoi / trangThaiGui |
+| Hợp nhất tin local và Server, không tạo hàng trùng | ui/KhungChatPanel | trangThai, themTin, theoMa/theoId |
+| Render sticker không nền, recall xám nghiêng, menu chuột phải | ui/HangTin | noiDung, menu, ganMenu |
+| Quyền người gửi 10 phút, chủ/admin mọi lúc, phải ở phòng | server/QuanLyTinNhan / server/ServerCore | duocThuHoi, thuHoi / thuHoi |
+| Xóa nội dung cũ khỏi file chính qua temp/atomic move | server/KhoLuuTru | ghiLaiTin, ghiAnToan |
+| Sự kiện thu hồi tin cậy, revision count trong HEAD | server/ServerCore / server/QuanLyTinNhan | thuHoi, guiMocTin / phienBan, danhSachThuHoi |
+| RESYNC cả thu hồi cũ khi msgId không tăng | client/TroChuyenClient / client/ClientCore | nhanRevision, dongBoThuHoi / dongBoPhong |
+| Chặn tin cũ tới muộn làm sống lại nội dung, kể cả EDT/sidebar | client/TroChuyenClient / ui/KhungChatPanel / ui/ChatMulticastUI | loc, thuHoiMoi / locTin, thuHoi / onTinNhan, onThuHoi |
+| Sidebar không giữ preview nội dung đã thu hồi | ui/DanhSachPhongPanel | thuHoi, nutPhong |
+| UDP nhanh không ACK dùng cùng DatagramSocket | common/ReliableUdp | guiNhanh, nhanNhanh, vongNhan |
+| Typing Client ≤1 lần/3 giây, không gửi text rỗng | client/TroChuyenClient / client/ClientCore | dangGo, choTyping / guiTyping |
+| Typing Server kiểm tra token/phòng và rate, phát multicast | server/ServerCore / server/QuanLyTinNhan | typing / choTyping |
+| Lọc roomId trước nhận TYPING multicast | client/KenhPhong / client/TroChuyenClient | vongNhan, suKien / nhanTyping |
+| Nhiều người đang nhập, tự tắt sau 4 giây, riêng từng phòng | ui/ChatMulticastUI | onDangGo, capNhatDangGo, khungSoan |
+| SelfTest M3b không Swing | src/test/.../TinNhanSelfTest | kiemTraQuyen, BoTest.sticker/thuHoi/trangThai/typing/napLai |
+| PNG và assertions trạng thái/typing/menu/sticker lạ | ui/UiPreview / ui/FormKiemTra | xuatTroChuyen / kiemTraThuHoi |
+
+### Luồng tin và chống trùng
+
+Client tạo mã ngẫu nhiên 128-bit, biểu diễn Base64url 22 ký tự. Gửi `SEND|requestId|token|roomId|maClient|text` hoặc `STK|requestId|token|roomId|maClient|maSticker` qua ReliableUdp. Server xác thực thành viên/quyền/phòng mở và mã sticker. `QuanLyTinNhan.them` tra room + user + mã; có rồi trả lại cùng msgId và phát lại multicast, không ghi thêm. Khác nội dung mà dùng lại mã sẽ bị từ chối; tin đã thu hồi chỉ phát bản D không nội dung. Mã chống trùng được nạp từ log khi restart.
+
+Tin multicast/log vẫn 7 trường. Với tin mới, phần nội dung có dấu `~maClient~T/S/D~noiDung`; phần nhị phân sticker không đi qua mạng. Client biết mã để hợp nhất với hàng local; msgId dùng sắp thứ tự/RESYNC. Giới hạn byte kiểm tra toàn gói có header/escape, không chỉ nội dung. Không đổi sang TCP.
+
+Gửi thành công ở tầng ReliableUdp chưa đủ để báo Đã gửi. `TroChuyenClient` chờ RESPONSE đúng msgId và multicast thực tế của cùng mã; RESYNC có thể hiển thị tin nhưng không được giả làm multicast đã quay về. Hết khoảng 8 giây chuyển lỗi, giữ mã/nội dung để retry. Gửi lại có thể xác nhận một tin mà Server đã lưu từ lần trước. Nút Xóa chỉ bỏ hàng lỗi local, không thu hồi tin trên Server; lịch sử có thể hiện lại nếu tin đã tới Server. Tối đa 256 hàng chờ/lỗi, logout dọn.
+
+### Thu hồi và đồng bộ
+
+Server kiểm tra người gửi trong 10 phút hoặc chủ/admin; mọi trường hợp phải đang ở phòng. Tạo bản D với nội dung rỗng, ghi lại toàn bộ log qua file tạm rồi đổi tên, sau thành công mới thay RAM. Không giữ nội dung cũ trong log chính. Các phiên online nhận REVOKED qua UDP có ACK. Client ghi tombstone trước khi xử lý tin tới chậm; UI lọc lại trên EDT và cập nhật preview sidebar. Đương nhiên không thể xóa bản sao đã được người nhận lưu/chụp trước khi thu hồi.
+
+HEAD mang thêm số lượng tin đã thu hồi (revision), không đổi msgId. Nếu hụt sự kiện thu hồi hoặc nối lại, Client xin RECALLS từng lô tối đa 50 ID, không mang nội dung gốc; HISTORY và RESYNC luôn lấy bản D hiện tại. Ngay RESYNC với mốc đã bằng Server vẫn đồng bộ tombstone. File cũ không có mã/loại vẫn nạp được; cần đóng toàn bộ Client/Server cũ trước khi chạy cùng phiên bản mới.
+
+### Multicast và typing nằm ở đâu?
+
+Tin văn bản và sticker sau kiểm tra ở Server đều qua `ServerCore.phatMulticast` → `KenhPhong.vongNhan`, nhóm/cổng riêng từng phòng và lọc roomId. TYPING đi Client → Server bằng UDP unicast nhanh cùng DatagramSocket, không envelope R/ACK. Server kiểm tra token + thành viên + phòng mở + limiter 3 giây, rồi dùng MulticastSocket phát TYPING vào đúng nhóm phòng. Không ghi lịch sử, cho phép mất gói. Client bỏ typing của chính mình; UI dùng đồng hồ đơn điệu để tắt sau 4 giây. Lệnh thu hồi, kết quả gửi, lịch sử và tombstone vẫn UDP tin cậy tự viết.
+
+### Kiểm chứng và phần dời lại
+
+Toàn bộ SelfTest: **43 PASS, 0 FAIL** = 37 hồi quy + 6 nhóm M3b. SelfTest mới dùng một Server/ba Client trên card mạng thật: mã sticker đúng/lạ; cách ly phòng; người thường không thu hồi người khác; chủ/admin được phép; biên đúng 10 phút/quá 1ms; log không còn nội dung bị thu hồi; HISTORY/RESYNC; thiếu multicast dù Server đã ACK gây lỗi sau 8 giây; retry không trùng cả RAM/log; restart còn tombstone/mã; TYPING không lưu và limiter Client/Server đúng 2999/3000ms. UiPreview **37 PNG**, ảnh 31–36 có thanh cuộn thật, picker, sticker/thu hồi/ba trạng thái/typing, menu, cập nhật không trùng và sticker không hỗ trợ; typing hết hạn được kiểm tra bằng đồng hồ truyền vào, không sleep EDT.
+
+Không thêm thư viện. Thêm bốn file chức năng/renderer M3b (QuanLyTinNhan, TroChuyenClient, StickerKho, HangTin) và FormKiemTra từ M3a.1: **40 file ứng dụng + 6 file test**. Tách thêm để từng file dưới 400 dòng, hàm dưới khoảng 40 dòng, UI không Socket, logic không Swing. Không xóa chức năng cũ; dời logic lịch sử khỏi QuanLyPhong sang QuanLyTinNhan, API cũ gọi tiếp qua lớp này.
+
+Chỉ bốn mục M3b đã làm. Thứ tự tiếp: **M4 → M5 → M6 → M3c → M7**. M3c gồm tìm kiếm, trả lời, gộp tin, phân cách ngày, tắt thông báo phòng, xuất lịch sử. Không tự thêm các mục đó vào M3b.
+
+**Giới hạn đã biết:** UDP vẫn có thể hết lượt retry; multicast cần chung LAN và cho Java qua Windows Firewall; token/mật khẩu qua UDP không mã hóa, nguồn multicast chưa xác thực. TYPING có thể mất, không phải bằng chứng người dùng còn online. Thu hồi ghi lại log và tombstone/mã hiện giữ RAM theo lịch sử, chưa tối ưu dữ liệu rất lớn. Chưa kiểm tra tương tác IDE/ba cửa sổ đầy đủ, nhiều máy LAN hoặc DPI khác; PNG không thay thế kiểm tra tay.
+
+Ảnh [37-kho-sticker-day-du.png](screenshots/37-kho-sticker-day-du.png) cho xem đầy đủ 12 sticker Java2D ở kích thước gốc 128px.

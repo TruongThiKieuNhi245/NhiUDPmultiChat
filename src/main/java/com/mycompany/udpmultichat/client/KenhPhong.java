@@ -20,6 +20,9 @@ public final class KenhPhong implements AutoCloseable {
     private final NetworkInterface giaoDien;
     private final Consumer<TinNhan> nhanTin;
     private final Consumer<String> heThong, baoLoi;
+    private java.util.function.Consumer<String[]> suKien=g -> { };
+    // Gan callback typing truoc READY; khong tham gia luong tin lich su.
+    public void suKien(java.util.function.Consumer<String[]> xuLy) { suKien=xuLy; }
     private volatile boolean dangChay = true;
 
     // Mo kenh nhan multicast cho mot roomId tren card IPv4 da chon.
@@ -47,6 +50,7 @@ public final class KenhPhong implements AutoCloseable {
                 if (Protocol.TIN.equals(p[0])) {
                     TinNhan tin = TinNhan.tuTruong(p);
                     nhanTin.accept(tin);
+                } else if (Protocol.DANG_GO.equals(p[0]) && p.length==4) { suKien.accept(p);
                 } else if (Protocol.HE_THONG.equals(p[0]) && p.length == 3) {
                     heThong.accept(p[2]);
                 }

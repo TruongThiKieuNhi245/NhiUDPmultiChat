@@ -60,6 +60,8 @@ public final class ReliableUdp implements AutoCloseable {
                 60, 60, TimeUnit.SECONDS);
     }
 
+    // TYPING di UDP nhanh, khong seq/ACK/gui lai; chi goi tu luong nen.
+    public void guiNhanh(InetSocketAddress dich,String noiDung) throws IOException { guiRaw(Goi.thanhByte(noiDung),dich); }
     // ===== GUI KHONG CHAN LUONG GOI =====
     // Hoan thanh khi co ACK; nghiep vu can goi RESPONSE rieng.
     public CompletableFuture<Void> gui(InetSocketAddress dich, String noiDung) {
@@ -112,11 +114,19 @@ public final class ReliableUdp implements AutoCloseable {
                     nhanAck(nguon,truong[1]);
                 } else if (truong.length == 3 && "R".equals(truong[0]) && truong[1].length() <= 80) {
                     nhanTinCay(nguon, truong[1], truong[2]);
+                } else if (truong.length==3 && Protocol.DANG_GO.equals(truong[0])) {
+                    nhanNhanh(nguon,new String(goi.getData(),0,goi.getLength(),StandardCharsets.UTF_8));
                 }
             } catch (IOException | RuntimeException e) {
                 if (dangChay) { baoLoi.accept("Lỗi UDP: " + e.getMessage()); }
             }
         }
+    }
+
+    // Dat typing vao hang co gioi han, khong ACK va bo khi day.
+    private void nhanNhanh(InetSocketAddress nguon,String noiDung) {
+        try { xuLyNen.execute(() -> xuLyNoiDung(nguon,noiDung)); }
+        catch (RejectedExecutionException e) { /* Typing duoc phep mat. */ }
     }
 
     // Chi nhan ACK tu endpoint ma goi tin dang cho.

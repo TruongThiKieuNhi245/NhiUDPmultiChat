@@ -24,6 +24,12 @@ public interface Listener {
     // Nhan trang thai phien da ngat.
     void onMatKetNoi(String lyDo);
 
+    // Trang thai hang gui cuc bo: WAIT/SENT/ERROR/REMOVE.
+    default void onTrangThaiGui(TinNhan tin,String trangThai,String lyDo) { }
+    // Tombstone chi chua roomId va msgId.
+    default void onThuHoi(String room,long id) { }
+    // Dang go trong phong; UI tu tat sau bon giay.
+    default void onDangGo(String room,String user,String ten) { }
     // Lich su khong tinh vao badge chua doc.
     default void onTinNhan(TinNhan tin,boolean laToi,boolean lichSu) { onTinNhan(tin,laToi); }
     // Nhan thong bao he thong qua Listener.

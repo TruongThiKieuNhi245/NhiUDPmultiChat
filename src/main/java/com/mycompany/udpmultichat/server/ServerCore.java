@@ -97,14 +97,10 @@ public final class ServerCore implements AutoCloseable {
         try {
             String[] p=Goi.tach(duLieu);
             if (p.length<2 || p[1].length()>64) { return; }
+            if (Protocol.DANG_GO.equals(p[0])) { typing(nguon,p); return; }
             ma=p[1];
             if (Protocol.THU_SERVER.equals(p[0])) { duTruong(p,2); traLoi(nguon,ma,true,"Server đang hoạt động"); return; }
-            if (Protocol.KET_NOI_LAI.equals(p[0])) {
-                duTruong(p,5); quetPhien();
-                Phien k=nguoiDung.ketNoiLai(p[2],p[3],p[4],nguon);
-                traLoi(nguon,ma,true,Goi.noi(new String[]{k.token},k.nguoi.cacTruong())); return;
-            }
-            if (Protocol.DANG_KY.equals(p[0]) || Protocol.DANG_NHAP.equals(p[0])) {
+            if (Protocol.DANG_KY.equals(p[0]) || Protocol.DANG_NHAP.equals(p[0]) || Protocol.KET_NOI_LAI.equals(p[0])) {
                 taiKhoan(nguon,p); return;
             }
             if (p.length<3) { throw new IllegalArgumentException("Thiếu token phiên"); }
@@ -121,7 +117,9 @@ public final class ServerCore implements AutoCloseable {
                     duTruong(p,3); nguoiDung.dangXuat(phien);
                     roiTatCa(phien,"đã đăng xuất."); traLoi(nguon,ma,true,"Đã đăng xuất"); break;
                 case Protocol.SAN_SANG: sanSang(phien,p); break;
-                case Protocol.GUI_TIN: guiTin(phien,p); break;
+                case Protocol.GUI_TIN: case Protocol.STICKER: guiTin(phien,p); break;
+                case Protocol.THU_HOI: thuHoi(phien,p); break;
+                case Protocol.DS_THU_HOI: duTruong(p,5); phong.kiemTraThanhVien(phien,p[3]); traLoi(nguon,ma,true,phong.tinNhan().danhSachThuHoi(p[3],Long.parseLong(p[4]))); break;
                 case Protocol.LICH_SU: case Protocol.DONG_BO: guiLichSu(phien,p); break;
                 default: xuLyPhong(phien,p);
             }
@@ -134,6 +132,10 @@ public final class ServerCore implements AutoCloseable {
 
     // Tai khoan.
     private void taiKhoan(InetSocketAddress nguon,String[] p) throws IOException {
+        if (Protocol.KET_NOI_LAI.equals(p[0])) {
+            duTruong(p,5); quetPhien(); Phien k=nguoiDung.ketNoiLai(p[2],p[3],p[4],nguon);
+            traLoi(nguon,p[1],true,Goi.noi(new String[]{k.token},k.nguoi.cacTruong())); return;
+        }
         duTruong(p,4);
         if (Protocol.DANG_KY.equals(p[0])) {
             nguoiDung.dangKy(p[2],p[3]); traLoi(nguon,p[1],true,"Đăng ký thành công. Hãy đăng nhập.");
@@ -255,10 +257,26 @@ public final class ServerCore implements AutoCloseable {
 
     // ===== TIN NHAN VA GUI BU =====
     private void guiTin(Phien phien,String[] p) throws IOException {
-        duTruong(p,5); TinNhan tin=phong.themTin(phien,p[3],p[4]);
+        duTruong(p,6); TinNhan tin=phong.themTin(phien,p[3],p[5],p[4],p[0].equals(Protocol.STICKER)?"S":"T");
         try { phatMulticast(p[3],tin.dongGoi()); }
         catch (IOException e) { listener.onLog("Tin đã lưu; multicast lỗi, Client sẽ RESYNC: "+e.getMessage()); }
         traLoi(phien.diaChi,p[1],true,Long.toString(tin.msgId)); baoThongKe();
+    }
+
+    // Thu hoi phat su kien tin cay; heartbeat revision bu khi Client da mat ket noi.
+    private void thuHoi(Phien p,String[] g) throws IOException {
+        duTruong(g,5); phong.kiemTraThanhVien(p,g[3]);
+        TinNhan t=phong.tinNhan().thuHoi(p,phong.lay(g[3]),Long.parseLong(g[4]));
+        phong.thanhVien(g[3]).forEach(n -> guiSuKien(n,Goi.ghep(Protocol.DA_THU_HOI,g[3],Long.toString(t.msgId))));
+        traLoi(p.diaChi,g[1],true,"Đã thu hồi tin nhắn."); listener.onLog(p.nguoi.tenDangNhap+" thu hồi tin "+t.msgId+" ở "+g[3]);
+    }
+    // Kiem tra token va quyen truoc khi phat nhanh vao dung nhom; khong ACK/luu lich su.
+    private void typing(InetSocketAddress diaChi,String[] g) throws IOException {
+        duTruong(g,3); Phien p=nguoiDung.kiemTra(g[1],diaChi); nguoiDung.kiemTraBatBuoc(p,Protocol.DANG_GO);
+        phong.kiemTraThanhVien(p,g[2]); if (!phong.lay(g[2]).dangMo) { return; }
+        if (phong.tinNhan().choTyping(g[2],p.nguoi.id,System.nanoTime()/1000000L)) {
+            phatMulticast(g[2],Goi.ghep(Protocol.DANG_GO,g[2],p.nguoi.id,p.nguoi.tenHienThi));
+        }
     }
 
     // Gui lich su.
@@ -325,7 +343,7 @@ public final class ServerCore implements AutoCloseable {
     }
     // Gui moc tin.
     private void guiMocTin(Phien p) {
-        List<String> lo=p.phong.stream().map(id -> Goi.ghep(Protocol.MOC_TIN,id,Long.toString(phong.mocTin(id)))).toList();
+        List<String> lo=p.phong.stream().map(id -> Goi.ghep(Protocol.MOC_TIN,id,Long.toString(phong.mocTin(id)),Long.toString(phong.tinNhan().phienBan(id)))).toList();
         guiLo(p,lo);
     }
     // Quet phien.

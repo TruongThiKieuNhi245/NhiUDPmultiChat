@@ -188,6 +188,11 @@ public final class KhoLuuTru {
         }
     }
 
+    // Ghi lai lich su qua tep tam khi thu hoi, noi dung cu khong con tren tep chinh.
+    public synchronized void ghiLaiTin(String roomId,List<TinNhan> ds) throws IOException {
+        StringBuilder s=new StringBuilder(); for (TinNhan t:ds) { s.append(t.dongGoi()).append('\n'); }
+        ghiAnToan(tepTin(roomId),s.toString());
+    }
     // Danh sach thanh vien ben vung, khong luu token hoac mat khau.
     public synchronized Properties docThanhVien() throws IOException {
         Properties p=new Properties(); Path tep=thuMuc.resolve("members.properties");

@@ -1,4 +1,4 @@
-# UDPmultiChat — mốc M3a
+# UDPmultiChat — mốc M3b
 
 Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmultichat.ClientMain` và `com.mycompany.udpmultichat.server.ServerMain`. Giao diện dùng **FlatLaf 3.7.2**, giấy phép Apache 2.0 ([trang chính thức](https://www.formdev.com/flatlaf/)); đây là thư viện duy nhất của ứng dụng, được bổ sung theo yêu cầu M2.5.
 
@@ -18,18 +18,19 @@ Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmulti
 
 **Sảnh chung** luôn công khai, mở, không mật khẩu; không được Sửa/Xóa/Rời/Đóng. Phòng tạo hoặc sửa dùng tên 3–30 ký tự, mô tả tối đa 80 ký tự, giới hạn 2–500 thành viên. Sảnh hệ thống giữ giới hạn cũ 1000 nếu dữ liệu được tạo từ M2.
 
-M2.8 và M3a đã hoàn thành với hai commit riêng. Dừng chờ xác nhận trước M3b; các mốc tiếp theo vẫn giữ phạm vi:
+M2.8 và M3a đã hoàn thành với hai commit riêng. M3a.1 và M3b rút gọn đã hoàn thành; dừng chờ xác nhận trước M4. Thứ tự còn lại: **M4 → M5 → M6 → M3c → M7**.
 
 | Mốc | Phần việc |
 |---|---|
 | M3a (xong) | Hồ sơ: tách tên đăng nhập cố định/tên hiển thị 2–30 ký tự, giới thiệu 100 ký tự; avatar PNG/JPG ≤2 MB, cắt giữa/96×96 PNG, mảnh ~600 byte/ACK/CRC32, phiên bản/cache có giới hạn, cập nhật realtime; đổi mật khẩu và buộc admin đổi admin123 |
-| M3b | Sticker bằng hình vẽ/PNG (không emoji font), typing, tìm kiếm, thu hồi, trạng thái gửi/gửi lại, ngày/gộp tin, trả lời trích dẫn, sao chép/cuộn có điều kiện; tắt thông báo theo phòng |
+| M3b (xong) | 12 sticker Java2D, thu hồi + sao chép, trạng thái gửi/gửi lại chống trùng, typing giới hạn tần suất |
 | M4 | File UDP tối đa 10 MB cấu hình được, ACK/CRC32/tiến trình/hủy, chống path traversal, tải xuống, xem trước ảnh, chỉ thành viên phòng được tải |
 | M5 | Dashboard đầy đủ bảng user (vai trò/online/phòng/ngày tạo/khóa-cấm, thêm/sửa/xóa/khóa/mở/đặt lại mật khẩu/đổi vai trò), bảng phòng (thành viên/tin/file, CRUD/đóng/mở), kick/mute có hạn/ban/gỡ cấm, broadcast, chống spam, thống kê, nhật ký thao tác, báo cáo CSV BOM + HTML (tổng user, user theo phòng, top chat) |
-| M6 | Sáng/Tối, co giãn, phím tắt, xuất lịch sử một phòng ra .txt, hoàn thiện launch Server/Client 1/2/3 và tài liệu |
+| M6 | Sáng/Tối, co giãn, phím tắt, hoàn thiện launch Server/Client 1/2/3 và tài liệu |
+| M3c (sau M6) | Tìm kiếm, trả lời tin, gộp tin liên tiếp, phân cách ngày, tắt thông báo phòng, xuất lịch sử .txt |
 | M7 | Rà soát toàn bộ, sửa lỗi, chạy lại SelfTest/UiPreview, báo cáo đối chiếu yêu cầu |
 
-Menu tài khoản có **Hồ sơ của tôi / Đổi mật khẩu / Đăng xuất**. Sáng/Tối chưa triển khai nên vẫn ẩn. Nút emoji/+ là vị trí chờ ở ô soạn, hiện vô hiệu. Quản trị thành viên thực hiện ở M5. Discovery tự tìm Server chưa triển khai; hiện nhập IP thủ công.
+Menu tài khoản có **Hồ sơ của tôi / Đổi mật khẩu / Đăng xuất**. Sáng/Tối chưa triển khai nên vẫn ẩn. Nút mặt cười mở bảng sticker; nút + chờ phần file M4, hiện vô hiệu. Quản trị thành viên thực hiện ở M5. Discovery tự tìm Server chưa triển khai; hiện nhập IP thủ công.
 
 ## Chạy bằng VS Code / NetBeans
 
@@ -86,9 +87,9 @@ Cách chạy trực tiếp, không cần FlatLaf vì SelfTest không tạo Swing
 java '-Djava.net.preferIPv4Stack=true' '-Dstdout.encoding=UTF-8' '-Dstderr.encoding=UTF-8' -cp 'target/test-classes;target/classes' com.mycompany.udpmultichat.SelfTest
 ```
 
-Năm file test ở `src/test/java`: SelfTest, PhongSelfTest, GiaoDienSelfTest, DanhTinhSelfTest, HoSoSelfTest. Dữ liệu riêng `.selftest/`, cấu hình Client test cũng tách riêng; không dùng data thật. UDP điều khiển dùng cổng tạm, multicast test dùng gốc 19000/21000/23000/25000/27000/29000. Chạy một phiên SelfTest mỗi lần.
+Sáu file test ở `src/test/java`: SelfTest, PhongSelfTest, GiaoDienSelfTest, DanhTinhSelfTest, HoSoSelfTest, TinNhanSelfTest. Dữ liệu riêng `.selftest/`, cấu hình Client test cũng tách riêng; không dùng data thật. UDP điều khiển dùng cổng tạm, multicast test dùng gốc 19000/21000/23000/25000/27000/29000/31000. Chạy một phiên SelfTest mỗi lần.
 
-Kết quả chạy lại đến M3a trên máy hiện tại: **37 PASS, 0 FAIL**, gồm:
+Kết quả chạy lại đến M3a trên máy hiện tại: **43 PASS, 0 FAIL**, gồm:
 
 - Hồ sơ phát realtime sang Client khác, avatar tải lên/tải về CRC trùng kể cả mất 20% gói; từ chối ảnh giả/quá lớn/sai kích thước, hủy/xóa ảnh, mật khẩu cũ sai/đúng và 6–128 ký tự, buộc đổi admin mặc định, nạp lại hồ sơ/hash và chuyển users.csv cũ 7 cột.
 - Tài khoản, timeout, mất ngẫu nhiên 20% DATA/ACK với seed `20261112/20261113` (thứ tự lập lịch hệ điều hành vẫn có thể khác).
@@ -107,7 +108,7 @@ $mvnChat = 'C:\Program Files\Apache NetBeans\java\maven\bin\mvn.cmd'
 & $mvnChat -q compile exec:java '-Dexec.mainClass=com.mycompany.udpmultichat.ui.UiPreview'
 ```
 
-Xuất **30 PNG** vào [docs/screenshots](docs/screenshots/README.md): đăng nhập/đăng ký/lỗi inline, chat, mất kết nối, toast, menu tài khoản, hộp thoại phòng, Server và giới hạn tin, thông tin phòng, Client bbb vào cuối có Bạn, cửa sổ 960×600, ô soạn 5 dòng và số 111 và năm ảnh lỗi form bổ sung (20–24); sáu ảnh hồ sơ/mật khẩu/avatar (25–30). Công cụ vẽ chính component Swing đang dùng lên BufferedImage với dữ liệu mẫu; không mở socket, không phải ảnh chụp thao tác desktop. Cần môi trường đồ họa để tạo JFrame. Đã xem PNG và chạy kiểm tra component thật: đổi profile vẽ lại đúng Bạn kể cả trùng tên hiển thị, chuyển phòng xóa badge không cần mạng, nút Tạo phòng không cắt chữ, chữ số không có viền RGB do LCD AA; mọi input vẫn đủ cao khi có lỗi, nội dung JTextArea là Font.PLAIN, toast không che ô soạn và nhóm công khai rỗng được ẩn. Đây không thay thế thử tương tác thực tế.
+Xuất **37 PNG** vào [docs/screenshots](docs/screenshots/README.md): đăng nhập/đăng ký/lỗi inline, chat, mất kết nối, toast, menu tài khoản, hộp thoại phòng, Server và giới hạn tin, thông tin phòng, Client bbb vào cuối có Bạn, cửa sổ 960×600, ô soạn 5 dòng và số 111 và năm ảnh lỗi form bổ sung (20–24); sáu ảnh hồ sơ/mật khẩu/avatar (25–30). Công cụ vẽ chính component Swing đang dùng lên BufferedImage với dữ liệu mẫu; không mở socket, không phải ảnh chụp thao tác desktop. Cần môi trường đồ họa để tạo JFrame. Đã xem PNG và chạy kiểm tra component thật: đổi profile vẽ lại đúng Bạn kể cả trùng tên hiển thị, chuyển phòng xóa badge không cần mạng, nút Tạo phòng không cắt chữ, chữ số không có viền RGB do LCD AA; mọi input vẫn đủ cao khi có lỗi, nội dung JTextArea là Font.PLAIN, toast không che ô soạn và nhóm công khai rỗng được ẩn. Đây không thay thế thử tương tác thực tế.
 
 ## Dữ liệu
 
@@ -147,7 +148,7 @@ Chỉ chạy một Server cho mỗi data, từ thư mục project. Token/trạng
 
 ## Cấu trúc và tài liệu chỉ code
 
-35 file Java ứng dụng + 5 file test ở mốc này, mỗi file dưới 400 dòng (dài nhất ClientCore 393 dòng); các hàm được tách dưới khoảng 40 dòng. Comment đầu file ghi Vai trò/Ai gọi/Gọi ai; từng hàm có comment không dấu. Giữ bốn gói common/client/server/ui; UI không có Socket, logic không import Swing (ngoại lệ ServerMain). Quyền phòng gộp trong QuanLyPhong, lưu trữ gộp trong KhoLuuTru, DTO thành viên gộp trong Phong. Dialog tách khỏi DanhSachPhongPanel sang HopThoai để dùng chung và giữ file ngắn. Màu/font/nút/vẽ icon gom vào Theme, Avatar/BongTin còn trong ThanhPhan. Các phần M3–M5 sẽ ưu tiên mở rộng các lớp theo nhiệm vụ hiện có.
+40 file Java ứng dụng + 6 file test ở mốc này, mỗi file dưới 400 dòng (dài nhất ClientCore 399 dòng); các hàm được tách dưới khoảng 40 dòng. Comment đầu file ghi Vai trò/Ai gọi/Gọi ai; từng hàm có comment không dấu. Giữ bốn gói common/client/server/ui; UI không có Socket, logic không import Swing (ngoại lệ ServerMain). Quyền phòng gộp trong QuanLyPhong, lưu trữ gộp trong KhoLuuTru, DTO thành viên gộp trong Phong. Dialog tách khỏi DanhSachPhongPanel sang HopThoai để dùng chung và giữ file ngắn. Màu/font/nút/vẽ icon gom vào Theme, Avatar/BongTin còn trong ThanhPhan. Các phần M3–M5 sẽ ưu tiên mở rộng các lớp theo nhiệm vụ hiện có.
 
 Xem [docs/GIAI_THICH.md](docs/GIAI_THICH.md) để tra bảng chức năng → file → hàm và đối chiếu UDP/Multicast chương 6.
 
@@ -184,7 +185,7 @@ File mới: `common/PhanManh.java`, `client/HoSoClient.java`, `server/QuanLyHoSo
 4. Đổi mật khẩu thường: ba ô không bị nén khi có lỗi, từng nút Hiện hoạt động; đăng xuất, mật khẩu cũ bị từ chối, mật khẩu mới đăng nhập được. Dừng/bật Server, kiểm tra tên/giới thiệu/avatar và mật khẩu admin mới còn.
 5. Xem ảnh 25–30 trong docs/screenshots; thử tiếp soạn nhiều dòng/offline/font từ M2.8. Chạy SelfTest để kiểm tra CRC và mất 20% gói có seed; không mô phỏng mất mạng bằng tắt Wi-Fi khi đang demo phòng chung.
 
-Đã biên dịch Java 21 bằng Maven NetBeans, SelfTest chạy mạng thật trên một máy và UiPreview xuất PNG từ component thật. Chưa kiểm tra thao tác chuột/phím toàn bộ ba cửa sổ trong IDE, nhiều máy LAN hoặc DPI khác. M3b–M7 còn chờ xác nhận.
+Đã biên dịch Java 21 bằng Maven NetBeans, SelfTest chạy mạng thật trên một máy và UiPreview xuất PNG từ component thật. Chưa kiểm tra thao tác chuột/phím toàn bộ ba cửa sổ trong IDE, nhiều máy LAN hoặc DPI khác. M4, M5, M6, M3c và M7 còn chờ xác nhận.
 
 
 ## M3a.1 — sửa lỗi từ ảnh
@@ -194,3 +195,27 @@ Assertion đã tái hiện lỗi `Mô tả` bị gán khóa `ten`: hàm HopThoai
 SoanTinPanel.capNhat chỉ cho thanh cuộn dọc hiện khi vượt 5 dòng kể cả dòng tự ngắt; UiPreview xác nhận ô một dòng không lộ thanh cuộn và thêm ảnh 31-soan-co-thanh-cuon.png. Nút Hiện mật khẩu dùng nút viền; lỗi cũ/mới/nhập lại phân biệt đúng, ẩn gợi ý khi ô mới có lỗi. Hồ sơ vô hiệu Xóa ảnh khi chưa có ảnh, bộ đếm giới thiệu n/100. Login thật trả cùng thông báo “Tên đăng nhập hoặc mật khẩu không đúng.”; thông báo tồn tại chỉ dùng khi đăng ký. Admin mặc định có khung cảnh báo vàng. Tên hiển thị ngoài BMP bị từ chối ở cả Client/Server với thông báo rõ để người dùng sửa, không âm thầm mất ký tự.
 
 File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemTraCuon; ui/SoanTinPanel.capNhat; ui/HoSoDialog.formHoSo/formMatKhau/kiemTra/oGioiThieu; server/QuanLyPhong.kiemTraNoiDung; server/QuanLyNguoiDung.dangNhap/luuHoSo; ui/UiPreview.xuatLoiForm. SelfTest hồi quy 37 PASS; UiPreview 31 PNG. Thao tác thật nhiều máy LAN và DPI khác vẫn cần thử tay.
+
+
+## M3b rút gọn — sticker, thu hồi, trạng thái gửi, đang nhập
+
+- **Sticker:** nút mặt cười mở popup 3 nhóm, mỗi nhóm 4 hình; 12 ảnh Java2D 128×128, hiển thị trong chat 112px, không có nền bong bóng. Hover hiện tên. Lệnh `STK` chỉ chứa mã hình; Server từ chối mã lạ, renderer có dòng “Sticker không hỗ trợ” nếu gặp dữ liệu từ phiên bản khác.
+- **Thu hồi / Sao chép:** chuột phải trực tiếp lên tin. Người gửi có 10 phút; chủ phòng/admin được thu hồi tin khác không hạn thời gian, phải đang ở phòng. Server kiểm tra lại. Tin thu hồi thành chữ xám nghiêng; bỏ nội dung cũ khỏi bản lưu, lịch sử/RESYNC và sidebar. Bản tin cũ đến chậm không làm nội dung xuất hiện lại. Thu hồi không thể xóa bản sao mà người khác đã chép/lưu trước đó.
+- **Trạng thái:** khi gửi xuất hiện một hàng “Đang gửi”; chỉ “Đã gửi” sau khi có RESPONSE đúng msgId và tin multicast quay về. Thiếu xác nhận khoảng 8 giây thành “Lỗi” kèm Gửi lại/Xóa. Khi gửi lại giữ nguyên mã 128-bit do Client tạo; Server dùng room + user + mã để trả lại cùng msgId và phát lại, không lưu thêm tin. Xóa chỉ bỏ hàng lỗi cục bộ, không xóa tin có thể đã tới Server. Khi vào lại phòng, lịch sử đã lưu vẫn có thể xuất hiện.
+- **Đang nhập:** chỉ gửi khi có chữ, tối đa 1 lần/3 giây theo từng phòng ở cả Client/Server; UDP unicast nhanh tới Server rồi multicast đúng nhóm, không ACK/không lịch sử. Tự tắt sau 4 giây, nhiều người hiện “An và 2 người khác đang nhập...”. Mất một sự kiện có thể không hiện dòng này, không ảnh hưởng tin chat.
+- Gói chat/log vẫn giữ 7 trường để nạp lịch sử cũ, trường nội dung mới có phần đánh dấu mã Client/loại. Chat văn bản vẫn 1000 byte, luôn kiểm tra thêm header/escape dưới 1400 byte. Gói `HEAD` thêm revision thu hồi; `RECALLS` trả từng lô tối đa 50 ID đã thu hồi để đồng bộ cả tin cũ không đổi msgId.
+- Tách lịch sử/chống trùng/thu hồi ra `server/QuanLyTinNhan`, tách trạng thái/typing/đồng bộ thu hồi ra `client/TroChuyenClient`, và renderer hàng tin `ui/HangTin`, kho hình `ui/StickerKho`. `ui/FormKiemTra` ở M3a.1 giữ assertions form tách khỏi UiPreview. Tổng tăng từ 35 lên 40 file ứng dụng để giữ ranh giới mạng/Swing và từng file dưới 400 dòng; không thêm thư viện.
+
+Kiểm thử: toàn bộ **43 PASS, 0 FAIL** (37 hồi quy + 6 nhóm M3b). Nhóm mới kiểm tra mã hợp lệ/lạ, cách ly phòng, biên 10 phút, chủ/admin/không có quyền, nội dung trên đĩa đã xóa, HISTORY/RESYNC sau thu hồi, thiếu multicast 8 giây rồi retry không trùng, limiter typing và restart giữ mã/tombstone. UiPreview **37 PNG**, bổ sung 31 thanh cuộn khi quá 5 dòng, 32 picker, 33 sticker/thu hồi/ba trạng thái/typing, 34 menu, 35 cập nhật không trùng và hết typing, 36 sticker không hỗ trợ. Có assertions hàng gửi không trùng, typing tắt sau 4 giây và tin cũ không khôi phục nội dung.
+
+### Thử tay M3b (1 Server + 3 Client)
+
+1. Đóng toàn bộ tiến trình cũ; chạy Server rồi Client 1/2/3, đăng nhập và vào cùng một phòng. Chọn mặt cười, thử cả 3 nhóm sticker; Client khác phải thấy đúng hình/tên/giờ, không có bong bóng nền.
+2. Gửi văn bản, quan sát Đang gửi → Đã gửi. Dừng Server rồi thử gửi trước khi heartbeat khóa soạn: hàng lỗi có Gửi lại/Xóa. Bật lại, chờ dải kết nối phục hồi rồi bấm Gửi lại; Client khác chỉ có một tin. Có thể dùng SelfTest để mô phỏng thiếu multicast chính xác hơn.
+3. Chuột phải tin của mình → Sao chép/Thu hồi; kiểm tra nội dung đổi sang dòng thu hồi ở mọi Client. Thử tài khoản thường thu hồi tin khác (không có menu); chủ/admin trong phòng có quyền. Đăng xuất/vào lại vẫn không lộ nội dung cũ.
+4. A gõ liên tục không gửi: B thấy đang nhập; hai người gõ thì hiện số người còn lại. Dừng gõ hơn 4 giây thì dòng biến mất. Chuyển sang phòng khác không được thấy typing của phòng cũ.
+5. Dừng/bật Server, kiểm tra lịch sử sticker/thu hồi; xem ảnh 31–36 và chạy lại SelfTest. Chức năng M3c chưa có ở menu và không được tính là đã làm.
+
+Lệnh chạy giữ như trên: Maven `-q compile`, `-q test-compile`; SelfTest với `-Dexec.classpathScope=test`, UiPreview bằng main tương ứng. Chưa thử tương tác trực tiếp đầy đủ trong IDE, nhiều máy LAN hay DPI khác. UDP không đảm bảo, multicast cần chung LAN/Windows Firewall; token/mật khẩu chưa mã hóa. Lịch sử và tombstone hiện giữ RAM theo số tin; thu hồi ghi lại file log nên chưa phù hợp lịch sử rất lớn. Cache mã chống trùng nạp từ log; Client giữ tối đa 256 hàng chờ/lỗi, logout dọn. Mã chỉ chống gửi lại trùng, không phải cơ chế xác thực nguồn multicast.
+
+Ảnh [37-kho-sticker-day-du.png](docs/screenshots/37-kho-sticker-day-du.png) cho xem đầy đủ 12 sticker Java2D ở kích thước gốc 128px.

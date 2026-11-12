@@ -70,3 +70,18 @@ Assertion đã tái hiện lỗi `Mô tả` bị gán khóa `ten`: hàm HopThoai
 SoanTinPanel.capNhat chỉ cho thanh cuộn dọc hiện khi vượt 5 dòng kể cả dòng tự ngắt; UiPreview xác nhận ô một dòng không lộ thanh cuộn và thêm ảnh 31-soan-co-thanh-cuon.png. Nút Hiện mật khẩu dùng nút viền; lỗi cũ/mới/nhập lại phân biệt đúng, ẩn gợi ý khi ô mới có lỗi. Hồ sơ vô hiệu Xóa ảnh khi chưa có ảnh, bộ đếm giới thiệu n/100. Login thật trả cùng thông báo “Tên đăng nhập hoặc mật khẩu không đúng.”; thông báo tồn tại chỉ dùng khi đăng ký. Admin mặc định có khung cảnh báo vàng. Tên hiển thị ngoài BMP bị từ chối ở cả Client/Server với thông báo rõ để người dùng sửa, không âm thầm mất ký tự.
 
 File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemTraCuon; ui/SoanTinPanel.capNhat; ui/HoSoDialog.formHoSo/formMatKhau/kiemTra/oGioiThieu; server/QuanLyPhong.kiemTraNoiDung; server/QuanLyNguoiDung.dangNhap/luuHoSo; ui/UiPreview.xuatLoiForm. SelfTest hồi quy 37 PASS; UiPreview 31 PNG. Thao tác thật nhiều máy LAN và DPI khác vẫn cần thử tay.
+
+
+## M3b rút gọn — ảnh mới
+
+| Ảnh | Nội dung |
+|---|---|
+| [32-bang-sticker.png](32-bang-sticker.png) | Popup 3 nhóm, 12 sticker Java2D, không dùng ký tự emoji |
+| [33-chat-sticker-trang-thai.png](33-chat-sticker-trang-thai.png) | Sticker 112px, thu hồi, Đang gửi/Đã gửi/Lỗi, typing nhiều người |
+| [34-menu-tin-nhan.png](34-menu-tin-nhan.png) | Chuột phải tin: Sao chép, Thu hồi |
+| [35-cap-nhat-khong-trung.png](35-cap-nhat-khong-trung.png) | Cập nhật trạng thái cùng mã không thêm hàng, xóa hàng lỗi, typing hết 4 giây |
+| [36-sticker-khong-ho-tro.png](36-sticker-khong-ho-tro.png) | Fallback cho mã sticker lạ từ dữ liệu không tương thích |
+
+UiPreview xuất tổng 37 PNG, kiểm tra đúng số nhãn trạng thái trước/sau cập nhật, typing tự tắt và tombstone chặn tin tới chậm. Ảnh 31 chứng minh thanh cuộn chỉ xuất hiện khi quá 5 dòng. Những ảnh trước được xuất lại bằng renderer mới; màu/font vẫn lấy Theme. Chưa thay thế thử tương tác bằng chuột/phím.
+
+Ảnh [37-kho-sticker-day-du.png](37-kho-sticker-day-du.png) cho xem đầy đủ 12 sticker Java2D ở kích thước gốc 128px.

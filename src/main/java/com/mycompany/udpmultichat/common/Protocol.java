@@ -40,6 +40,13 @@ public final class Protocol {
     public static final String HO_SO="PROFILE_GET", LUU_HO_SO="PROFILE_SAVE", HO_SO_MOI="PROFILE_CHANGED";
     public static final String DOI_MAT_KHAU="PASSWORD_CHANGE", ANH_BAT_DAU="AVATAR_BEGIN", ANH_MANH="AVATAR_PART";
     public static final String ANH_HUY="AVATAR_CANCEL", ANH_DOC="AVATAR_READ";
+    // ===== STICKER, THU HOI, TRANG THAI VA TYPING =====
+    public static final String STICKER="STK", THU_HOI="REVOKE", DA_THU_HOI="REVOKED", DS_THU_HOI="RECALLS", DANG_GO="TYPING";
+    public static final int TYPING_MS=3000, TYPING_HIEN_MS=4000, CHO_TIN_MS=8000;
+    public static final long THU_HOI_MS=10*60*1000L;
+    public static final String[] MA_STICKER={"vui","tim","like","votay","cuoi","nga","buon","gian","ngu","phao","pizza","cafe"};
+    // Kiem tra ma dung chung, Server khong phu thuoc UI hay anh.
+    public static boolean stickerHopLe(String ma) { return java.util.Arrays.asList(MA_STICKER).contains(ma); }
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Protocol() { }
 }

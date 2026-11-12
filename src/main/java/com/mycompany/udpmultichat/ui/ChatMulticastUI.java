@@ -58,6 +58,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private boolean dong,dangGui,online=true;
     private List<Phong> danhSach=List.of();
     private Timer anDai;
+    private final JLabel dangGo=Theme.nhan("",false);
+    private final Map<String,Map<String,NguoiGo>> nguoiGo=new LinkedHashMap<>();
+    private final Timer dongHoGo=new Timer(500,e -> capNhatDangGo());
 
     // Khoi tao lop va noi cac thanh phan can thiet.
     public ChatMulticastUI() {
@@ -68,7 +71,8 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         trai.add(phongPanel,BorderLayout.CENTER); trai.add(theTaiKhoan(),BorderLayout.SOUTH);
         avatar.addActionListener(e -> { JPopupMenu m=menuAvatar(); m.show(avatar,0,-m.getPreferredSize().height); });
         chat.add(trai,BorderLayout.WEST); chat.add(giua,BorderLayout.CENTER); chat.add(thanhVienPanel,BorderLayout.EAST);
-        giua.add(tieuDePhong(),BorderLayout.NORTH); giua.add(noiDungPhong,BorderLayout.CENTER); giua.add(soan,BorderLayout.SOUTH);
+        giua.add(tieuDePhong(),BorderLayout.NORTH); giua.add(noiDungPhong,BorderLayout.CENTER); giua.add(khungSoan(),BorderLayout.SOUTH);
+        soan.datChucNang(this::guiSticker,text -> client.troChuyen().dangGo(phongDangXem,text)); dongHoGo.start();
         JPanel chatVaCanhBao=new JPanel(new BorderLayout()); ketNoi.setOpaque(true); ketNoi.setBorder(Theme.le(Theme.S8)); ketNoi.setVisible(false);
         chatVaCanhBao.add(ketNoi,BorderLayout.NORTH); chatVaCanhBao.add(chat,BorderLayout.CENTER);
         javax.swing.JScrollPane loginCuon=new javax.swing.JScrollPane(dangNhap); loginCuon.setBorder(null); loginCuon.setHorizontalScrollBarPolicy(javax.swing.JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -79,6 +83,36 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         menuPhong.setIcon(Theme.icon("more"));
         menuPhong.addActionListener(e -> { Phong p=phongChon(); if (p!=null) { phongPanel.menu(p).show(menuPhong,0,menuPhong.getHeight()); } });
         addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) { dongCuaSo(); } }); capNhat();
+    }
+    // Dong typing nam ngoai khung nhap, khong day noi dung trong textarea.
+    private JPanel khungSoan() {
+        JPanel p=new JPanel(new BorderLayout()); dangGo.setName("dang-go"); dangGo.setFont(Theme.NHO); dangGo.setForeground(Theme.PHU);
+        dangGo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0,Theme.S16,0,Theme.S16)); dangGo.setVisible(false);
+        p.add(dangGo,BorderLayout.NORTH); p.add(soan); return p;
+    }
+    // Loai nguoi ngung go sau bon giay, khong duoc ghi vao lich su.
+    private void capNhatDangGo() {
+        capNhatDangGo(System.nanoTime());
+    }
+    // Dong ho truyen vao giup UiPreview kiem tra het han ma khong ngu EDT.
+    void capNhatDangGo(long luc) {
+        nguoiGo.values().forEach(ds -> ds.values().removeIf(n -> luc-n.luc()>Protocol.TYPING_HIEN_MS*1000000L));
+        var ds=nguoiGo.getOrDefault(phongDangXem,Map.of()).values().stream().toList();
+        dangGo.setText(ds.isEmpty()?"":ds.get(0).ten()+(ds.size()==1?" đang nhập...":" và "+(ds.size()-1)+" người khác đang nhập..."));
+        dangGo.setVisible(!ds.isEmpty()); giua.revalidate();
+    }
+    // Gui sticker bang ma, khong gui byte anh.
+    private void guiSticker(String ma) {
+        Phong p=phongChon(); if (p!=null && online) { chay(() -> client.troChuyen().gui(p.id,ma,"S"),v -> { },this::loi); }
+    }
+    // Chuot phai tin de thu hoi, gui lai dung ma hoac xoa hang loi cuc bo.
+    private void hanhDongTin(String lenh,TinNhan t) {
+        switch (lenh) {
+            case "Thu hồi": chay(() -> client.troChuyen().thuHoi(t.roomId,t.msgId),v -> { },this::loi); break;
+            case "Gửi lại": chay(() -> client.troChuyen().guiLai(t.roomId,t.maClient),v -> { },this::loi); break;
+            case "Xóa": client.troChuyen().xoaTinLoi(t.roomId,t.maClient); break;
+            default: break;
+        }
     }
     // Tieu de khong lap thanh tab; ma va nut co du cho o cua so toi thieu.
     private JPanel tieuDePhong() {
@@ -151,7 +185,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }
     // Ve dang nhap.
     private void veDangNhap(String lyDo) {
-        toi=null; noiDungPhong.removeAll(); phongDangXem=""; khung.clear(); thanhVien.clear(); chuaDoc.clear(); danhSach=List.of(); phongPanel.xoa();
+        toi=null; noiDungPhong.removeAll(); phongDangXem=""; khung.clear(); nguoiGo.clear(); thanhVien.clear(); chuaDoc.clear(); danhSach=List.of(); phongPanel.xoa();
         cards.show(goc,"login"); toast.datVung(null); dangNhap.ban(false); setTitle("UDP Chat"); ketNoi.setVisible(false); capNhat(); toast(ThongBao.Muc.THONG_TIN,lyDo);
     }
     // Vao phong.
@@ -240,7 +274,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
             var ds=thanhVien.getOrDefault(p.id,List.of()); long on=ds.stream().filter(Phong.ThanhVien::online).count();
             chiTiet.setText("Mã: "+p.maPhong+(p.dangMo?"":" · Đang đóng")); thanhVienNut.setText("Thành viên ("+ds.size()+")");
             chiTiet.setToolTipText(p.nhom+":"+p.cong+" · "+on+" đang online");
-            thanhVienPanel.capNhat(ds,toi==null?"":toi.tenDangNhap,phongPanel.quanLy(p));
+            capNhatDangGo(); thanhVienPanel.capNhat(ds,toi==null?"":toi.tenDangNhap,phongPanel.quanLy(p));
         } else {
             tenPhong.setText("Chọn phòng để trò chuyện"); chiTiet.setText(" "); thanhVienNut.setText("Thành viên (0)");
             thanhVienPanel.capNhat(List.of(),"",false);
@@ -258,13 +292,26 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         nen.execute(() -> client.dangXuat().whenComplete((v,e) -> { client.close(); nen.shutdown(); trenEdt(this::dispose); }));
     }
     // Don tai nguyen UI khi cua so ket thuc.
-    @Override public void dispose() { toast.close(); if (anDai!=null) { anDai.stop(); } nen.shutdown(); super.dispose(); }
+    @Override public void dispose() { dongHoGo.stop(); toast.close(); if (anDai!=null) { anDai.stop(); } nen.shutdown(); super.dispose(); }
     // Tren edt.
     private static void trenEdt(Runnable r) { if (SwingUtilities.isEventDispatchThread()) { r.run(); } else { SwingUtilities.invokeLater(r); } }
 
     // ===== SU KIEN CLIENT: CHI CAP NHAT SWING TREN EDT =====
     // Profile luon vao EDT truoc cac su kien phong do ClientCore phat tiep sau do.
     @Override public void onNguoiDung(NguoiDung n) { trenEdt(() -> ganNguoiDung(n)); }
+    // Core phat trang thai theo ma Client; UI chi ve vao dung khung phong.
+    @Override public void onTrangThaiGui(TinNhan t,String ma,String loi) { trenEdt(() -> {
+        var k=khung.get(t.roomId); if (k!=null) { k.trangThai(t,ma,loi); }
+        if (ma.equals("WAIT") && t.loai.equals("T") && t.roomId.equals(phongDangXem)) { soan.xoaNeuGiong(t.noiDung); }
+    }); }
+    // Thu hoi xoa ca preview sidebar, khong de lo noi dung cu.
+    @Override public void onThuHoi(String room,long id) { trenEdt(() -> { var k=khung.get(room); if (k!=null) { k.thuHoi(id); } phongPanel.thuHoi(room,id); }); }
+    // Moi su kien typing gia han bon giay tren dong ho don dieu.
+    @Override public void onDangGo(String room,String user,String ten) { trenEdt(() -> {
+        if (!khung.containsKey(room)) { return; } nguoiGo.computeIfAbsent(room,k -> new LinkedHashMap<>()).put(user,new NguoiGo(ten,System.nanoTime())); capNhatDangGo();
+    }); }
+    /** Ho so nho chi phuc vu hien thi typing tren EDT. */
+    private record NguoiGo(String ten,long luc) { }
     // Ho so chung phong thay doi; laToi luon dua vao ten dang nhap/id, khong theo ten moi.
     @Override public void onHoSo(NguoiDung n) { trenEdt(() -> {
         if (toi!=null && toi.id.equals(n.id)) { ganNguoiDung(client.nguoiDung()==null?n:client.nguoiDung()); }
@@ -274,14 +321,14 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }); }
     // Tao khung o nen, khong tao tab hien thi.
     @Override public void onVaoPhong(Phong p) { trenEdt(() -> {
-        if (!khung.containsKey(p.id)) { KhungChatPanel k=new KhungChatPanel(p); k.datHoSo(client.hoSo()::anh,client.hoSo()::lay); khung.put(p.id,k); noiDungPhong.add(k,p.id); }
+        if (!khung.containsKey(p.id)) { KhungChatPanel k=new KhungChatPanel(p); k.datHoSo(client.hoSo()::anh,client.hoSo()::lay); k.datHanhDong(() -> phongPanel.quanLy(k.phong()),this::hanhDongTin); khung.put(p.id,k); noiDungPhong.add(k,p.id); }
         if (phongDangXem.isEmpty()) { chonPhong(p.id); }
         phongPanel.capNhat(danhSach);
     }); }
     // Roi phong dong rieng khung do va chuyen ve Sanh neu con.
     @Override public void onRoiPhong(String id,String lyDo) { trenEdt(() -> {
         KhungChatPanel k=khung.remove(id); if (k!=null) { noiDungPhong.remove(k); }
-        thanhVien.remove(id); chuaDoc.remove(id);
+        thanhVien.remove(id); nguoiGo.remove(id); chuaDoc.remove(id);
         if (phongDangXem.equals(id)) { phongDangXem=""; chonPhong(Protocol.SANH_ID); }
         capNhatPhongDangXem(); if (toi!=null) { toast(ThongBao.Muc.THONG_TIN,lyDo); }
     }); }
@@ -294,9 +341,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     @Override public void onTinNhan(TinNhan t,boolean laToi) { onTinNhan(t,laToi,false); }
     // laToi do Core so ID bat bien tu tai khoan xac thuc, khong so ten hien thi.
     @Override public void onTinNhan(TinNhan t,boolean laToi,boolean lichSu) { trenEdt(() -> {
-        KhungChatPanel k=khung.get(t.roomId); if (k==null) { return; } if (client.nguoiDung()!=null) { client.hoSo().gap(t.userId); } k.themTin(t,laToi);
+        KhungChatPanel k=khung.get(t.roomId); if (k==null) { return; } if (client.nguoiDung()!=null) { client.hoSo().gap(t.userId); } TinNhan hien=k.locTin(t); k.themTin(hien,laToi);
         if (!lichSu && !laToi && !phongDangXem.equals(t.roomId)) { chuaDoc.merge(t.roomId,1,Integer::sum); }
-        phongPanel.tinCuoi(t);
+        phongPanel.tinCuoi(hien);
     }); }
     // Moi snapshot deu ve lai nhan Ban theo ten dang nhap hien tai.
     @Override public void onThanhVienChiTiet(String id,List<Phong.ThanhVien> ds) { trenEdt(() -> {

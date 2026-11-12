@@ -4,9 +4,6 @@ import com.mycompany.udpmultichat.common.model.Phong;
 import com.mycompany.udpmultichat.common.model.TinNhan;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -17,21 +14,22 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial")
 final class KhungChatPanel extends JPanel {
     // ===== VAI TRO VA CAC THAO TAC =====
-    private static final DateTimeFormatter GIO=DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
     private final JPanel ds=new JPanel(); private final JScrollPane cuon;
     private Phong phong;
     private java.util.function.Function<String,java.awt.image.BufferedImage> anh=id -> null;
     private java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo=id -> null;
-    private final java.util.Map<String,java.util.List<ThanhPhan.BongTin>> bong=new java.util.HashMap<>();
-    private final java.util.Map<String,java.util.List<ThanhPhan.Avatar>> avatar=new java.util.HashMap<>();
+    private final java.util.Map<Long,HangTin> theoId=new java.util.LinkedHashMap<>();
+    private final java.util.Map<String,HangTin> theoMa=new java.util.LinkedHashMap<>();
+    private final java.util.Set<Long> thuHoi=new java.util.HashSet<>();
+    private java.util.function.BooleanSupplier quanLy=() -> false;
+    private java.util.function.BiConsumer<String,TinNhan> hanhDong=(l,t) -> { };
     // Cache duoc doc truc tiep tren EDT, khong chan mang.
-    void datHoSo(java.util.function.Function<String,java.awt.image.BufferedImage> anh,java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo) {
-        this.anh=anh; this.hoSo=hoSo;
-    }
-    // Ve lai ten va avatar, giu nguyen thu tu tin va vi tri cuon.
+    void datHoSo(java.util.function.Function<String,java.awt.image.BufferedImage> anh,java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo) { this.anh=anh; this.hoSo=hoSo; }
+    // Quyen cua phong duoc doc lai moi khi menu mo.
+    void datHanhDong(java.util.function.BooleanSupplier quanLy,java.util.function.BiConsumer<String,TinNhan> hanhDong) { this.quanLy=quanLy; this.hanhDong=hanhDong; }
+    // Ve lai ten va avatar, giu nguyen vi tri cuon.
     void hoSoMoi(com.mycompany.udpmultichat.common.model.NguoiDung n) {
-        bong.getOrDefault(n.id,java.util.List.of()).forEach(b -> b.tenMoi(n.tenHienThi));
-        avatar.getOrDefault(n.id,java.util.List.of()).forEach(a -> a.tenMoi(n.tenHienThi)); ds.revalidate(); ds.repaint();
+        for (var c:ds.getComponents()) { if (c instanceof HangTin h && h.tin().userId.equals(n.id)) { h.veLai(); } }
     }
     // Khoi tao lop va noi cac thanh phan can thiet.
     KhungChatPanel(Phong phong) {
@@ -43,16 +41,40 @@ final class KhungChatPanel extends JPanel {
     Phong phong() { return phong; }
     // Cap nhat.
     void capNhat(Phong p) { phong=p; }
-    // Them tin.
+    // Ma Client chi duy nhat trong pham vi nguoi gui; nguoi khac cung ma khong ghi de hang.
+    private static String khoa(TinNhan t) { return t.userId+":"+t.maClient; }
+    // Loc lai tren EDT vi callback tin va thu hoi co the den khac luong.
+    TinNhan locTin(TinNhan t) { return thuHoi.contains(t.msgId)?t.daThuHoi():t; }
+    // Tin Server cung ma Client thay dong dang gui, khong hien hai lan.
     void themTin(TinNhan t,boolean toi) {
-        JPanel hang=new JPanel(new FlowLayout(toi?FlowLayout.RIGHT:FlowLayout.LEFT,Theme.S16,Theme.S8)); hang.setOpaque(false);
-        var n=hoSo.apply(t.userId); String ten=n==null?t.ten:n.tenHienThi;
-        if (!toi) {
-            ThanhPhan.Avatar a=new ThanhPhan.Avatar(ten,null,() -> anh.apply(t.userId));
-            avatar.computeIfAbsent(t.userId,id -> new java.util.ArrayList<>()).add(a); hang.add(a);
+        if (thuHoi.contains(t.msgId)) { t=t.daThuHoi(); }
+        HangTin cu=theoId.get(t.msgId);
+        if (cu==null && !t.maClient.isEmpty()) { cu=theoMa.get(khoa(t)); }
+        if (cu!=null) { cu.capNhat(t); theoId.put(t.msgId,cu); return; }
+        HangTin h=taoHang(t,toi); if (toi) { h.trangThai("SENT",""); } theoId.put(t.msgId,h); if (!t.maClient.isEmpty()) { theoMa.put(khoa(t),h); } them(h);
+    }
+    // Tao hang, ten hien thi lay snapshot moi nhat theo id bat bien.
+    private HangTin taoHang(TinNhan t,boolean toi) {
+        return new HangTin(t,toi,() -> anh.apply(t.userId),() -> {
+            var n=hoSo.apply(t.userId); return n==null?t.ten:n.tenHienThi;
+        },quanLy,lenh -> {
+            HangTin h=theoMa.get(khoa(t)); if (h==null) { h=theoId.get(t.msgId); }
+            hanhDong.accept(lenh,h==null?t:h.tin());
+        });
+    }
+    // Trang thai ma Client la khoa; local id=0 khong dua vao map msgId.
+    void trangThai(TinNhan t,String ma,String loi) {
+        HangTin h=theoMa.get(khoa(t));
+        if (ma.equals("REMOVE")) {
+            if (h!=null) { ds.remove(h); theoMa.remove(khoa(t)); HangTin xoa=h; theoId.values().removeIf(v -> v==xoa); ds.revalidate(); ds.repaint(); } return;
         }
-        ThanhPhan.BongTin b=new ThanhPhan.BongTin(ten,t.noiDung,GIO.format(Instant.ofEpochMilli(t.thoiGian)),toi);
-        bong.computeIfAbsent(t.userId,id -> new java.util.ArrayList<>()).add(b); hang.add(b); them(hang);
+        if (h==null) { h=taoHang(t,true); theoMa.put(khoa(t),h); them(h); }
+        if (t.msgId>0) { if (thuHoi.contains(t.msgId)) { t=t.daThuHoi(); } h.capNhat(t); theoId.put(t.msgId,h); }
+        h.trangThai(ma,loi);
+    }
+    // Tombstone den truoc ban tin van chan noi dung cu den cham.
+    void thuHoi(long id) {
+        thuHoi.add(id); HangTin h=theoId.get(id); if (h!=null) { h.capNhat(h.tin().daThuHoi()); }
     }
     // He thong.
     void heThong(String text) {

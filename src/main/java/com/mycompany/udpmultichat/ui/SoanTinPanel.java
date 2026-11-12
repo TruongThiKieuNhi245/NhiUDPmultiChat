@@ -30,6 +30,10 @@ final class SoanTinPanel extends JPanel {
             if (getText().isEmpty()) { g.setColor(Theme.PHU); g.setFont(Theme.FONT); g.drawString("Nhập tin nhắn…",4,20); }
         }
     };
+    private java.util.function.Consumer<String> chonSticker=ma -> { },dangGo=t -> { };
+    private final JButton sticker=Theme.nutNhe("","smile");
+    // Gan thao tac sau khi cua so chinh da tao xong Client.
+    void datChucNang(Consumer<String> sticker,Consumer<String> dangGo) { chonSticker=sticker; this.dangGo=dangGo; capNhat(); }
     private final JButton gui=Theme.nutGui();
     private final JLabel dem=Theme.nhan("",false);
     private final JTextArea loi=new JTextArea();
@@ -60,17 +64,18 @@ final class SoanTinPanel extends JPanel {
     // Nut emoji va dinh kem nhe, can day; chua co chuc nang thi an.
     private JPanel nutDinhKem() {
         JPanel nut=new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT,0,0)); nut.setOpaque(false);
-        JButton emoji=Theme.nutNhe("","smile"),file=Theme.nutNhe("","plus");
-        emoji.setToolTipText("Emoji và sticker"); file.setToolTipText("Đính kèm"); emoji.setEnabled(false); file.setEnabled(false);
+        JButton emoji=sticker,file=Theme.nutNhe("","plus");
+        emoji.setToolTipText("Emoji và sticker"); file.setToolTipText("Đính kèm"); file.setEnabled(false);
+        emoji.addActionListener(e -> { var m=StickerKho.bangChon(chonSticker); m.show(emoji,0,-m.getPreferredSize().height); });
         nut.add(emoji); nut.add(file); JPanel boc=new JPanel(new BorderLayout()); boc.setOpaque(false); boc.add(nut,BorderLayout.SOUTH); return boc;
     }
     // Thay noi dung xoa loi cu; tinh lai khi be rong o soan thay doi.
     private void theoDoiNhap() {
         o.getDocument().addDocumentListener(new DocumentListener() {
             // Cap nhat khi them noi dung vao o nhap.
-            public void insertUpdate(DocumentEvent e) { loiGui=""; capNhat(); }
+            public void insertUpdate(DocumentEvent e) { loiGui=""; capNhat(); dangGo.accept(o.getText()); }
             // Cap nhat khi xoa noi dung khoi o nhap.
-            public void removeUpdate(DocumentEvent e) { loiGui=""; capNhat(); }
+            public void removeUpdate(DocumentEvent e) { loiGui=""; capNhat(); dangGo.accept(o.getText()); }
             // Cap nhat khi dinh dang van ban thay doi.
             public void changedUpdate(DocumentEvent e) { capNhat(); }
         });
@@ -119,6 +124,7 @@ final class SoanTinPanel extends JPanel {
         dem.setText(kyTu+"/"+toiDa); dem.setVisible(bytes>=Protocol.TIN_TOI_DA*4/5);
         dem.setForeground(qua?Theme.LOI:Theme.PHU); String thongBao=qua?Protocol.LOI_TIN_DAI:loiGui;
         loi.setText(thongBao); loi.setVisible(!thongBao.isBlank()); loi.setRows(thongBao.isBlank()?0:2);
+        sticker.setEnabled(choPhep);
         gui.setEnabled(choPhep && !dangGui && !text.isBlank() && !qua); o.setEnabled(choPhep && !dangGui);
         java.awt.Color nen=choPhep?Theme.THE:Theme.NEN_KHOA;
         vien.setBackground(nen); o.setBackground(nen); cuon.getViewport().setBackground(nen);

@@ -9,10 +9,8 @@ import com.mycompany.udpmultichat.common.model.TinNhan;
 import com.mycompany.udpmultichat.common.model.VaiTro;
 import com.mycompany.udpmultichat.server.QuanLyNguoiDung.Phien;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -24,14 +22,14 @@ public final class QuanLyPhong {
     private final KhoLuuTru kho;
     private final Supplier<List<Phien>> cacPhien;
     private final Map<String, NoiBo> phong = new LinkedHashMap<>();
-    private final Map<String, List<TinNhan>> lichSu = new LinkedHashMap<>();
+    private final QuanLyTinNhan tinNhan;
     private final SecureRandom ngauNhien = new SecureRandom();
     private final int congGoc;
     private final java.util.Properties thanhVien;
 
     // Khoi tao lop va noi cac thanh phan can thiet.
     public QuanLyPhong(KhoLuuTru kho, Supplier<List<Phien>> cacPhien) throws IOException {
-        this.kho=kho; this.cacPhien=cacPhien; thanhVien=kho.docThanhVien();
+        this.kho=kho; tinNhan=new QuanLyTinNhan(kho); this.cacPhien=cacPhien; thanhVien=kho.docThanhVien();
         try {
             congGoc=Integer.parseInt(kho.cauHinh("multicast.portBase"));
             if (congGoc<1024 || congGoc>65000) { throw new IllegalArgumentException(); }
@@ -61,7 +59,7 @@ public final class QuanLyPhong {
         Phong sanh=lay(Protocol.SANH_ID);
         if (!sanh.congKhai || !sanh.dangMo || sanh.coMatKhau) { throw new IOException("Sảnh chung phải công khai và luôn mở"); }
         for (String id : phong.keySet()) {
-            lichSu.put(id,kho.docTin(id));
+            tinNhan.nap(id);
             String chu=phong.get(id).phong.chuId;
             if (!Protocol.SANH_ID.equals(id) && !laThanhVien(chu,id)) { ghiThanhVien(chu,id,true); }
         }
@@ -115,7 +113,7 @@ public final class QuanLyPhong {
         Phong moi=new Phong(BaoMat.ngauNhien(12),ten.strip(),moTa.strip(),taoMa(),p.nguoi.id,
                 "239.255.42."+so,congGoc+so,gioiHan,congKhai,!matKhau.isEmpty(),true,0,Instant.now().toString());
         luuThayDoi(moi.id,new NoiBo(moi,salt,matKhau.isEmpty()?"":BaoMat.bam(salt,matKhau)));
-        lichSu.put(moi.id,new ArrayList<>());
+        tinNhan.tao(moi.id);
         ghiThanhVien(p.nguoi.id,moi.id,true);
         return moi;
     }
@@ -154,7 +152,7 @@ public final class QuanLyPhong {
     public void xoa(Phien p,String id) throws IOException {
         Phong cu=lay(id); kiemTraQuyen(p,cu);
         if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Không được xóa Sảnh chung"); }
-        luuThayDoi(id,null); lichSu.remove(id);
+        luuThayDoi(id,null); tinNhan.xoa(id);
         // Giu file log cu de khong mat du lieu; id phong moi khong tai su dung.
     }
 
@@ -240,30 +238,23 @@ public final class QuanLyPhong {
     }
 
     // ===== LICH SU VA MSG ID THEO PHONG =====
-    public long mocTin(String id) { lay(id); return lichSu.get(id).size(); }
-    // Tong tin.
-    public long tongTin() { return lichSu.values().stream().mapToLong(List::size).sum(); }
-    // Tong phong hien co, gom Sanh chung, de cua so Server giam sat.
+    public QuanLyTinNhan tinNhan() { return tinNhan; }
+    // Moc tin de heartbeat phat hien mat goi cuoi.
+    public long mocTin(String id) { lay(id); return tinNhan.moc(id); }
+    // Tong tin gom ca tin thu hoi.
+    public long tongTin() { return tinNhan.tong(); }
+    // Tong phong hien co.
     public int tongPhong() { return phong.size(); }
-
-    // Them tin.
-    public TinNhan themTin(Phien p,String id,String noiDung) throws IOException {
-        kiemTraThanhVien(p,id); Phong r=lay(id);
-        if (!r.dangMo) { throw new IllegalArgumentException("Phòng đang đóng, chưa thể gửi tin"); }
-        TinNhan tin=new TinNhan(mocTin(id)+1,id,p.nguoi.id,p.nguoi.tenHienThi,noiDung,System.currentTimeMillis());
-        // Tin phai vua ca goi gui bu (them envelope va ma dong bo).
-        Goi.kiemTraTin(tin);
-        kho.ghiTin(tin); lichSu.get(id).add(tin);
-        return tin;
+    // API cu cho test va tin van ban khong co ma gui lai.
+    public TinNhan themTin(Phien p,String id,String nd) throws IOException { return themTin(p,id,nd,"","T"); }
+    // Kiem tra quyen/phong truoc khi loai trung va luu tin.
+    public TinNhan themTin(Phien p,String id,String nd,String ma,String loai) throws IOException {
+        kiemTraThanhVien(p,id);
+        if (!lay(id).dangMo) { throw new IllegalArgumentException("Phòng đang đóng, chưa thể gửi tin"); }
+        return tinNhan.them(p,id,nd,ma,loai);
     }
-
-    // Lay tin.
-    public List<TinNhan> layTin(String id,boolean ganNhat,long sauId) {
-        List<TinNhan> ds=lichSu.get(id); lay(id);
-        int batDau=ganNhat?Math.max(0,ds.size()-50):(int)Math.min(Math.max(0,sauId),ds.size());
-        int ketThuc=ganNhat?ds.size():Math.min(ds.size(),batDau+50);
-        return List.copyOf(ds.subList(batDau,ketThuc));
-    }
+    // Lay lich su 50 tin hoac lo dong bo tiep theo.
+    public List<TinNhan> layTin(String id,boolean ganNhat,long sauId) { lay(id); return tinNhan.lay(id,ganNhat,sauId); }
 
     // ===== GHI AN TOAN VA KIEM TRA DAU VAO =====
     private void luuThayDoi(String id,NoiBo moi) throws IOException {

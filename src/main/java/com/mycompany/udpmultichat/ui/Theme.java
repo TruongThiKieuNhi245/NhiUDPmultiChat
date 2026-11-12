@@ -22,6 +22,7 @@ public final class Theme {
     public static final Color THANH_CONG=new Color(0x217347),LOI=new Color(0xBC303A),CANH_BAO=new Color(0x8A5B00),THONG_TIN=new Color(0x245FB3);
     public static final Color NEN_XANH=new Color(0xEDF8F0),NEN_DO=new Color(0xFFF0F1),NEN_VANG=new Color(0xFFF6DC),NEN_TIN=new Color(0xEDF4FF);
     public static final Color OFFLINE=new Color(0x777F8D),AVATAR=new Color(0x4261B9);
+    public static final Color STICKER_VANG=new Color(0xFFD45C),STICKER_DA=new Color(0xF3BB8A),STICKER_DO=new Color(0xEF6575),STICKER_XANH=new Color(0x55A9E6);
     public static final Color NEN_KHOA=new Color(0xECEEF2);
     public static final Font FONT=new Font("Segoe UI",Font.PLAIN,14),DAM=FONT.deriveFont(Font.BOLD),NHO=FONT.deriveFont(12f);
     public static final Font DON_CACH=new Font(tenFontLog(),Font.PLAIN,13);
@@ -127,6 +128,7 @@ public final class Theme {
         switch(loai) {
             case "more": a.fillOval(8,3,3,3); a.fillOval(8,8,3,3); a.fillOval(8,13,3,3); break;
             case "lock": a.drawRoundRect(4,8,11,8,2,2); a.drawArc(6,2,7,10,0,180); break;
+            case "warning": a.drawPolygon(new int[]{9,1,17},new int[]{1,16,16},3); a.drawLine(9,6,9,10); a.fillOval(8,12,2,2); break;
             case "smile": a.drawOval(2,2,14,14); a.fillOval(6,6,2,2); a.fillOval(11,6,2,2); a.drawArc(6,8,7,5,180,180); break;
             case "ok": a.drawPolyline(new int[]{3,7,15},new int[]{9,13,4},3); break;
             case "down": a.drawPolyline(new int[]{4,9,14},new int[]{6,11,6},3); break;

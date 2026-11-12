@@ -67,6 +67,19 @@ final class FormKiemTra {
             if (c instanceof Container n) { kiemTraCuon(n); }
         }
     }
+    // Tin den cham khong duoc khoi phuc noi dung tren EDT sau thu hoi.
+    static void kiemTraThuHoi(Phong p) {
+        var k=new KhungChatPanel(p); var t=new com.mycompany.udpmultichat.common.model.TinNhan(1,p.id,"a","An","Bí mật",1);
+        k.thuHoi(1); k.themTin(t,false);
+        can(k.locTin(t).thuHoi && k.locTin(t).noiDung.isEmpty(),"Tin cu song lai sau thu hoi");
+        String ma="x".repeat(22); k.themTin(new com.mycompany.udpmultichat.common.model.TinNhan(2,p.id,"a","An","A",1,ma,"T"),false);
+        k.themTin(new com.mycompany.udpmultichat.common.model.TinNhan(3,p.id,"b","Bình","B",1,ma,"T"),false);
+        can(soHang(k)==3,"Hai nguoi dung cung ma Client lam ghi de hang tin");
+    }
+    // Dem hang tin tren component that, khong duyet qua field bang reflection.
+    private static int soHang(Container cha) {
+        int so=0; for (var c:cha.getComponents()) { if (c instanceof HangTin) { so++; } else if (c instanceof Container n) { so+=soHang(n); } } return so;
+    }
     // Assertion luon bat ke ca khi JVM khong co -ea.
     private static void can(boolean dung,String loi) { if (!dung) { throw new AssertionError(loi); } }
 }

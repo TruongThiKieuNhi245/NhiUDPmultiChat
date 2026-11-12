@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 /** Vai tro: API client khong Swing: unicast dieu khien, kenh va dong bo rieng cho tung phong. Ai goi: ChatMulticastUI, SelfTest. Goi: ReliableUdp, KenhPhong, DongBoTinNhan, Listener. */
 public final class ClientCore implements AutoCloseable {
     private final Listener listener;
+    private final TroChuyenClient troChuyen;
     private final HoSoClient hoSo=new HoSoClient(this,this::phatHoSo);
     private double matGoi;
     private long seed;
@@ -55,16 +56,23 @@ public final class ClientCore implements AutoCloseable {
     public ClientCore(Listener listener,boolean tuDongPing) { this(listener,tuDongPing,tin -> true); }
     // Bo loc chi de SelfTest chu dong lam mat goi multicast; ban thuong giu moi goi.
     public ClientCore(Listener listener,boolean tuDongPing,Predicate<TinNhan> giuMulticast) {
-        this.listener=listener; this.tuDongPing=tuDongPing; this.giuMulticast=giuMulticast;
+        this.listener=listener; troChuyen=new TroChuyenClient(this,listener); this.tuDongPing=tuDongPing; this.giuMulticast=giuMulticast;
     }
 
+    // Chuc nang tin moi tach khoi Core de file de trinh bay.
+    public TroChuyenClient troChuyen() { return troChuyen; }
+    // Datagram nhanh di cung socket Client, khong ACK va khong tao them luong.
+    void guiTyping(String room) {
+        try { ReliableUdp u=udp; if (u!=null && sanSang()) { u.guiNhanh(server,Goi.ghep(Protocol.DANG_GO,token,room)); } }
+        catch (IOException | RuntimeException e) { /* Typing duoc phep mat goi. */ }
+    }
     // Mo phong mac dinh sau khi da doi mat khau bat buoc.
     public CompletableFuture<Phong> vaoSanh() { return vaoPhong(Protocol.SANH_ID,""); }
     // API ho so tach rieng de ClientCore khong chua xu ly anh.
     public HoSoClient hoSo() { return hoSo; }
     // SelfTest dat mat goi truoc khi ket noi, seed giu ket qua tai lap.
     public void moPhongMatGoi(double tiLe,long hat) { if (udp!=null) { throw new IllegalStateException("Đã kết nối"); } matGoi=tiLe; seed=hat; }
-    // Goi da xac thuc dung chung cho ho so va avatar.
+    // Goi da xac thuc dung chung cho ho so, avatar va chuc nang tin.
     CompletableFuture<String[]> yeuCauHoSo(String lenh,String... p) { return yeuCau(lenh,Goi.noi(new String[]{token},p)); }
     // Doi mat khau phien trong RAM de heartbeat ket noi lai dung hash moi.
     public CompletableFuture<NguoiDung> doiMatKhau(String cu,String moi) {
@@ -153,11 +161,12 @@ public final class ClientCore implements AutoCloseable {
         if (daVao.containsKey(p.id)) { return CompletableFuture.completedFuture(p); }
         try {
             DongBoTinNhan dongBo=new DongBoTinNhan(p.id,(tin,lichSu) -> listener.onTinNhan(
-                    tin,toi!=null && tin.userId.equals(toi.id),lichSu));
+                    troChuyen.loc(tin),toi!=null && tin.userId.equals(toi.id),lichSu));
             cacDongBo.put(p.id,dongBo); daVao.put(p.id,p);
             KenhPhong kenh=new KenhPhong(p.id,p.nhom,p.cong,tin -> {
-                if (giuMulticast.test(tin) && dongBo.nhan(tin) && daSanSang.contains(p.id)) { hoiDongBo(p.id); }
+                if (giuMulticast.test(tin)) { troChuyen.nhanMulticast(tin); if (dongBo.nhan(tin) && daSanSang.contains(p.id)) { hoiDongBo(p.id); } }
             },noiDung -> listener.onHeThong(p.id,noiDung),listener::onLoi);
+            kenh.suKien(g -> troChuyen.nhanTyping(p.id,g[2],g[3]));
             cacKenh.put(p.id,kenh); listener.onVaoPhong(p);
             return yeuCau(Protocol.SAN_SANG,token,p.id).thenCompose(v -> {
                         daSanSang.add(p.id); return dongBoPhong(p.id);
@@ -191,11 +200,7 @@ public final class ClientCore implements AutoCloseable {
     }
     // Gui tin.
     public CompletableFuture<Void> guiTin(String id,String noiDung) {
-        if (thuLai) { return CompletableFuture.failedFuture(new IOException("Đang khôi phục kết nối, chưa thể gửi")); }
-        if (!daVao.containsKey(id)) { return CompletableFuture.failedFuture(new IOException("Bạn chưa vào phòng")); }
-        try { Goi.kiemTraTin(new TinNhan(Long.MAX_VALUE,id,toi.id,toi.tenHienThi,noiDung.strip(),Long.MAX_VALUE)); }
-        catch (IllegalArgumentException e) { return CompletableFuture.failedFuture(e); }
-        return yeuCau(Protocol.GUI_TIN,token,id,noiDung.trim()).thenApply(p -> null);
+        return troChuyen.gui(id,noiDung,"T");
     }
     // Ham cu duoc giu cho SelfTest va truong hop chi chat Sanh chung.
     public CompletableFuture<Void> guiTin(String noiDung) { return guiTin(Protocol.SANH_ID,noiDung); }
@@ -211,7 +216,7 @@ public final class ClientCore implements AutoCloseable {
                     .whenComplete((p,e) -> { if (e!=null) { db.huy(ma,e); } });
             ketQua.whenComplete((v,e) -> { if (e==null && db.canDongBo()) { hoiDongBo(id); } });
         }
-        return ketQua;
+        return ketQua.thenCompose(v -> troChuyen.dongBoThuHoi(id));
     }
     // Hoi dong bo.
     private void hoiDongBo(String id) {
@@ -226,7 +231,7 @@ public final class ClientCore implements AutoCloseable {
         Phong cu=daVao.remove(id);
         KenhPhong kenh=cacKenh.remove(id); if (kenh!=null) { kenh.close(); }
         DongBoTinNhan db=cacDongBo.remove(id); if (db!=null) { db.close(); }
-        cacThanhVien.remove(id);
+        cacThanhVien.remove(id); troChuyen.roiPhong(id);
         if (cu!=null) { listener.onRoiPhong(id,lyDo); }
     }
 
@@ -256,6 +261,7 @@ public final class ClientCore implements AutoCloseable {
                     else { cho.completeExceptionally(new IOException(p[3])); }
                 }
                 break;
+            case Protocol.DA_THU_HOI: if (p.length==3 && daVao.containsKey(p[1])) { troChuyen.thuHoiMoi(p[1],Long.parseLong(p[2])); } break;
             case Protocol.HO_SO_MOI: if (p.length==1+NguoiDung.SO_TRUONG && toi!=null) { nhanHoSo(NguoiDung.tuTruong(p,1)); } break;
             case Protocol.DANH_SACH_PHONG: nhanDanhSach(p); break;
             case Protocol.ONLINE: if (p.length==10) { nhanThanhVien(p); } break;
@@ -270,7 +276,7 @@ public final class ClientCore implements AutoCloseable {
                 DongBoTinNhan db=cacDongBo.get(p[1]); if (p.length==7 && db!=null) { db.nhanKetThuc(p); } break;
             case Protocol.MOC_TIN:
                 DongBoTinNhan dongBo=cacDongBo.get(p[1]);
-                if (p.length==3 && dongBo!=null && dongBo.nhanMoc(Long.parseLong(p[2])) && daSanSang.contains(p[1])) { hoiDongBo(p[1]); }
+                if (p.length==4 && dongBo!=null) { troChuyen.nhanRevision(p[1],Long.parseLong(p[3])); if (dongBo.nhanMoc(Long.parseLong(p[2])) && daSanSang.contains(p[1])) { hoiDongBo(p[1]); } }
                 break;
             case Protocol.HET_PHIEN: if (p.length==2) { matKetNoi(p[1]); } break;
             default: break;
@@ -383,7 +389,7 @@ public final class ClientCore implements AutoCloseable {
         for (String id : List.copyOf(daVao.keySet())) { dongKenh(id,"Đã đóng kết nối."); }
         if (kenhCu!=null) { kenhCu.close(); }
         dangCho.values().forEach(f -> f.completeExceptionally(new IOException("Kết nối đã đóng")));
-        dangCho.clear(); cacThanhVien.clear(); hoSo.xoa();
+        dangCho.clear(); cacThanhVien.clear(); hoSo.xoa(); troChuyen.xoa();
     }
     /** Bo dem ghep danh sach thanh vien rieng tung phong. */
     private static final class BangTen {
