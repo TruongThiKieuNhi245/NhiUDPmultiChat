@@ -1,10 +1,12 @@
 package com.mycompany.udpmultichat.common.model;
 
-/** Ban sao ho so cong khai, khong chua salt, hash hay token. */
+/** Vai tro: Ban sao ho so cong khai, khong chua salt, hash hay token. Ai goi: ClientCore, QuanLyNguoiDung, ui. Goi: VaiTro. */
 public final class NguoiDung {
+    // ===== VAI TRO VA CAC THAO TAC =====
     public final String id, tenDangNhap, tenHienThi, ngayTao;
     public final VaiTro vaiTro;
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public NguoiDung(String id, String tenDangNhap, String tenHienThi, VaiTro vaiTro, String ngayTao) {
         this.id = id;
         this.tenDangNhap = tenDangNhap;

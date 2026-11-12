@@ -19,7 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/** CRUD, quyen chu phong, dat cho vao phong va lich su; duoc ServerCore goi tuan tu. */
+/** Vai tro: CRUD, quyen chu phong, dat cho vao phong va lich su; duoc ServerCore goi tuan tu. Ai goi: ServerCore. Goi: KhoLuuTru, BaoMat, Goi, Phong. */
 public final class QuanLyPhong {
     private final KhoLuuTru kho;
     private final Supplier<List<Phien>> cacPhien;
@@ -29,6 +29,7 @@ public final class QuanLyPhong {
     private final int congGoc;
     private final java.util.Properties thanhVien;
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public QuanLyPhong(KhoLuuTru kho, Supplier<List<Phien>> cacPhien) throws IOException {
         this.kho=kho; this.cacPhien=cacPhien; thanhVien=kho.docThanhVien();
         try {
@@ -73,23 +74,28 @@ public final class QuanLyPhong {
         return n.phong.voiSoThanhVien(thanhVien(id).size());
     }
 
+    // Danh sach cho.
     public List<Phong> danhSachCho(Phien p) {
         return phong.values().stream().map(n -> lay(n.phong.id)).filter(r -> r.congKhai
                 || duocQuanLy(p.nguoi,r) || laThanhVien(p.nguoi.id,r.id)).toList();
     }
 
+    // Thanh vien.
     public List<Phien> thanhVien(String id) {
         return cacPhien.get().stream().filter(p -> p.sanSang && p.phong.contains(id)).toList();
     }
 
+    // Duoc quan ly.
     public static boolean duocQuanLy(NguoiDung nguoi, Phong p) {
         return nguoi.vaiTro==VaiTro.ADMIN || nguoi.id.equals(p.chuId);
     }
 
+    // Kiem tra quyen.
     private void kiemTraQuyen(Phien p, Phong r) {
         if (!duocQuanLy(p.nguoi,r)) { throw new IllegalArgumentException("Chỉ chủ phòng hoặc admin được quản lý phòng"); }
     }
 
+    // Kiem tra thanh vien.
     public void kiemTraThanhVien(Phien p, String id) {
         lay(id);
         if (!p.phong.contains(id)) { throw new IllegalArgumentException("Bạn chưa vào phòng này"); }
@@ -134,6 +140,7 @@ public final class QuanLyPhong {
         return lay(id);
     }
 
+    // Dong mo.
     public void dongMo(Phien p,String id,boolean mo) throws IOException {
         Phong cu=lay(id); kiemTraQuyen(p,cu);
         if (Protocol.SANH_ID.equals(id) && !mo) { throw new IllegalArgumentException("Sảnh chung luôn mở"); }
@@ -143,6 +150,7 @@ public final class QuanLyPhong {
         luuThayDoi(id,new NoiBo(moi,n.salt,n.hash));
     }
 
+    // Xoa.
     public void xoa(Phien p,String id) throws IOException {
         Phong cu=lay(id); kiemTraQuyen(p,cu);
         if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Không được xóa Sảnh chung"); }
@@ -174,6 +182,7 @@ public final class QuanLyPhong {
         return lay(r.id);
     }
 
+    // Xac nhan vao.
     public void xacNhanVao(Phien p,String id) throws IOException {
         if (p.phong.contains(id)) { return; }
         Long hetHan=p.choVao.remove(id);
@@ -182,6 +191,7 @@ public final class QuanLyPhong {
         ghiThanhVien(p.nguoi.id,id,true); p.phong.add(id);
     }
 
+    // Roi.
     public void roi(Phien p,String id) { p.phong.remove(id); p.choVao.remove(id); }
 
     // Roi phong chu dong khac voi dang xuat: xoa tu cach thanh vien.
@@ -192,6 +202,7 @@ public final class QuanLyPhong {
         ghiThanhVien(p.nguoi.id,id,false); roi(p,id);
     }
 
+    // Chuyen chu.
     public void chuyenChu(Phien p,String id,String nguoiMoi) throws IOException {
         Phong r=lay(id); kiemTraQuyen(p,r);
         if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Không chuyển chủ Sảnh chung"); }
@@ -200,8 +211,11 @@ public final class QuanLyPhong {
         Phong moi=new Phong(id,r.ten,r.moTa,r.maPhong,nguoiMoi,r.nhom,r.cong,r.gioiHan,r.congKhai,r.coMatKhau,r.dangMo,0,r.ngayTao);
         luuThayDoi(id,new NoiBo(moi,n.salt,n.hash));
     }
+    // La thanh vien.
     public boolean laThanhVien(String user,String id) { return thanhVien.containsKey(id+"."+user); }
+    // So thanh vien ben vung.
     public int soThanhVienBenVung(String id) { return (int)thanhVien.stringPropertyNames().stream().filter(k -> k.startsWith(id+".")).count(); }
+    // Ghi thanh vien.
     private void ghiThanhVien(String user,String id,boolean them) throws IOException {
         String khoa=id+"."+user, cu=thanhVien.getProperty(khoa);
         if (them) { thanhVien.setProperty(khoa,"1"); } else { thanhVien.remove(khoa); }
@@ -209,11 +223,13 @@ public final class QuanLyPhong {
         catch (IOException e) { if (cu==null) { thanhVien.remove(khoa); } else { thanhVien.setProperty(khoa,cu); } throw e; }
     }
 
+    // Don dat cho.
     public void donDatCho() {
         long nay=System.nanoTime();
         cacPhien.get().forEach(p -> p.choVao.entrySet().removeIf(e -> e.getValue()<nay));
     }
 
+    // So cho da dung.
     private int soChoDaDung(String id) {
         long nay=System.nanoTime();
         java.util.Set<String> user=new java.util.HashSet<>();
@@ -225,22 +241,23 @@ public final class QuanLyPhong {
 
     // ===== LICH SU VA MSG ID THEO PHONG =====
     public long mocTin(String id) { lay(id); return lichSu.get(id).size(); }
+    // Tong tin.
     public long tongTin() { return lichSu.values().stream().mapToLong(List::size).sum(); }
+    // Tong phong hien co, gom Sanh chung, de cua so Server giam sat.
+    public int tongPhong() { return phong.size(); }
 
+    // Them tin.
     public TinNhan themTin(Phien p,String id,String noiDung) throws IOException {
         kiemTraThanhVien(p,id); Phong r=lay(id);
         if (!r.dangMo) { throw new IllegalArgumentException("Phòng đang đóng, chưa thể gửi tin"); }
-        if (noiDung.isBlank() || noiDung.getBytes(StandardCharsets.UTF_8).length>600) {
-            throw new IllegalArgumentException("Tin nhắn cần 1–600 byte UTF-8");
-        }
         TinNhan tin=new TinNhan(mocTin(id)+1,id,p.nguoi.id,p.nguoi.tenHienThi,noiDung,System.currentTimeMillis());
         // Tin phai vua ca goi gui bu (them envelope va ma dong bo).
-        String sync=Goi.ghep(Goi.noi(new String[]{Protocol.MUC_DONG_BO,id,"x".repeat(36)},Goi.tach(tin.dongGoi())));
-        Goi.thanhByte(Goi.ghep("R","x".repeat(80),sync));
+        Goi.kiemTraTin(tin);
         kho.ghiTin(tin); lichSu.get(id).add(tin);
         return tin;
     }
 
+    // Lay tin.
     public List<TinNhan> layTin(String id,boolean ganNhat,long sauId) {
         List<TinNhan> ds=lichSu.get(id); lay(id);
         int batDau=ganNhat?Math.max(0,ds.size()-50):(int)Math.min(Math.max(0,sauId),ds.size());
@@ -263,6 +280,7 @@ public final class QuanLyPhong {
         } catch (IOException e) { if (cu==null) { phong.remove(id); } else { phong.put(id,cu); } throw e; }
     }
 
+    // Tao ma.
     private String taoMa() {
         String bang="23456789ABCDEFGHJKLMNPQRSTUVWXYZ", ma;
         do {
@@ -272,8 +290,10 @@ public final class QuanLyPhong {
         } while (trungMa(ma));
         return ma;
     }
+    // Trung ma.
     private boolean trungMa(String ma) { return phong.values().stream().anyMatch(n -> n.phong.maPhong.equals(ma)); }
 
+    // Kiem tra noi dung.
     private static void kiemTraNoiDung(String ten,String moTa,int gioiHan) {
         if (ten.strip().codePointCount(0,ten.strip().length())<3 || ten.strip().codePointCount(0,ten.strip().length())>30
                 || moTa.getBytes(StandardCharsets.UTF_8).length>240 || ten.contains("\n") || ten.contains("\r")
@@ -281,6 +301,7 @@ public final class QuanLyPhong {
             throw new IllegalArgumentException("Tên cần 3–30 ký tự, mô tả tối đa 240 byte một dòng; giới hạn 2–500 người");
         }
     }
+    // Kiem tra mat khau.
     private static void kiemTraMatKhau(String matKhau) {
         if (matKhau.length()>128) { throw new IllegalArgumentException("Mật khẩu phòng tối đa 128 ký tự"); }
     }

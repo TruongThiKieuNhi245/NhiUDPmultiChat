@@ -6,9 +6,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.HexFormat;
 
-/** Tao salt, token va bam SHA-256 bang API san co cua Java. */
+/** Vai tro: Tao salt, token va bam SHA-256 bang API san co cua Java. Ai goi: QuanLyNguoiDung, QuanLyPhong, KhoLuuTru. Goi: MessageDigest, SecureRandom. */
 public final class BaoMat {
+    // ===== VAI TRO VA CAC THAO TAC =====
     private static final SecureRandom NGAU_NHIEN = new SecureRandom();
+    // Khoi tao lop va noi cac thanh phan can thiet.
     private BaoMat() { }
 
     // Tao chuoi ngau nhien cho salt hoac token phien.

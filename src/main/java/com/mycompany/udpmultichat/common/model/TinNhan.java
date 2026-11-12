@@ -3,11 +3,13 @@ package com.mycompany.udpmultichat.common.model;
 import com.mycompany.udpmultichat.common.Goi;
 import com.mycompany.udpmultichat.common.Protocol;
 
-/** Tin do Server gan so thu tu va thoi gian; moi goi deu co roomId. */
+/** Vai tro: Tin do Server gan so thu tu va thoi gian; moi goi deu co roomId. Ai goi: ClientCore, QuanLyPhong, ui. Goi: Goi, Protocol. */
 public final class TinNhan {
+    // ===== VAI TRO VA CAC THAO TAC =====
     public final long msgId, thoiGian;
     public final String roomId, userId, ten, noiDung;
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public TinNhan(long msgId, String roomId, String userId, String ten, String noiDung, long thoiGian) {
         this.msgId = msgId;
         this.roomId = roomId;

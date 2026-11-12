@@ -1,6 +1,6 @@
 package com.mycompany.udpmultichat.common;
 
-/** Hang so dung chung cho UDP dieu khien va multicast phong. */
+/** Vai tro: Hang so dung chung cho UDP dieu khien va multicast phong. Ai goi: common, client, server, ui. Goi: khong goi lop khac. */
 public final class Protocol {
     public static final int CONG_SERVER = 5000;
     public static final int GOI_TOI_DA = 1399;
@@ -32,7 +32,9 @@ public final class Protocol {
     public static final String HET_DONG_BO = "SYNC_END";
     public static final String MOC_TIN = "HEAD";
     public static final String DANH_SACH_PHONG = "ROOMS";
-    public static final int TIN_TOI_DA = 600;
+    public static final int TIN_TOI_DA = 1000;
+    public static final String LOI_TIN_DAI = "Tin nhắn quá dài. Hãy rút gọn hoặc tách thành nhiều tin.";
     public static final String CHUYEN_CHU = "TRANSFER", KET_NOI_LAI = "RECONNECT", THU_SERVER = "HELLO";
+    // Khoi tao lop va noi cac thanh phan can thiet.
     private Protocol() { }
 }

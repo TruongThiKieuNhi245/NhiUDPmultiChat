@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-/** Thu tu va loai trung theo msgId cua MOT phong; ghep lich su/RESYNC voi tin truc tiep. */
+/** Vai tro: Thu tu va loai trung theo msgId cua MOT phong; ghep lich su/RESYNC voi tin truc tiep. Ai goi: ClientCore. Goi: TinNhan, CompletableFuture. */
 public final class DongBoTinNhan implements AutoCloseable {
     private final String roomId;
     private final BiConsumer<TinNhan,Boolean> hienTin;
@@ -19,6 +19,7 @@ public final class DongBoTinNhan implements AutoCloseable {
     private String[] ketThuc;
     private CompletableFuture<Void> ketQua=CompletableFuture.completedFuture(null);
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public DongBoTinNhan(String roomId,BiConsumer<TinNhan,Boolean> hienTin) {
         this.roomId=roomId; this.hienTin=hienTin;
     }
@@ -39,10 +40,13 @@ public final class DongBoTinNhan implements AutoCloseable {
         mocServer=Math.max(mocServer,head);
         return canDongBo();
     }
+    // Can dong bo.
     public synchronized boolean canDongBo() {
         return !daDong && !dangDongBo && (!sanSang || cuoi<mocServer);
     }
+    // Da san sang.
     public synchronized boolean daSanSang() { return sanSang; }
+    // Cuoi.
     public synchronized long cuoi() { return cuoi; }
 
     // ===== BAT DAU MOT LO =====
@@ -57,13 +61,16 @@ public final class DongBoTinNhan implements AutoCloseable {
         });
         return ma;
     }
+    // Ket qua.
     public synchronized CompletableFuture<Void> ketQua() { return ketQua; }
 
+    // Nhan muc.
     public synchronized void nhanMuc(String maLo,TinNhan tin) {
         if (daDong || !dangDongBo || !ma.equals(maLo) || !roomId.equals(tin.roomId)) { return; }
         if (banSao.size()<50) { banSao.putIfAbsent(tin.msgId,tin); }
         thuHoanTat();
     }
+    // Nhan ket thuc.
     public synchronized void nhanKetThuc(String[] p) {
         if (daDong || !dangDongBo || !ma.equals(p[2])) { return; }
         ketThuc=p.clone(); thuHoanTat();
@@ -92,6 +99,7 @@ public final class DongBoTinNhan implements AutoCloseable {
         CompletableFuture<Void> xong=ketQua; xong.complete(null);
     }
 
+    // Phat lien tiep.
     private void phatLienTiep(boolean lichSu,long hetLichSu) {
         while (choNhan.containsKey(cuoi+1)) {
             TinNhan tin=choNhan.remove(++cuoi);
@@ -100,6 +108,7 @@ public final class DongBoTinNhan implements AutoCloseable {
         choNhan.headMap(cuoi,true).clear();
     }
 
+    // Huy.
     public synchronized void huy(String maLo,Throwable loi) {
         if (!dangDongBo || !ma.equals(maLo)) { return; }
         dangDongBo=false; ma=""; banSao.clear(); ketThuc=null;

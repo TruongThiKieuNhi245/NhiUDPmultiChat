@@ -9,10 +9,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
-/** Chi ghi ten dang nhap va Server lan truoc; khong luu mat khau/token. */
+/** Vai tro: Chi ghi ten dang nhap va Server lan truoc; khong luu mat khau/token. Ai goi: ClientCore, DangNhapPanel. Goi: Files, Properties. */
 public final class CauHinhClient {
+    // ===== VAI TRO VA CAC THAO TAC =====
+    // Khoi tao lop va noi cac thanh phan can thiet.
     private CauHinhClient() { }
+    // Tep cau hinh.
     public static Path tepCauHinh() { return Path.of(System.getProperty("udpmultichat.clientConfig","client.properties")); }
+    // Doc.
     public static Properties doc() {
         Properties p=new Properties();
         Path tep=tepCauHinh();

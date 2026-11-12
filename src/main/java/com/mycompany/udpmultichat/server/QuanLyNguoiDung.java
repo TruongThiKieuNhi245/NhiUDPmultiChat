@@ -14,12 +14,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/** Gop tai khoan va phien; Server la noi quyet dinh quyen va online. */
+/** Vai tro: Gop tai khoan va phien; Server la noi quyet dinh quyen va online. Ai goi: ServerCore. Goi: KhoLuuTru, BaoMat, NguoiDung. */
 public final class QuanLyNguoiDung {
     private final KhoLuuTru kho;
     private final Map<String, TaiKhoan> taiKhoan;
     private final Map<String, Phien> phien = new LinkedHashMap<>();
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public QuanLyNguoiDung(KhoLuuTru kho) throws IOException {
         this.kho = kho;
         taiKhoan = kho.docNguoiDung();
@@ -46,6 +47,7 @@ public final class QuanLyNguoiDung {
         return nguoi;
     }
 
+    // Dang nhap.
     public synchronized Phien dangNhap(String ten, String matKhau, InetSocketAddress diaChi) {
         ten = chuanHoaTen(ten);
         kiemTraMatKhau(matKhau);
@@ -85,14 +87,19 @@ public final class QuanLyNguoiDung {
         }
         return dangNhap(ten,matKhau,diaChi);
     }
+    // Tat ca.
     public synchronized List<NguoiDung> tatCa() { return taiKhoan.values().stream().map(t -> t.nguoi).toList(); }
 
     // ===== HEARTBEAT =====
     public synchronized void ping(Phien p) { p.pingCuoi = System.nanoTime(); }
+    // Dang xuat.
     public synchronized void dangXuat(Phien p) { phien.remove(p.token); }
+    // Danh sach.
     public synchronized List<Phien> danhSach() { return new ArrayList<>(phien.values()); }
+    // Tong nguoi dung.
     public synchronized int tongNguoiDung() { return taiKhoan.size(); }
 
+    // Xoa het han.
     public synchronized List<Phien> xoaHetHan() {
         long hienTai = System.nanoTime();
         List<Phien> hetHan = phien.values().stream()
@@ -101,6 +108,7 @@ public final class QuanLyNguoiDung {
         return hetHan;
     }
 
+    // Chuan hoa ten.
     private static String chuanHoaTen(String ten) {
         String ketQua = ten.trim().toLowerCase(Locale.ROOT);
         if (!ketQua.matches("[a-z0-9_]{3,20}")) {
@@ -109,6 +117,7 @@ public final class QuanLyNguoiDung {
         return ketQua;
     }
 
+    // Kiem tra mat khau.
     private static void kiemTraMatKhau(String matKhau) {
         if (matKhau.length() < 6 || matKhau.length() > 128) {
             throw new IllegalArgumentException("Mật khẩu cần 6–128 ký tự");
@@ -124,6 +133,7 @@ public final class QuanLyNguoiDung {
         boolean sanSang;
         final java.util.Set<String> phong = new java.util.LinkedHashSet<>();
         final Map<String, Long> choVao = new LinkedHashMap<>();
+        // Tao phien gan token, tai khoan va endpoint UDP.
         Phien(String token, NguoiDung nguoi, InetSocketAddress diaChi) {
             this.token = token; this.nguoi = nguoi; this.diaChi = diaChi;
         }

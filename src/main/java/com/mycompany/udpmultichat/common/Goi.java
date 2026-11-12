@@ -4,8 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Goi text UTF-8: escape dau gach dung, gach cheo va xuong dong. */
+/** Vai tro: Goi text UTF-8: escape dau gach dung, gach cheo va xuong dong. Ai goi: ReliableUdp, ClientCore, ServerCore. Goi: Protocol, TinNhan, UTF-8. */
 public final class Goi {
+    // Khoi tao lop va noi cac thanh phan can thiet.
     private Goi() { }
 
     // ===== MA HOA =====
@@ -61,5 +62,16 @@ public final class Goi {
             throw new IllegalArgumentException("Gói vượt 1399 byte UTF-8; hãy rút ngắn nội dung");
         }
         return ketQua;
+    }
+
+    // Du phong ca envelope RESYNC va ACK; noi dung nhieu escape co the het cho som.
+    public static void kiemTraTin(com.mycompany.udpmultichat.common.model.TinNhan tin) {
+        if (tin.noiDung.isBlank()) { throw new IllegalArgumentException("Hãy nhập nội dung tin nhắn."); }
+        if (tin.noiDung.getBytes(StandardCharsets.UTF_8).length>Protocol.TIN_TOI_DA) {
+            throw new IllegalArgumentException(Protocol.LOI_TIN_DAI);
+        }
+        String sync=ghep(noi(new String[]{Protocol.MUC_DONG_BO,tin.roomId,"x".repeat(36)},tach(tin.dongGoi())));
+        try { thanhByte(ghep("R","x".repeat(80),sync)); }
+        catch (IllegalArgumentException e) { throw new IllegalArgumentException(Protocol.LOI_TIN_DAI); }
     }
 }

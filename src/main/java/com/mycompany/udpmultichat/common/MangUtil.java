@@ -9,13 +9,23 @@ import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.Locale;
 
-/** Chon IPv4 va tao MulticastSocket; tai su dung cach chon card cua ban goc. */
+/** Vai tro: Chon IPv4 va tao MulticastSocket; tai su dung cach chon card cua ban goc. Ai goi: ClientMain, ServerMain, KenhPhong, ServerCore. Goi: NetworkInterface, MulticastSocket. */
 public final class MangUtil {
+    // Khoi tao lop va noi cac thanh phan can thiet.
     private MangUtil() { }
 
     // Goi truoc khi tao bat ky socket nao, ke ca khi chay SelfTest.
     public static void dungIPv4() {
         System.setProperty("java.net.preferIPv4Stack", "true");
+    }
+    // Dia chi LAN cung card multicast de Client may khac nhap, khong mo socket.
+    public static String diaChiLan() throws SocketException {
+        Enumeration<InetAddress> ds=timGiaoDienMang().getInetAddresses();
+        while (ds.hasMoreElements()) {
+            InetAddress ip=ds.nextElement();
+            if (ip instanceof Inet4Address && !ip.isLoopbackAddress()) { return ip.getHostAddress(); }
+        }
+        return "127.0.0.1";
     }
 
     // ===== CHON CARD MANG =====

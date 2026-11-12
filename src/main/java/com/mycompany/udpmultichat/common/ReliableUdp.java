@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-/** UDP tin cay cho dieu khien: ACK, gui lai 3 lan, loai trung theo endpoint + seq. */
+/** Vai tro: UDP tin cay cho dieu khien: ACK, gui lai 3 lan, loai trung theo endpoint + seq. Ai goi: ClientCore, ServerCore. Goi: DatagramSocket, Goi, Protocol. */
 public final class ReliableUdp implements AutoCloseable {
     private final DatagramSocket socket;
     private final BiConsumer<InetSocketAddress, String> xuLy;
@@ -36,6 +36,7 @@ public final class ReliableUdp implements AutoCloseable {
     private final double tyLeMat;
     private volatile boolean dangChay = true;
 
+    // Tao UDP dieu khien voi ACK, gui lai va hang xu ly nen.
     public ReliableUdp(DatagramSocket socket, BiConsumer<InetSocketAddress, String> xuLy,
                        Consumer<String> baoLoi) {
         this(socket, xuLy, baoLoi, 0, 0);
@@ -108,8 +109,7 @@ public final class ReliableUdp implements AutoCloseable {
                 InetSocketAddress nguon = (InetSocketAddress) goi.getSocketAddress();
                 String[] truong = Goi.tach(new String(goi.getData(), 0, goi.getLength(), StandardCharsets.UTF_8));
                 if (truong.length == 2 && "A".equals(truong[0])) {
-                    ChoAck cho = dangCho.get(truong[1]);
-                    if (cho != null && cho.dich.equals(nguon)) { cho.ketQua.complete(null); }
+                    nhanAck(nguon,truong[1]);
                 } else if (truong.length == 3 && "R".equals(truong[0]) && truong[1].length() <= 80) {
                     nhanTinCay(nguon, truong[1], truong[2]);
                 }
@@ -117,6 +117,12 @@ public final class ReliableUdp implements AutoCloseable {
                 if (dangChay) { baoLoi.accept("Lỗi UDP: " + e.getMessage()); }
             }
         }
+    }
+
+    // Chi nhan ACK tu endpoint ma goi tin dang cho.
+    private void nhanAck(InetSocketAddress nguon,String ma) {
+        ChoAck cho=dangCho.get(ma);
+        if (cho!=null && cho.dich.equals(nguon)) { cho.ketQua.complete(null); }
     }
 
     // Chi ACK sau khi da nhan vao hang xu ly; goi trung duoc ACK lai.
@@ -127,14 +133,17 @@ public final class ReliableUdp implements AutoCloseable {
         } else {
             if (daNhan.size() >= 20000) { return; }
             try {
-                xuLyNen.execute(() -> {
-                    try { xuLy.accept(nguon, noiDung); }
-                    catch (RuntimeException e) { baoLoi.accept("Lỗi xử lý gói: " + e.getMessage()); }
-                });
+                xuLyNen.execute(() -> xuLyNoiDung(nguon,noiDung));
                 daNhan.put(khoa, System.nanoTime());
             } catch (RejectedExecutionException e) { return; }
         }
         guiRaw(Goi.thanhByte(Goi.ghep("A", ma)), nguon);
+    }
+
+    // Khong de loi nghiep vu lam chet luong xu ly UDP.
+    private void xuLyNoiDung(InetSocketAddress nguon,String noiDung) {
+        try { xuLy.accept(nguon,noiDung); }
+        catch (RuntimeException e) { baoLoi.accept("Lỗi xử lý gói: "+e.getMessage()); }
     }
 
     // Bo ngau nhien goi gui, gom ca ACK, khi kiem thu mat goi.
@@ -145,8 +154,11 @@ public final class ReliableUdp implements AutoCloseable {
         socket.send(new DatagramPacket(duLieu, duLieu.length, dich));
     }
 
+    // Cong.
     public int cong() { return socket.getLocalPort(); }
+    // So lan gui lai.
     public long soLanGuiLai() { return soGuiLai.get(); }
+    // So goi trung.
     public long soGoiTrung() { return soTrung.get(); }
 
     // Dong socket de danh thuc receive, huy cac Future dang cho.
@@ -160,6 +172,7 @@ public final class ReliableUdp implements AutoCloseable {
         daNhan.clear();
     }
 
+    // Luong nen.
     private static Thread luongNen(Runnable viec, String ten) {
         Thread luong = new Thread(viec, ten);
         luong.setDaemon(true);
@@ -171,6 +184,7 @@ public final class ReliableUdp implements AutoCloseable {
         final InetSocketAddress dich;
         final byte[] duLieu;
         final CompletableFuture<Void> ketQua = new CompletableFuture<>();
+        // Luu datagram va Future cho mot yeu cau dang cho ACK.
         ChoAck(InetSocketAddress dich, byte[] duLieu) {
             this.dich = dich;
             this.duLieu = duLieu;

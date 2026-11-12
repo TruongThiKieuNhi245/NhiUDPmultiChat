@@ -1,4 +1,4 @@
-# Ảnh UiPreview — M2.5
+# Ảnh UiPreview — M2.6
 
 Chạy từ project:
 
@@ -22,5 +22,12 @@ Công cụ vẽ **chính component Swing của ứng dụng** lên BufferedImage
 | [10-sua-phong.png](10-sua-phong.png) | Form sửa, Giữ/Đổi/Xóa mật khẩu |
 | [11-vao-phong.png](11-vao-phong.png) | Vào bằng mã kèm mật khẩu |
 | [12-server.png](12-server.png) | Cửa sổ giám sát Server |
-| [13-tin-qua-dai.png](13-tin-qua-dai.png) | 201 ký tự ắ = 603 byte, khóa Gửi |
+| [13-tin-qua-dai.png](13-tin-qua-dai.png) | 334 ký tự ắ = 1002 byte, khóa Gửi |
 | [14-cai-dat-server.png](14-cai-dat-server.png) | Ô IP Server và kiểm tra kết nối |
+| [15-thong-tin-phong.png](15-thong-tin-phong.png) | HopThoai thông tin phòng đầy đủ, có sao chép mã |
+| [16-client-vao-cuoi.png](16-client-vao-cuoi.png) | bbb vào sau admin/aaa, nhãn Bạn đúng cạnh bbb |
+| [17-chat-960x600.png](17-chat-960x600.png) | Kiểm tra kích thước cửa sổ tối thiểu |
+| [18-soan-nhieu-dong.png](18-soan-nhieu-dong.png) | Năm dòng, nút Gửi tròn và emoji/+ căn đáy |
+| [19-chu-so.png](19-chu-so.png) | Số 111 trong hai bong bóng, grayscale AA không viền RGB |
+
+19 PNG đã được xuất lại bằng UI M2.6. UiPreview còn xác nhận trên component thật: đổi profile vẽ lại đúng một Bạn, hai tên hiển thị trùng nhau không nhầm tài khoản, chuyển phòng xóa badge ngay, nút Tạo phòng không bị cắt và kiểm tra pixel chữ trắng trên nền xanh không có viền RGB.

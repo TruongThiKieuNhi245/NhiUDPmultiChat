@@ -24,12 +24,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
-/** Luu tai khoan va config UTF-8; ghi file tam roi thay the de tranh file do dang. */
+/** Vai tro: Luu tai khoan va config UTF-8; ghi file tam roi thay the de tranh file do dang. Ai goi: ServerCore, QuanLyNguoiDung, QuanLyPhong. Goi: Files, BaoMat, Goi. */
 public final class KhoLuuTru {
     private final Path thuMuc;
     private final Consumer<String> log;
     private final Properties cauHinh = new Properties();
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public KhoLuuTru(Path thuMuc, Consumer<String> log) throws IOException {
         this.thuMuc = thuMuc.toAbsolutePath().normalize();
         this.log = log;
@@ -67,6 +68,7 @@ public final class KhoLuuTru {
         ghiAnToan(tep, ghi.toString());
     }
 
+    // Cau hinh.
     public String cauHinh(String khoa) { return cauHinh.getProperty(khoa); }
 
     // ===== CSV TAI KHOAN =====
@@ -111,6 +113,7 @@ public final class KhoLuuTru {
         return ketQua;
     }
 
+    // Ghi phong.
     public synchronized void ghiPhong(List<String[]> danhSach) throws IOException {
         StringBuilder noiDung = new StringBuilder("id,ten,moTa,maPhong,chuId,nhom,cong,gioiHan,congKhai,coMatKhau,dangMo,soThanhVien,ngayTao,salt,hash\n");
         for (String[] p : danhSach) {
@@ -126,6 +129,7 @@ public final class KhoLuuTru {
         return phong.resolve(roomId + ".log");
     }
 
+    // Doc tin.
     public synchronized List<TinNhan> docTin(String roomId) throws IOException {
         Path tep = tepTin(roomId);
         List<TinNhan> ketQua = new ArrayList<>();
@@ -165,11 +169,13 @@ public final class KhoLuuTru {
         }
         return p;
     }
+    // Ghi thanh vien.
     public synchronized void ghiThanhVien(Properties p) throws IOException {
         StringWriter ghi=new StringWriter(); p.store(ghi,"Thanh vien phong - UTF-8");
         ghiAnToan(thuMuc.resolve("members.properties"),ghi.toString());
     }
 
+    // Csv.
     private static String csv(String giaTri) { return "\"" + giaTri.replace("\"", "\"\"") + "\""; }
 
     // Doc CSV co dau phay va dau nhay kep trong truong.

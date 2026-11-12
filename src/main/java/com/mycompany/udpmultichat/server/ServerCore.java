@@ -23,12 +23,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-/** Server UDP dieu phoi tai khoan/phong; luu tin truoc khi multicast dung nhom phong. */
+/** Vai tro: Server UDP dieu phoi tai khoan/phong; luu tin truoc khi multicast dung nhom phong. Ai goi: ServerMain, SelfTest. Goi: ReliableUdp, QuanLyNguoiDung, QuanLyPhong, KhoLuuTru. */
 public final class ServerCore implements AutoCloseable {
     /** Giao dien nhan su kien tren luong nen, khong rang buoc Swing. */
     public interface Listener {
+        // Nhan log qua Listener, chuyen ve luong phu hop.
         void onLog(String noiDung);
+        // Nhan snapshot thong ke tu ServerCore.
         void onThongKe(int tongUser,int online,long soTin);
+        // Bo sung so phong, giu listener test cu khong phu thuoc giao dien.
+        default void onThongKe(int tongUser,int online,int soPhong,long soTin) { onThongKe(tongUser,online,soTin); }
     }
     private final Path thuMuc;
     private final Listener listener;
@@ -40,6 +44,7 @@ public final class ServerCore implements AutoCloseable {
     private long phienBan;
     private volatile boolean dangChay;
 
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public ServerCore(Path thuMuc,Listener listener) { this.thuMuc=thuMuc; this.listener=listener; }
 
     // ===== BAT DAU / DUNG =====
@@ -68,9 +73,12 @@ public final class ServerCore implements AutoCloseable {
             baoThongKe();
         } catch (IOException | RuntimeException e) { close(); throw e; }
     }
+    // Cong.
     public int cong() { return udp==null?-1:udp.cong(); }
+    // Dang chay.
     public boolean dangChay() { return dangChay; }
 
+    // Dong tai nguyen cua lop, ke ca khi co loi.
     @Override public synchronized void close() {
         dangChay=false;
         if (dongHo!=null) { dongHo.shutdownNow(); }
@@ -119,6 +127,7 @@ public final class ServerCore implements AutoCloseable {
         }
     }
 
+    // Tai khoan.
     private void taiKhoan(InetSocketAddress nguon,String[] p) throws IOException {
         duTruong(p,4);
         if (Protocol.DANG_KY.equals(p[0])) {
@@ -141,23 +150,6 @@ public final class ServerCore implements AutoCloseable {
             case Protocol.LAY_PHONG:
                 duTruong(p,3); guiDanhSachPhong(phien,++phienBan);
                 traLoi(phien.diaChi,p[1],true,"Đã cập nhật danh sách"); return;
-            case Protocol.TAO_PHONG:
-                duTruong(p,8);
-                r=phong.tao(phien,p[3],p[4],docBoolean(p[5]),p[6],Integer.parseInt(p[7]));
-                traLoi(phien.diaChi,p[1],true,r.cacTruong());
-                listener.onLog(phien.nguoi.tenHienThi+" tạo phòng "+r.ten+" — "+r.nhom+":"+r.cong); break;
-            case Protocol.SUA_PHONG:
-                duTruong(p,10);
-                if (!p[7].equals("KEEP") && !p[7].equals("SET")) { throw new IllegalArgumentException("Chế độ mật khẩu không hợp lệ"); }
-                r=phong.sua(phien,p[3],p[4],p[5],docBoolean(p[6]),p[7].equals("KEEP")?null:p[8],Integer.parseInt(p[9]));
-                traLoi(phien.diaChi,p[1],true,r.cacTruong());
-                listener.onLog(phien.nguoi.tenHienThi+" sửa phòng "+r.ten);
-                thongBaoPhong(r.id,"Thông tin phòng đã được cập nhật."); break;
-            case Protocol.TRANG_THAI_PHONG:
-                duTruong(p,5); phong.dongMo(phien,p[3],docBoolean(p[4]));
-                thongBaoPhong(p[3],docBoolean(p[4])?"Phòng đã mở lại.":"Phòng đã đóng; tạm dừng vào phòng và gửi tin.");
-                listener.onLog(phien.nguoi.tenHienThi+" "+(docBoolean(p[4])?"mở":"đóng")+" phòng "+phong.lay(p[3]).ten);
-                traLoi(phien.diaChi,p[1],true,"Đã cập nhật trạng thái phòng"); break;
             case Protocol.XOA_PHONG:
                 duTruong(p,4); xoaPhong(phien,p[3]);
                 traLoi(phien.diaChi,p[1],true,"Đã xóa phòng"); break;
@@ -175,11 +167,37 @@ public final class ServerCore implements AutoCloseable {
                 duTruong(p,4); phong.kiemTraThanhVien(phien,p[3]); phong.roiChuDong(phien,p[3]);
                 roiPhong(phien,p[3],"Bạn đã rời phòng.");
                 traLoi(phien.diaChi,p[1],true,"Đã rời phòng"); break;
-            default: throw new IllegalArgumentException("Lệnh không được hỗ trợ");
+            default: suaTaoPhong(phien,p);
         }
         capNhatPhong();
     }
 
+    // Tao/sua/trang thai duoc tach khoi vao/roi de moi ham de theo doi.
+    private void suaTaoPhong(Phien phien,String[] p) throws IOException {
+        Phong r;
+        switch (p[0]) {
+            case Protocol.TAO_PHONG:
+                duTruong(p,8);
+                r=phong.tao(phien,p[3],p[4],docBoolean(p[5]),p[6],Integer.parseInt(p[7]));
+                traLoi(phien.diaChi,p[1],true,r.cacTruong());
+                listener.onLog(phien.nguoi.tenHienThi+" tạo phòng "+r.ten+" — "+r.nhom+":"+r.cong); break;
+            case Protocol.SUA_PHONG:
+                duTruong(p,10);
+                if (!p[7].equals("KEEP") && !p[7].equals("SET")) { throw new IllegalArgumentException("Chế độ mật khẩu không hợp lệ"); }
+                r=phong.sua(phien,p[3],p[4],p[5],docBoolean(p[6]),p[7].equals("KEEP")?null:p[8],Integer.parseInt(p[9]));
+                traLoi(phien.diaChi,p[1],true,r.cacTruong());
+                listener.onLog(phien.nguoi.tenHienThi+" sửa phòng "+r.ten);
+                thongBaoPhong(r.id,"Thông tin phòng đã được cập nhật."); break;
+            case Protocol.TRANG_THAI_PHONG:
+                duTruong(p,5); phong.dongMo(phien,p[3],docBoolean(p[4]));
+                thongBaoPhong(p[3],docBoolean(p[4])?"Phòng đã mở lại.":"Phòng đã đóng; tạm dừng vào phòng và gửi tin.");
+                listener.onLog(phien.nguoi.tenHienThi+" "+(docBoolean(p[4])?"mở":"đóng")+" phòng "+phong.lay(p[3]).ten);
+                traLoi(phien.diaChi,p[1],true,"Đã cập nhật trạng thái phòng"); break;
+            default: throw new IllegalArgumentException("Lệnh không được hỗ trợ");
+        }
+    }
+
+    // San sang.
     private void sanSang(Phien phien,String[] p) throws IOException {
         duTruong(p,4);
         boolean moi=!phien.phong.contains(p[3]);
@@ -193,6 +211,7 @@ public final class ServerCore implements AutoCloseable {
         traLoi(phien.diaChi,p[1],true,"Đã vào phòng");
     }
 
+    // Roi phong.
     private void roiPhong(Phien phien,String id,String lyDo) {
         phong.roi(phien,id);
         guiSuKien(phien,Goi.ghep(Protocol.DA_ROI_PHONG,id,lyDo));
@@ -200,11 +219,13 @@ public final class ServerCore implements AutoCloseable {
         capNhatThanhVien(id);
     }
 
+    // Roi tat ca.
     private void roiTatCa(Phien phien,String lyDo) {
         for (String id : List.copyOf(phien.phong)) { roiPhong(phien,id,"Phiên đã kết thúc."); }
         phien.choVao.clear(); listener.onLog(phien.nguoi.tenHienThi+" "+lyDo); capNhatPhong();
     }
 
+    // Xoa phong.
     private void xoaPhong(Phien chu,String id) throws IOException {
         String ten=phong.lay(id).ten;
         phong.xoa(chu,id);
@@ -225,6 +246,7 @@ public final class ServerCore implements AutoCloseable {
         traLoi(phien.diaChi,p[1],true,Long.toString(tin.msgId)); baoThongKe();
     }
 
+    // Gui lich su.
     private void guiLichSu(Phien phien,String[] p) {
         duTruong(p,6); phong.kiemTraThanhVien(phien,p[3]);
         if (!p[4].matches("[a-f0-9-]{36}")) { throw new IllegalArgumentException("Mã đồng bộ không hợp lệ"); }
@@ -248,6 +270,7 @@ public final class ServerCore implements AutoCloseable {
         Phong r=phong.lay(roomId); byte[] data=Goi.thanhByte(duLieu);
         multicast.send(new DatagramPacket(data,data.length,InetAddress.getByName(r.nhom),r.cong));
     }
+    // Thong bao phong.
     private void thongBaoPhong(String id,String noiDung) {
         try { phatMulticast(id,Goi.ghep(Protocol.HE_THONG,id,noiDung)); }
         catch (IOException e) { listener.onLog("Lỗi thông báo phòng: "+e.getMessage()); }
@@ -259,14 +282,19 @@ public final class ServerCore implements AutoCloseable {
         nguoiDung.danhSach().stream().filter(p -> p.sanSang).forEach(p -> guiDanhSachPhong(p,ban));
         baoThongKe();
     }
+    // Gui danh sach phong.
     private void guiDanhSachPhong(Phien p,long ban) {
         List<Phong> ds=phong.danhSachCho(p); List<String> lo=new ArrayList<>();
         if (ds.isEmpty()) { lo.add(Goi.ghep(Protocol.DANH_SACH_PHONG,Long.toString(ban),"0","-1")); }
         for (int i=0;i<ds.size();i++) {
-            lo.add(Goi.ghep(Goi.noi(new String[]{Protocol.DANH_SACH_PHONG,Long.toString(ban),Integer.toString(ds.size()),Integer.toString(i)},ds.get(i).cacTruong())));
+            Phong r=ds.get(i);
+            String chu=nguoiDung.tatCa().stream().filter(n -> n.id.equals(r.chuId)).map(n -> n.tenHienThi+" (@"+n.tenDangNhap+")").findFirst().orElse("Hệ thống");
+            lo.add(Goi.ghep(Goi.noi(new String[]{Protocol.DANH_SACH_PHONG,Long.toString(ban),Integer.toString(ds.size()),Integer.toString(i)},ds.get(i).cacTruong(),
+                new String[]{Boolean.toString(phong.laThanhVien(p.nguoi.id,r.id)),chu,Integer.toString(phong.soThanhVienBenVung(r.id))})));
         }
         guiLo(p,lo);
     }
+    // Cap nhat thanh vien.
     private void capNhatThanhVien(String id) {
         List<Phien> online=phong.thanhVien(id); String ban=Long.toString(++phienBan); Phong r=phong.lay(id);
         var ds=nguoiDung.tatCa().stream().filter(n -> phong.laThanhVien(n.id,id)).toList();
@@ -275,15 +303,17 @@ public final class ServerCore implements AutoCloseable {
             for (int i=0;i<ds.size();i++) {
                 var n=ds.get(i); String vai=n.vaiTro==VaiTro.ADMIN?"ADMIN":(r.chuId.equals(n.id)?"CHU_PHONG":"THANH_VIEN");
                 boolean bat=online.stream().anyMatch(p -> p.nguoi.id.equals(n.id));
-                lo.add(Goi.ghep(Protocol.ONLINE,id,ban,Integer.toString(ds.size()),Integer.toString(i),n.id,n.tenHienThi,vai,Boolean.toString(bat)));
+                lo.add(Goi.ghep(Protocol.ONLINE,id,ban,Integer.toString(ds.size()),Integer.toString(i),n.id,n.tenDangNhap,n.tenHienThi,vai,Boolean.toString(bat)));
             }
             guiLo(dich,lo);
         }
     }
+    // Gui moc tin.
     private void guiMocTin(Phien p) {
         List<String> lo=p.phong.stream().map(id -> Goi.ghep(Protocol.MOC_TIN,id,Long.toString(phong.mocTin(id)))).toList();
         guiLo(p,lo);
     }
+    // Quet phien.
     private synchronized void quetPhien() {
         if (!dangChay) { return; }
         phong.donDatCho();
@@ -292,8 +322,9 @@ public final class ServerCore implements AutoCloseable {
             roiTatCa(p,"đã mất kết nối (hết heartbeat).");
         }
     }
+    // Bao thong ke.
     private void baoThongKe() {
-        listener.onThongKe(nguoiDung.tongNguoiDung(),nguoiDung.danhSach().size(),phong.tongTin());
+        listener.onThongKe(nguoiDung.tongNguoiDung(),nguoiDung.danhSach().size(),phong.tongPhong(),phong.tongTin());
     }
 
     // ===== GUI UNICAST KHONG CHAN RECEIVE =====
@@ -304,15 +335,19 @@ public final class ServerCore implements AutoCloseable {
         for (String duLieu : lo) { viec=viec.thenCompose(v -> kenh.gui(phien.diaChi,duLieu)); }
         viec.exceptionally(e -> { if (dangChay) { listener.onLog("Không gửi đủ cập nhật cho "+phien.nguoi.tenDangNhap); } return null; });
     }
+    // Gui su kien.
     private void guiSuKien(Phien phien,String duLieu) { guiLo(phien,List.of(duLieu)); }
+    // Tra loi.
     private void traLoi(InetSocketAddress dich,String ma,boolean ok,String... noiDung) {
         if (ma.isEmpty() || udp==null) { return; }
         udp.gui(dich,Goi.ghep(Goi.noi(new String[]{Protocol.TRA_LOI,ma,ok?"OK":"ERR"},noiDung)))
             .exceptionally(e -> { if (dangChay) { listener.onLog("Không nhận ACK phản hồi từ "+dich); } return null; });
     }
+    // Du truong.
     private static void duTruong(String[] p,int so) {
         if (p.length!=so) { throw new IllegalArgumentException("Số trường của gói không hợp lệ"); }
     }
+    // Doc boolean.
     private static boolean docBoolean(String s) {
         if (!s.equals("true") && !s.equals("false")) { throw new IllegalArgumentException("Giá trị đúng/sai không hợp lệ"); }
         return Boolean.parseBoolean(s);

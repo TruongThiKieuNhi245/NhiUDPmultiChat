@@ -6,7 +6,6 @@ import com.mycompany.udpmultichat.common.model.Phong;
 import com.mycompany.udpmultichat.common.model.TinNhan;
 import com.mycompany.udpmultichat.common.model.VaiTro;
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
@@ -19,121 +18,177 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import javax.swing.DefaultListModel;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.ListCellRenderer;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-/** Sidebar chat quen thuoc: loc, tao/nhap ma, dong hai hang, preview/badge va menu phong. */
+/** Vai tro: hai nhom phong. Ai goi: ChatMulticastUI. Goi: Theme, callback UI. */
 @SuppressWarnings("serial")
 final class DanhSachPhongPanel extends JPanel {
-    private final DefaultListModel<Phong> model=new DefaultListModel<>();
-    private final JList<Phong> ds=new JList<>(model);
+    private final JPanel ds=new JPanel() {
+        // Sidebar luon bam be rong viewport, khong co thanh cuon ngang.
+        @Override public Dimension getPreferredSize() { return new Dimension(1,super.getPreferredSize().height); }
+    };
+    private final JScrollPane cuon=new JScrollPane(ds);
     private final JTextField loc=new JTextField();
     private final JButton tao=Theme.nut("+ Tạo phòng",true),ma=Theme.nut("Nhập mã",false);
     private final Supplier<NguoiDung> toi;
+    private final Predicate<String> daMo;
     private final Function<String,Integer> chuaDoc;
     private final Consumer<Phong> vao;
-    private final java.util.function.BiConsumer<String,Phong> hanhDong;
+    private final BiConsumer<String,Phong> hanhDong;
     private final Map<String,TinNhan> tinCuoi=new LinkedHashMap<>();
+    private final Map<String,JPanel> cacHang=new LinkedHashMap<>();
     private List<Phong> danhSach=List.of();
-    private int hover=-1;
+    private String dangChon="";
+    private boolean choPhep;
     private static final DateTimeFormatter GIO=DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
 
-    DanhSachPhongPanel(Supplier<NguoiDung> toi,Function<String,Integer> chuaDoc,Consumer<Phong> vao,
-                       java.util.function.BiConsumer<String,Phong> hanhDong) {
-        super(new BorderLayout(0,Theme.S12)); this.toi=toi; this.chuaDoc=chuaDoc; this.vao=vao; this.hanhDong=hanhDong;
+    // ===== DUNG SIDEBAR =====
+    // Danh sach chi goi callback; ClientCore duoc goi tai cua so chinh.
+    DanhSachPhongPanel(Supplier<NguoiDung> toi,Predicate<String> daMo,Function<String,Integer> chuaDoc,
+                       Consumer<Phong> vao,BiConsumer<String,Phong> hanhDong) {
+        super(new BorderLayout(0,Theme.S12)); this.toi=toi; this.daMo=daMo; this.chuaDoc=chuaDoc; this.vao=vao; this.hanhDong=hanhDong;
         setBackground(Theme.NEN); setBorder(Theme.le(Theme.S12));
         JPanel dau=new JPanel(new BorderLayout(0,Theme.S16)); dau.setOpaque(false);
         JLabel ten=Theme.nhan("UDP Chat",true); ten.setFont(Theme.DAM.deriveFont(20f)); dau.add(ten,BorderLayout.NORTH);
+        tao.setMargin(new java.awt.Insets(6,8,6,8)); ma.setMargin(new java.awt.Insets(6,8,6,8));
         loc.putClientProperty("JTextField.placeholderText","Lọc phòng…"); dau.add(loc,BorderLayout.CENTER);
         JPanel nut=new JPanel(new GridLayout(1,2,Theme.S8,0)); nut.setOpaque(false); nut.add(tao); nut.add(ma); dau.add(nut,BorderLayout.SOUTH); add(dau,BorderLayout.NORTH);
-        ds.setBackground(Theme.NEN); ds.setCellRenderer(new DongPhong()); ds.setFixedCellHeight(72);
-        JScrollPane cuon=new JScrollPane(ds); cuon.setBorder(null); add(cuon,BorderLayout.CENTER);
+        ds.setLayout(new BoxLayout(ds,BoxLayout.Y_AXIS)); ds.setBackground(Theme.NEN); cuon.setBorder(null);
+        cuon.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); add(cuon,BorderLayout.CENTER);
         tao.addActionListener(e -> hanhDong.accept("tao",null)); ma.addActionListener(e -> hanhDong.accept("ma",null));
         loc.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { loc(); } public void removeUpdate(DocumentEvent e) { loc(); }
+            // Cap nhat khi them noi dung vao o nhap.
+            public void insertUpdate(DocumentEvent e) { loc(); }
+            // Cap nhat khi xoa noi dung khoi o nhap.
+            public void removeUpdate(DocumentEvent e) { loc(); }
+            // Cap nhat khi dinh dang van ban thay doi.
             public void changedUpdate(DocumentEvent e) { loc(); }
         });
-        MouseAdapter chuot=new MouseAdapter() {
-            @Override public void mouseMoved(MouseEvent e) { hover=ds.locationToIndex(e.getPoint()); ds.repaint(); }
-            @Override public void mouseExited(MouseEvent e) { hover=-1; ds.repaint(); }
-            @Override public void mousePressed(MouseEvent e) { if (e.isPopupTrigger()) { moMenu(e); } }
-            @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) { moMenu(e); } }
-            @Override public void mouseClicked(MouseEvent e) {
-                if (!ds.isEnabled() || e.getButton()!=MouseEvent.BUTTON1) { return; }
-                Phong p=taiDiem(e); if (p==null) { return; }
-                if (e.getX()>ds.getWidth()-36) { menu(p).show(ds,e.getX(),e.getY()); } else { vao.accept(p); }
-            }
-        };
-        ds.addMouseListener(chuot); ds.addMouseMotionListener(chuot);
     }
-    void choPhep(boolean bat) { tao.setEnabled(bat); ma.setEnabled(bat); ds.setEnabled(bat); }
-    void capNhat(List<Phong> dsMoi) { danhSach=List.copyOf(dsMoi); loc(); }
+    // Bat tat thao tac khi chua dang nhap hoac mat ket noi.
+    void choPhep(boolean bat) { choPhep=bat; tao.setEnabled(bat); ma.setEnabled(bat); batNut(ds,bat); }
+    // Bat tat ca nut con ma khong thay doi du lieu.
+    private void batNut(java.awt.Container cha,boolean bat) {
+        for (var c:cha.getComponents()) {
+            if (c instanceof JButton b) { b.setEnabled(bat); }
+            if (c instanceof java.awt.Container n) { batNut(n,bat); }
+        }
+    }
+    // Nhan snapshot rieng cua tai khoan, giu bo loc dang nhap.
+    void capNhat(List<Phong> moi) { danhSach=List.copyOf(moi); loc(); }
+    // Tin lich su cu khong duoc ghi de preview cua tin moi.
     void tinCuoi(TinNhan t) {
         TinNhan cu=tinCuoi.get(t.roomId);
-        if (cu==null || t.msgId>cu.msgId) { tinCuoi.put(t.roomId,t); ds.repaint(); }
+        if (cu==null || t.msgId>=cu.msgId) { tinCuoi.put(t.roomId,t); loc(); }
     }
-    void xoa() { tinCuoi.clear(); danhSach=List.of(); loc(); }
-    void chon(String id) { for (int i=0;i<model.size();i++) { if (model.get(i).id.equals(id)) { ds.setSelectedIndex(i); break; } } }
+    // Don danh sach sau dang xuat.
+    void xoa() { tinCuoi.clear(); danhSach=List.of(); dangChon=""; loc(); }
+    // Chon phong tu sidebar, khong tao them tab.
+    void chon(String id) {
+        dangChon=id;
+        cacHang.forEach((k,h) -> {
+            h.setBackground(k.equals(id)?Theme.CHON:Theme.NEN);
+            if (h.getClientProperty("menuPhong") instanceof JButton b) { b.setVisible(k.equals(id)); }
+            if (h.getClientProperty("badge") instanceof JLabel l) { int so=chuaDoc.apply(k); l.setText(so>0?String.valueOf(so):""); }
+        });
+    }
+    // Loc tren ca hai nhom, giu vi tri cuon.
     private void loc() {
-        String id=ds.getSelectedValue()==null?"":ds.getSelectedValue().id;
-        model.clear(); String tim=loc.getText().strip().toLowerCase(java.util.Locale.ROOT);
-        danhSach.stream().filter(p -> p.ten.toLowerCase(java.util.Locale.ROOT).contains(tim)).forEach(model::addElement); chon(id);
+        int viTri=cuon.getVerticalScrollBar().getValue(); ds.removeAll(); cacHang.clear();
+        String tim=loc.getText().strip().toLowerCase(java.util.Locale.ROOT);
+        List<Phong> ketQua=danhSach.stream().filter(p -> p.ten.toLowerCase(java.util.Locale.ROOT).contains(tim)).toList();
+        themNhom("PHÒNG CỦA TÔI",ketQua.stream().filter(this::cuaToi).toList(),true);
+        themNhom("PHÒNG CÔNG KHAI",ketQua.stream().filter(p -> !cuaToi(p)).toList(),false);
+        ds.add(javax.swing.Box.createVerticalGlue()); ds.revalidate(); ds.repaint(); cuon.getVerticalScrollBar().setValue(viTri);
     }
+    // Membership do Server gui, khong suy ra tu ten hien thi.
+    private boolean cuaToi(Phong p) {
+        return p.daThamGia || daMo.test(p.id) || chu(p) || (!p.congKhai && quanLy(p));
+    }
+    // Moi nhom co tieu de xam can trai; phong rieng admin giam sat o nhom cua toi.
+    private void themNhom(String ten,List<Phong> phong,boolean thamGia) {
+        JLabel t=Theme.nhan(ten,true); t.setForeground(Theme.PHU); t.setFont(Theme.NHO); t.setBorder(Theme.le(Theme.S8));
+        t.setAlignmentX(LEFT_ALIGNMENT); t.setMaximumSize(new Dimension(Integer.MAX_VALUE,36)); ds.add(t);
+        for (Phong p:phong) { ds.add(hang(p,thamGia)); }
+    }
+    // Dong phong hai hang, nut tham gia hoac menu la nut Swing that.
+    private JPanel hang(Phong p,boolean thamGia) {
+        JPanel h=new JPanel(new BorderLayout(Theme.S4,0)); h.setBorder(Theme.le(Theme.S8)); h.setName("phong-"+p.id);
+        h.setAlignmentX(LEFT_ALIGNMENT); h.setMaximumSize(new Dimension(Integer.MAX_VALUE,76)); h.setPreferredSize(new Dimension(250,76));
+        h.setBackground(p.id.equals(dangChon)?Theme.CHON:Theme.NEN); cacHang.put(p.id,h);
+        TinNhan tin=tinCuoi.get(p.id); JPanel text=new JPanel(new GridLayout(2,1,0,Theme.S4)); text.setOpaque(false);
+        JPanel tren=new JPanel(new BorderLayout(Theme.S4,0)); tren.setOpaque(false);
+        JLabel ten=Theme.nhan(p.ten,true),gio=Theme.nhan(tin==null?"":GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false);
+        ten.setIcon(p.congKhai?null:Theme.icon("lock")); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU); tren.add(ten); tren.add(gio,BorderLayout.EAST);
+        JLabel nd=Theme.nhan(tin==null?(p.dangMo?p.moTa:"Phòng đang đóng"):tin.ten+": "+tin.noiDung.replace('\n',' '),false); nd.setForeground(Theme.PHU); nd.setFont(Theme.NHO);
+        text.add(tren); text.add(nd); h.add(text); h.add(nutPhong(p,thamGia),BorderLayout.EAST);
+        h.setToolTipText(p.moTa+" · Mã: "+p.maPhong+" · Giới hạn "+p.gioiHan);
+        ganClick(h,() -> { if (choPhep) { vao.accept(p); } }); h.setComponentPopupMenu(menu(p));
+        if (h.getClientProperty("menuPhong") instanceof JButton b) { ganHover(h,h,b,p.id); } return h;
+    }
+    // Badge chi o thanh ben; phong chua tham gia co nut rieng.
+    private JPanel nutPhong(Phong p,boolean thamGia) {
+        JPanel ben=new JPanel(new BorderLayout()); ben.setOpaque(false);
+        if (!thamGia) { JButton b=Theme.nutNhe("Tham gia",""); b.setFont(Theme.NHO); b.setEnabled(choPhep); b.addActionListener(e -> vao.accept(p)); ben.add(b); return ben; }
+        JButton menu=Theme.nutNhe("","more"); menu.setEnabled(choPhep); menu.setVisible(p.id.equals(dangChon));
+        menu.addActionListener(e -> menu(p).show(menu,0,menu.getHeight())); ben.add(menu,BorderLayout.NORTH);
+        int so=chuaDoc.apply(p.id); JLabel badge=Theme.nhan(so>0?String.valueOf(so):"",true); badge.setName("badge-"+p.id); badge.setForeground(Theme.CHINH); ben.add(badge,BorderLayout.SOUTH);
+        JPanel hang=cacHang.get(p.id); hang.putClientProperty("menuPhong",menu); hang.putClientProperty("badge",badge);
+        return ben;
+    }
+    // Hover duoc theo doi tren ca nhan con, khong chi khoang trong cua dong.
+    private void ganHover(JComponent c,JPanel hang,JButton menu,String id) {
+        c.addMouseListener(new MouseAdapter() {
+            // Hien menu khi hover ca nhan con.
+            public void mouseEntered(MouseEvent e) { menu.setVisible(true); }
+            // An menu khi chuot roi han dong phong.
+            public void mouseExited(MouseEvent e) {
+                var p=javax.swing.SwingUtilities.convertPoint(e.getComponent(),e.getPoint(),hang);
+                if (!hang.contains(p)) { menu.setVisible(id.equals(dangChon)); }
+            }
+        });
+        for (var con:c.getComponents()) { if (con instanceof JComponent j) { ganHover(j,hang,menu,id); } }
+    }
+    // Chuyen click/chuot phai tu nhan con ve dong phong, khong can renderer gia nut.
+    private void ganClick(JComponent c,Runnable vaoPhong) {
+        c.addMouseListener(new MouseAdapter() { public void mouseClicked(MouseEvent e) { if (e.getButton()==MouseEvent.BUTTON1) { vaoPhong.run(); } } });
+        for (var con:c.getComponents()) {
+            if (con instanceof JComponent j && !(j instanceof JButton)) { j.setInheritsPopupMenu(true); ganClick(j,vaoPhong); }
+        }
+    }
+    // ID chu phong la ID bat bien cua tai khoan da xac thuc.
     boolean chu(Phong p) { return toi.get()!=null && toi.get().id.equals(p.chuId); }
+    // Quyen he thong tu Server, khong suy ra tu chu Admin trong ten.
     boolean quanLy(Phong p) { return toi.get()!=null && (chu(p) || toi.get().vaiTro==VaiTro.ADMIN); }
+    // ===== MENU PHONG =====
+    // Khong hien thao tac roi cho chu phong hay cho phong chua tham gia.
     JPopupMenu menu(Phong p) {
         JPopupMenu m=new JPopupMenu(); them(m,"Thông tin phòng","thongtin",p);
         JMenuItem copy=new JMenuItem("Sao chép mã phòng"); copy.addActionListener(e -> saoChep(p.maPhong)); m.add(copy);
         if (Protocol.SANH_ID.equals(p.id)) { return m; }
-        m.addSeparator();
         if (quanLy(p)) {
-            them(m,"Sửa phòng","sua",p); them(m,p.dangMo?"Đóng phòng":"Mở phòng","trangthai",p);
+            m.addSeparator(); them(m,"Sửa phòng","sua",p); them(m,p.dangMo?"Đóng phòng":"Mở phòng","trangthai",p);
             them(m,"Chuyển quyền chủ phòng","chuyen",p); them(m,"Xóa phòng","xoa",p);
         }
-        if (!chu(p)) { them(m,"Rời phòng","roi",p); }
-        return m;
+        if (!chu(p) && (p.daThamGia || daMo.test(p.id))) { them(m,"Rời phòng","roi",p); } return m;
     }
+    // Sao chep van ban thuong vao clipboard cua he dieu hanh.
     static void saoChep(String text) { Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text),null); }
+    // Them lenh vao menu qua callback UI.
     private void them(JPopupMenu m,String ten,String lenh,Phong p) { JMenuItem i=new JMenuItem(ten); i.addActionListener(e -> hanhDong.accept(lenh,p)); m.add(i); }
-    private Phong taiDiem(MouseEvent e) { int i=ds.locationToIndex(e.getPoint()); return i>=0 && ds.getCellBounds(i,i).contains(e.getPoint())?model.get(i):null; }
-    private void moMenu(MouseEvent e) { Phong p=taiDiem(e); if (p!=null && ds.isEnabled()) { ds.setSelectedValue(p,true); menu(p).show(ds,e.getX(),e.getY()); } }
-
-    private static void boCuc(java.awt.Container c) {
-        c.doLayout(); for (var con:c.getComponents()) { if (con instanceof java.awt.Container n) { boCuc(n); } }
-    }
-
-    /** Renderer khong nhan click truc tiep; nut ba cham duoc hit-test tren JList. */
-    private final class DongPhong extends JPanel implements ListCellRenderer<Phong> {
-        private final JLabel ten=Theme.nhan("",true),gio=Theme.nhan("",false),preview=Theme.nhan("",false),badge=Theme.nhan("",true),menu=Theme.nhan("",true);
-        DongPhong() {
-            super(new BorderLayout(Theme.S8,0)); setBorder(Theme.le(Theme.S8));
-            JPanel text=new JPanel(new GridLayout(2,1,0,Theme.S4)); text.setOpaque(false);
-            JPanel tren=new JPanel(new BorderLayout()); tren.setOpaque(false); tren.add(ten,BorderLayout.CENTER); tren.add(gio,BorderLayout.EAST);
-            text.add(tren); text.add(preview); add(text,BorderLayout.CENTER);
-            JPanel ben=new JPanel(new GridLayout(2,1)); ben.setOpaque(false); ben.setPreferredSize(new Dimension(24,44));
-            ben.add(menu); ben.add(badge); add(ben,BorderLayout.EAST); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU); preview.setForeground(Theme.PHU); badge.setForeground(Theme.CHINH);
-        }
-        @Override public Component getListCellRendererComponent(JList<? extends Phong> list,Phong p,int i,boolean chon,boolean focus) {
-            TinNhan t=tinCuoi.get(p.id); int so=chuaDoc.apply(p.id);
-            ten.setIcon(p.congKhai?null:Theme.icon("lock")); ten.setText((p.congKhai?"# ":"")+p.ten); gio.setText(t==null?"":GIO.format(Instant.ofEpochMilli(t.thoiGian)));
-            String nd=t==null?(p.dangMo?(p.congKhai?"Phòng công khai":"Phòng riêng tư"):"Phòng đang đóng"):t.ten+": "+t.noiDung.replace('\n',' ');
-            preview.setText(nd.length()>30?nd.substring(0,29)+"…":nd); badge.setText(so>0?String.valueOf(so):"");
-            menu.setIcon(Theme.icon("more")); menu.setVisible(chon || hover==i); setBackground(chon?Theme.CHON:Theme.NEN);
-            setToolTipText(p.moTa+" · Mã: "+p.maPhong+" · "+p.soThanhVien+" đang online / tối đa "+p.gioiHan);
-            setSize(Math.max(240,list.getWidth()),72); boCuc(this); return this;
-        }
-    }
 }

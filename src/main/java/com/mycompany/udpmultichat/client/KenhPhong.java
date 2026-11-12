@@ -12,7 +12,7 @@ import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-/** Mot socket nhan multicast cho mot phong; luon loc roomId truoc khi hien thi. */
+/** Vai tro: Mot socket nhan multicast cho mot phong; luon loc roomId truoc khi hien thi. Ai goi: ClientCore. Goi: MangUtil, Goi, MulticastSocket. */
 public final class KenhPhong implements AutoCloseable {
     private final String roomId, nhom;
     private final int cong;
@@ -22,6 +22,7 @@ public final class KenhPhong implements AutoCloseable {
     private final Consumer<String> heThong, baoLoi;
     private volatile boolean dangChay = true;
 
+    // Mo kenh nhan multicast cho mot roomId tren card IPv4 da chon.
     public KenhPhong(String roomId, String nhom, int cong, Consumer<TinNhan> nhanTin,
                      Consumer<String> heThong, Consumer<String> baoLoi) throws IOException {
         this.roomId = roomId; this.nhom = nhom; this.cong = cong;

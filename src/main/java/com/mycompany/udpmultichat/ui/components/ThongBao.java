@@ -19,11 +19,15 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 
-/** Toast tren layered pane, toi da ba the; hover dung dem gio, xoa ca Timer khi dong. */
+/** Vai tro: Toast tren layered pane, toi da ba the; hover dung dem gio, xoa ca Timer khi dong. Ai goi: ChatMulticastUI. Goi: Theme, Swing Timer. */
 public final class ThongBao implements AutoCloseable {
+    // ===== VAI TRO VA CAC THAO TAC =====
     public enum Muc { THANH_CONG, LOI, CANH_BAO, THONG_TIN }
     private final JLayeredPane lop;
     private final List<Toast> ds=new ArrayList<>();
+    private javax.swing.JComponent vung;
+    private final ComponentAdapter doiCo=new ComponentAdapter() { public void componentResized(ComponentEvent e) { sapXep(); } };
+    // Khoi tao lop va noi cac thanh phan can thiet.
     public ThongBao(JLayeredPane lop) {
         this.lop=lop;
         lop.addComponentListener(new ComponentAdapter() { @Override public void componentResized(ComponentEvent e) { sapXep(); } });
@@ -33,19 +37,36 @@ public final class ThongBao implements AutoCloseable {
         if (ds.size()==3) { xoa(ds.get(0)); }
         Toast t=new Toast(muc,noiDung); ds.add(t); lop.add(t,JLayeredPane.POPUP_LAYER); sapXep();
     }
+    // Dat vung chat de toast nam ngay tren o soan, khong che toolbar/header.
+    public void datVung(javax.swing.JComponent vung) {
+        if (this.vung!=null) { this.vung.removeComponentListener(doiCo); }
+        this.vung=vung;
+        if (vung!=null) { vung.addComponentListener(doiCo); }
+        sapXep();
+    }
+    // Sap xep.
     private void sapXep() {
-        int y=Theme.S16,w=Math.min(370,Math.max(220,lop.getWidth()-Theme.S24*2));
-        for (Toast t:ds) { t.setBounds(Math.max(8,lop.getWidth()-w-Theme.S16),y,w,86); y+=98; }
+        java.awt.Rectangle r=new java.awt.Rectangle(0,0,lop.getWidth(),lop.getHeight()-Theme.S24);
+        if (vung!=null && vung.getParent()!=null && vung.getWidth()>0) {
+            r=javax.swing.SwingUtilities.convertRectangle(vung.getParent(),vung.getBounds(),lop);
+        }
+        int w=Math.min(Theme.TOAST_RONG,Math.max(220,r.width-Theme.S24)),y=r.y+r.height-Theme.S8;
+        for (int i=ds.size()-1;i>=0;i--) {
+            y-=Theme.TOAST_CAO; ds.get(i).setBounds(r.x+(r.width-w)/2,Math.max(r.y,y),w,Theme.TOAST_CAO); y-=Theme.S8;
+        }
         lop.repaint();
     }
+    // Xoa.
     private void xoa(Toast t) { t.timer.stop(); ds.remove(t); lop.remove(t); lop.repaint(); }
-    @Override public void close() { for (Toast t:List.copyOf(ds)) { xoa(t); } }
+    // Dong tai nguyen cua lop, ke ca khi co loi.
+    @Override public void close() { for (Toast t:List.copyOf(ds)) { xoa(t); } if (vung!=null) { vung.removeComponentListener(doiCo); } }
 
     /** Mot the toast: bieu tuong, thanh mau, noi dung va nut dong. */
     @SuppressWarnings("serial")
     private final class Toast extends JPanel {
         private final Timer timer;
         private int con;
+        // Tao mot toast co icon, mau va thoi gian tu dong dong.
         Toast(Muc muc,String noiDung) {
             super(new BorderLayout(Theme.S8,0));
             Color mau=switch(muc) { case THANH_CONG -> Theme.THANH_CONG; case LOI -> Theme.LOI; case CANH_BAO -> Theme.CANH_BAO; case THONG_TIN -> Theme.THONG_TIN; };
@@ -61,7 +82,9 @@ public final class ThongBao implements AutoCloseable {
             con=muc==Muc.LOI?6000:3800;
             timer=new Timer(100,e -> { con-=100; if (con<=0) { xoa(this); } }); timer.start();
             MouseAdapter hover=new MouseAdapter() {
+                // Cap nhat khi chuot vao thanh phan.
                 @Override public void mouseEntered(MouseEvent e) { timer.stop(); }
+                // Cap nhat khi chuot roi thanh phan.
                 @Override public void mouseExited(MouseEvent e) {
                     java.awt.Point p=javax.swing.SwingUtilities.convertPoint(e.getComponent(),e.getPoint(),Toast.this);
                     if (!contains(p)) { timer.start(); }
@@ -69,6 +92,7 @@ public final class ThongBao implements AutoCloseable {
             };
             ganHover(this,hover);
         }
+        // Gan hover.
         private void ganHover(Component c,MouseAdapter m) {
             c.addMouseListener(m);
             if (c instanceof Container n) { for (Component con:n.getComponents()) { ganHover(con,m); } }
