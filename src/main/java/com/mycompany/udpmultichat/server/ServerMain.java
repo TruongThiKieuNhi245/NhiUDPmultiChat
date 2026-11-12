@@ -5,7 +5,6 @@ import com.mycompany.udpmultichat.common.Protocol;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.Path;
@@ -14,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.swing.JButton;
+import com.mycompany.udpmultichat.ui.Theme;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -27,7 +27,7 @@ import javax.swing.border.EmptyBorder;
 public final class ServerMain extends JFrame implements ServerCore.Listener {
     private final JTextArea log = new JTextArea();
     private final JLabel thongKe = new JLabel("Chưa chạy Server");
-    private final JButton batDau = new JButton("Bắt đầu"), dung = new JButton("Dừng");
+    private final JButton batDau = Theme.nut("Bắt đầu",true), dung = Theme.nut("Dừng",false);
     private final ExecutorService viecNen = Executors.newSingleThreadExecutor(viec -> {
         Thread t = new Thread(viec, "ui-server-task"); t.setDaemon(true); return t;
     });
@@ -40,7 +40,7 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         JPanel thanh = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 10));
         thanh.add(batDau); thanh.add(dung); thanh.add(thongKe); dung.setEnabled(false);
-        log.setEditable(false); log.setFont(new Font("Consolas", Font.PLAIN, 13));
+        log.setEditable(false); log.setFont(Theme.FONT);
         log.setBorder(new EmptyBorder(12, 12, 12, 12));
         add(thanh, BorderLayout.NORTH); add(new JScrollPane(log), BorderLayout.CENTER);
         batDau.addActionListener(e -> doiTrangThai(true));
@@ -85,7 +85,7 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
 
     // Hai diem chay ro rang: ClientMain va server.ServerMain.
     public static void main(String[] args) {
-        MangUtil.dungIPv4();
+        MangUtil.dungIPv4(); Theme.caiDat();
         SwingUtilities.invokeLater(() -> new ServerMain().setVisible(true));
     }
 }

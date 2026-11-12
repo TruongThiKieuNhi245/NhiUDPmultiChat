@@ -19,6 +19,10 @@ public interface Listener {
     default void onThanhVien(String roomId,List<String> danhSach) {
         if (Protocol.SANH_ID.equals(roomId)) { onDanhSachOnline(danhSach); }
     }
+    default void onKetNoi(boolean sanSang,String thongBao) { }
+    default void onThanhVienChiTiet(String roomId,List<Phong.ThanhVien> ds) {
+        onThanhVien(roomId,ds.stream().filter(Phong.ThanhVien::online).map(Phong.ThanhVien::ten).toList());
+    }
     default void onDanhSachPhong(List<Phong> danhSach) { }
     default void onVaoPhong(Phong phong) { }
     default void onRoiPhong(String roomId,String lyDo) { }

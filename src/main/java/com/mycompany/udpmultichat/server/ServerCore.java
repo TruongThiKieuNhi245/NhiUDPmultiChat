@@ -89,6 +89,12 @@ public final class ServerCore implements AutoCloseable {
             String[] p=Goi.tach(duLieu);
             if (p.length<2 || p[1].length()>64) { return; }
             ma=p[1];
+            if (Protocol.THU_SERVER.equals(p[0])) { duTruong(p,2); traLoi(nguon,ma,true,"Server đang hoạt động"); return; }
+            if (Protocol.KET_NOI_LAI.equals(p[0])) {
+                duTruong(p,5); quetPhien();
+                Phien k=nguoiDung.ketNoiLai(p[2],p[3],p[4],nguon);
+                traLoi(nguon,ma,true,Goi.noi(new String[]{k.token},k.nguoi.cacTruong())); return;
+            }
             if (Protocol.DANG_KY.equals(p[0]) || Protocol.DANG_NHAP.equals(p[0])) {
                 taiKhoan(nguon,p); return;
             }
@@ -145,10 +151,12 @@ public final class ServerCore implements AutoCloseable {
                 if (!p[7].equals("KEEP") && !p[7].equals("SET")) { throw new IllegalArgumentException("Chế độ mật khẩu không hợp lệ"); }
                 r=phong.sua(phien,p[3],p[4],p[5],docBoolean(p[6]),p[7].equals("KEEP")?null:p[8],Integer.parseInt(p[9]));
                 traLoi(phien.diaChi,p[1],true,r.cacTruong());
+                listener.onLog(phien.nguoi.tenHienThi+" sửa phòng "+r.ten);
                 thongBaoPhong(r.id,"Thông tin phòng đã được cập nhật."); break;
             case Protocol.TRANG_THAI_PHONG:
                 duTruong(p,5); phong.dongMo(phien,p[3],docBoolean(p[4]));
                 thongBaoPhong(p[3],docBoolean(p[4])?"Phòng đã mở lại.":"Phòng đã đóng; tạm dừng vào phòng và gửi tin.");
+                listener.onLog(phien.nguoi.tenHienThi+" "+(docBoolean(p[4])?"mở":"đóng")+" phòng "+phong.lay(p[3]).ten);
                 traLoi(phien.diaChi,p[1],true,"Đã cập nhật trạng thái phòng"); break;
             case Protocol.XOA_PHONG:
                 duTruong(p,4); xoaPhong(phien,p[3]);
@@ -159,8 +167,12 @@ public final class ServerCore implements AutoCloseable {
             case Protocol.HUY_VAO:
                 duTruong(p,4); phien.choVao.remove(p[3]);
                 traLoi(phien.diaChi,p[1],true,"Đã hủy đặt chỗ"); return;
+            case Protocol.CHUYEN_CHU:
+                duTruong(p,5); phong.chuyenChu(phien,p[3],p[4]);
+                listener.onLog(phien.nguoi.tenHienThi+" chuyển chủ phòng "+phong.lay(p[3]).ten);
+                capNhatThanhVien(p[3]); traLoi(phien.diaChi,p[1],true,"Đã chuyển quyền chủ phòng"); break;
             case Protocol.ROI_PHONG:
-                duTruong(p,4); phong.kiemTraThanhVien(phien,p[3]);
+                duTruong(p,4); phong.kiemTraThanhVien(phien,p[3]); phong.roiChuDong(phien,p[3]);
                 roiPhong(phien,p[3],"Bạn đã rời phòng.");
                 traLoi(phien.diaChi,p[1],true,"Đã rời phòng"); break;
             default: throw new IllegalArgumentException("Lệnh không được hỗ trợ");
@@ -168,7 +180,7 @@ public final class ServerCore implements AutoCloseable {
         capNhatPhong();
     }
 
-    private void sanSang(Phien phien,String[] p) {
+    private void sanSang(Phien phien,String[] p) throws IOException {
         duTruong(p,4);
         boolean moi=!phien.phong.contains(p[3]);
         if (Protocol.SANH_ID.equals(p[3]) && moi) { phong.datCho(phien,p[3],""); }
@@ -256,14 +268,14 @@ public final class ServerCore implements AutoCloseable {
         guiLo(p,lo);
     }
     private void capNhatThanhVien(String id) {
-        List<Phien> ds=phong.thanhVien(id); String ban=Long.toString(++phienBan);
-        Phong r=phong.lay(id);
-        for (Phien dich : ds) {
+        List<Phien> online=phong.thanhVien(id); String ban=Long.toString(++phienBan); Phong r=phong.lay(id);
+        var ds=nguoiDung.tatCa().stream().filter(n -> phong.laThanhVien(n.id,id)).toList();
+        for (Phien dich : online) {
             List<String> lo=new ArrayList<>();
             for (int i=0;i<ds.size();i++) {
-                Phien p=ds.get(i);
-                String vai=p.nguoi.vaiTro==VaiTro.ADMIN?"ADMIN":(r.chuId.equals(p.nguoi.id)?"Chủ phòng":"Thành viên");
-                lo.add(Goi.ghep(Protocol.ONLINE,id,ban,Integer.toString(ds.size()),Integer.toString(i),p.nguoi.id,p.nguoi.tenHienThi+" ("+vai+")"));
+                var n=ds.get(i); String vai=n.vaiTro==VaiTro.ADMIN?"ADMIN":(r.chuId.equals(n.id)?"CHU_PHONG":"THANH_VIEN");
+                boolean bat=online.stream().anyMatch(p -> p.nguoi.id.equals(n.id));
+                lo.add(Goi.ghep(Protocol.ONLINE,id,ban,Integer.toString(ds.size()),Integer.toString(i),n.id,n.tenHienThi,vai,Boolean.toString(bat)));
             }
             guiLo(dich,lo);
         }

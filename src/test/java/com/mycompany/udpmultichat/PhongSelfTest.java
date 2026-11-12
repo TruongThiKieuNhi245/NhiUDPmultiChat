@@ -58,7 +58,7 @@ final class PhongSelfTest {
 
             chay("Tao phong: ma 6 ky tu, nhom/cong rieng, danh sach realtime",() -> {
                 ra.set(cho(a.taoPhong("Nhóm A","Học UDP | multicast",true,"",3)));
-                rb.set(cho(a.taoPhong("Bí mật B","Phòng riêng tư",false,"phong123",1)));
+                rb.set(cho(a.taoPhong("Bí mật B","Phòng riêng tư",false,"phong123",2)));
                 Phong x=ra.get(),y=rb.get();
                 can(x.maPhong.matches("[A-Z0-9]{6}") && !x.maPhong.equals(y.maPhong),"Ma phong khong duy nhat");
                 can(!x.nhom.equals(y.nhom) && x.cong!=y.cong,"Tai su dung nhom/cong giua hai phong");
@@ -70,13 +70,18 @@ final class PhongSelfTest {
             chay("Vao bang danh sach/ma, mat khau, gioi han nguoi va tieng Viet UI",() -> {
                 Phong x=ra.get(),y=rb.get();
                 cho(a.vaoPhong(x.id,"")); cho(c.vaoPhong(x.maPhong,"")); cho(b.vaoPhong(x.id,""));
-                cho(a.vaoPhong(y.id,""));
+                cho(a.vaoPhong(y.id,"")); cho(b.vaoPhong(y.id,""));
                 tuChoi(c.vaoPhong(y.maPhong,"sai"),"Mật khẩu");
                 tuChoi(c.vaoPhong(y.maPhong,"phong123"),"đầy");
-                cho(a.roiPhong(y.id)); cho(c.vaoPhong(y.maPhong,"phong123"));
+                tuChoi(a.roiPhong(y.id),"Chủ phòng");
+                cho(a.chuyenChu(y.id,b.nguoiDung().id)); cho(a.roiPhong(y.id));
+                cho(c.vaoPhong(y.maPhong,"phong123"));
+                cho(b.chuyenChu(y.id,c.nguoiDung().id)); cho(b.roiPhong(y.id));
                 doi(() -> na.heThong.stream().anyMatch(s -> s.contains("đã vào")),2000);
                 doi(() -> nc.thanhVien.getOrDefault(y.id,List.of()).size()==1,2000);
-                can(coPhong(nc,y.id),"Phong rieng da vao khong xuat hien trong danh sach");
+                doi(() -> coPhong(nc,y.id),3000);
+                can(!tim(nc,y.id).congKhai && !tim(nb,y.id).congKhai,"Phong rieng bi doi thanh cong khai");
+                tuChoi(a.xoaPhong(y.id),"chủ phòng");
             });
             chay("Cach ly: tin A khong sang B, tin B khong sang A tren cung may",() -> {
                 Phong x=ra.get(),y=rb.get(); cho(c.roiPhong(x.id));
@@ -142,7 +147,7 @@ final class PhongSelfTest {
                 can(tim(na,Protocol.SANH_ID).congKhai,"Sanh bi doi loai");
             });
             chay("Xoa phong dang co thanh vien: dong tab/kenh va cap nhat realtime",() -> {
-                Phong y=rb.get(); cho(a.xoaPhong(y.id));
+                Phong y=rb.get(); cho(c.xoaPhong(y.id));
                 doi(() -> nc.daRoi.contains(y.id) && !coPhong(nb,y.id) && !coPhong(nc,y.id),3000);
                 can(c.phongDaVao().stream().noneMatch(r -> r.id.equals(y.id)),"Client chua dong kenh phong bi xoa");
                 tuChoi(c.vaoPhong(y.maPhong,"phong123"),"Không tìm thấy");

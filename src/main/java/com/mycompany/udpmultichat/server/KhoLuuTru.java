@@ -157,6 +157,19 @@ public final class KhoLuuTru {
         }
     }
 
+    // Danh sach thanh vien ben vung, khong luu token hoac mat khau.
+    public synchronized Properties docThanhVien() throws IOException {
+        Properties p=new Properties(); Path tep=thuMuc.resolve("members.properties");
+        if (Files.exists(tep)) {
+            try (Reader doc=Files.newBufferedReader(tep,StandardCharsets.UTF_8)) { p.load(doc); }
+        }
+        return p;
+    }
+    public synchronized void ghiThanhVien(Properties p) throws IOException {
+        StringWriter ghi=new StringWriter(); p.store(ghi,"Thanh vien phong - UTF-8");
+        ghiAnToan(thuMuc.resolve("members.properties"),ghi.toString());
+    }
+
     private static String csv(String giaTri) { return "\"" + giaTri.replace("\"", "\"\"") + "\""; }
 
     // Doc CSV co dau phay va dau nhay kep trong truong.
@@ -183,10 +196,20 @@ public final class KhoLuuTru {
     private static void ghiAnToan(Path tep, String noiDung) throws IOException {
         Path tam = tep.resolveSibling(tep.getFileName() + ".tmp");
         Files.writeString(tam, noiDung, StandardCharsets.UTF_8);
-        try { Files.move(tam, tep, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
-        catch (AtomicMoveNotSupportedException e) {
-            Files.move(tam, tep, StandardCopyOption.REPLACE_EXISTING);
+        IOException loiCuoi=null;
+        for (int lan=0;lan<6;lan++) {
+            try {
+                try { Files.move(tam,tep,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING); }
+                catch (AtomicMoveNotSupportedException e) { Files.move(tam,tep,StandardCopyOption.REPLACE_EXISTING); }
+                return;
+            } catch (java.nio.file.AccessDeniedException e) {
+                // Windows co the khoa file rat ngan khi index/quet; retry co gioi han, khong bo loi.
+                loiCuoi=e;
+                try { Thread.sleep(40L*(lan+1)); }
+                catch (InterruptedException ngat) { Thread.currentThread().interrupt(); throw new IOException("Đã ngắt ghi file",ngat); }
+            }
         }
+        throw new IOException("Không thay được file "+tep.getFileName()+": "+loiCuoi,loiCuoi);
     }
 
     /** Ban ghi rieng cua Server; tuyet doi khong gui salt/hash cho Client. */

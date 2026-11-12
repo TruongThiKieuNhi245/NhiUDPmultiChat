@@ -2,6 +2,8 @@ package com.mycompany.udpmultichat.common.model;
 
 /** Ban sao phong cong khai; khong chua salt hay hash mat khau phong. */
 public final class Phong {
+    /** Thanh vien cua phong, tach biet voi trang thai online. */
+    public record ThanhVien(String id,String ten,String vaiTro,boolean online) { }
     public static final int SO_TRUONG = 13;
     public final String id, ten, moTa, maPhong, chuId, nhom, ngayTao;
     public final int cong, gioiHan, soThanhVien;

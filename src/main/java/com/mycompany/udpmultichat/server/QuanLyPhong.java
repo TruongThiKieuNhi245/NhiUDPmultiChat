@@ -27,9 +27,10 @@ public final class QuanLyPhong {
     private final Map<String, List<TinNhan>> lichSu = new LinkedHashMap<>();
     private final SecureRandom ngauNhien = new SecureRandom();
     private final int congGoc;
+    private final java.util.Properties thanhVien;
 
     public QuanLyPhong(KhoLuuTru kho, Supplier<List<Phien>> cacPhien) throws IOException {
-        this.kho=kho; this.cacPhien=cacPhien;
+        this.kho=kho; this.cacPhien=cacPhien; thanhVien=kho.docThanhVien();
         try {
             congGoc=Integer.parseInt(kho.cauHinh("multicast.portBase"));
             if (congGoc<1024 || congGoc>65000) { throw new IllegalArgumentException(); }
@@ -58,7 +59,11 @@ public final class QuanLyPhong {
         }
         Phong sanh=lay(Protocol.SANH_ID);
         if (!sanh.congKhai || !sanh.dangMo || sanh.coMatKhau) { throw new IOException("Sảnh chung phải công khai và luôn mở"); }
-        for (String id : phong.keySet()) { lichSu.put(id,kho.docTin(id)); }
+        for (String id : phong.keySet()) {
+            lichSu.put(id,kho.docTin(id));
+            String chu=phong.get(id).phong.chuId;
+            if (!Protocol.SANH_ID.equals(id) && !laThanhVien(chu,id)) { ghiThanhVien(chu,id,true); }
+        }
     }
 
     // ===== DANH SACH VA QUYEN =====
@@ -70,7 +75,7 @@ public final class QuanLyPhong {
 
     public List<Phong> danhSachCho(Phien p) {
         return phong.values().stream().map(n -> lay(n.phong.id)).filter(r -> r.congKhai
-                || duocQuanLy(p.nguoi,r) || p.phong.contains(r.id)).toList();
+                || duocQuanLy(p.nguoi,r) || laThanhVien(p.nguoi.id,r.id)).toList();
     }
 
     public List<Phien> thanhVien(String id) {
@@ -105,18 +110,21 @@ public final class QuanLyPhong {
                 "239.255.42."+so,congGoc+so,gioiHan,congKhai,!matKhau.isEmpty(),true,0,Instant.now().toString());
         luuThayDoi(moi.id,new NoiBo(moi,salt,matKhau.isEmpty()?"":BaoMat.bam(salt,matKhau)));
         lichSu.put(moi.id,new ArrayList<>());
+        ghiThanhVien(p.nguoi.id,moi.id,true);
         return moi;
     }
 
     // null giu mat khau cu; chuoi rong xoa; chuoi khac dat mat khau moi.
     public Phong sua(Phien p,String id,String ten,String moTa,boolean congKhai,String matKhau,int gioiHan) throws IOException {
-        Phong cu=lay(id); kiemTraQuyen(p,cu); kiemTraNoiDung(ten,moTa,gioiHan);
+        Phong cu=lay(id); kiemTraQuyen(p,cu);
+        if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Sảnh chung không được sửa"); }
+        kiemTraNoiDung(ten,moTa,gioiHan);
         if (matKhau!=null) { kiemTraMatKhau(matKhau); }
         if (Protocol.SANH_ID.equals(id) && (!congKhai || (matKhau!=null && !matKhau.isEmpty())
                 || !ten.strip().equals("Sảnh chung"))) {
             throw new IllegalArgumentException("Sảnh chung giữ nguyên tên/loại công khai và không đặt mật khẩu");
         }
-        if (gioiHan<soChoDaDung(id)) { throw new IllegalArgumentException("Giới hạn mới nhỏ hơn số người/đặt chỗ hiện tại"); }
+        if (gioiHan<Math.max(soChoDaDung(id),soThanhVienBenVung(id))) { throw new IllegalArgumentException("Giới hạn mới nhỏ hơn số người/đặt chỗ hiện tại"); }
         NoiBo n=phong.get(id);
         String salt=matKhau==null?n.salt:(matKhau.isEmpty()?"":BaoMat.ngauNhien(16));
         String hash=matKhau==null?n.hash:(matKhau.isEmpty()?"":BaoMat.bam(salt,matKhau));
@@ -149,6 +157,9 @@ public final class QuanLyPhong {
                 .map(n -> n.phong).filter(n -> n.maPhong.equals(ma)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mã phòng"));
         if (p.phong.contains(r.id)) { return lay(r.id); }
+        if (laThanhVien(p.nguoi.id,r.id)) {
+            p.choVao.put(r.id,System.nanoTime()+10_000_000_000L); return lay(r.id);
+        }
         if (phong.containsKey(khoa) && !r.congKhai && !duocQuanLy(p.nguoi,r)) {
             throw new IllegalArgumentException("Hãy nhập mã để vào phòng riêng tư");
         }
@@ -158,20 +169,45 @@ public final class QuanLyPhong {
             throw new IllegalArgumentException("Mật khẩu phòng không đúng");
         }
         p.choVao.remove(r.id);
-        if (soChoDaDung(r.id)>=r.gioiHan) { throw new IllegalArgumentException("Phòng đã đầy"); }
+        if (soThanhVienBenVung(r.id)>=r.gioiHan || soChoDaDung(r.id)>=r.gioiHan) { throw new IllegalArgumentException("Phòng đã đầy"); }
         p.choVao.put(r.id,System.nanoTime()+10_000_000_000L);
         return lay(r.id);
     }
 
-    public void xacNhanVao(Phien p,String id) {
+    public void xacNhanVao(Phien p,String id) throws IOException {
         if (p.phong.contains(id)) { return; }
         Long hetHan=p.choVao.remove(id);
         if (hetHan==null || hetHan<System.nanoTime()) { throw new IllegalArgumentException("Đặt chỗ đã hết hạn; hãy vào lại phòng"); }
-        if (!lay(id).dangMo) { throw new IllegalArgumentException("Phòng vừa đóng"); }
-        p.phong.add(id);
+        if (!lay(id).dangMo && !laThanhVien(p.nguoi.id,id)) { throw new IllegalArgumentException("Phòng vừa đóng"); }
+        ghiThanhVien(p.nguoi.id,id,true); p.phong.add(id);
     }
 
     public void roi(Phien p,String id) { p.phong.remove(id); p.choVao.remove(id); }
+
+    // Roi phong chu dong khac voi dang xuat: xoa tu cach thanh vien.
+    public void roiChuDong(Phien p,String id) throws IOException {
+        Phong r=lay(id);
+        if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Không được rời Sảnh chung"); }
+        if (r.chuId.equals(p.nguoi.id)) { throw new IllegalArgumentException("Chủ phòng phải chuyển quyền hoặc xóa phòng trước khi rời"); }
+        ghiThanhVien(p.nguoi.id,id,false); roi(p,id);
+    }
+
+    public void chuyenChu(Phien p,String id,String nguoiMoi) throws IOException {
+        Phong r=lay(id); kiemTraQuyen(p,r);
+        if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Không chuyển chủ Sảnh chung"); }
+        if (nguoiMoi.equals(r.chuId) || !laThanhVien(nguoiMoi,id)) { throw new IllegalArgumentException("Hãy chọn thành viên khác trong phòng"); }
+        NoiBo n=phong.get(id);
+        Phong moi=new Phong(id,r.ten,r.moTa,r.maPhong,nguoiMoi,r.nhom,r.cong,r.gioiHan,r.congKhai,r.coMatKhau,r.dangMo,0,r.ngayTao);
+        luuThayDoi(id,new NoiBo(moi,n.salt,n.hash));
+    }
+    public boolean laThanhVien(String user,String id) { return thanhVien.containsKey(id+"."+user); }
+    public int soThanhVienBenVung(String id) { return (int)thanhVien.stringPropertyNames().stream().filter(k -> k.startsWith(id+".")).count(); }
+    private void ghiThanhVien(String user,String id,boolean them) throws IOException {
+        String khoa=id+"."+user, cu=thanhVien.getProperty(khoa);
+        if (them) { thanhVien.setProperty(khoa,"1"); } else { thanhVien.remove(khoa); }
+        try { kho.ghiThanhVien(thanhVien); }
+        catch (IOException e) { if (cu==null) { thanhVien.remove(khoa); } else { thanhVien.setProperty(khoa,cu); } throw e; }
+    }
 
     public void donDatCho() {
         long nay=System.nanoTime();
@@ -180,8 +216,11 @@ public final class QuanLyPhong {
 
     private int soChoDaDung(String id) {
         long nay=System.nanoTime();
-        return (int)cacPhien.get().stream().filter(p -> p.phong.contains(id)
-                || p.choVao.getOrDefault(id,0L)>nay).count();
+        java.util.Set<String> user=new java.util.HashSet<>();
+        thanhVien.stringPropertyNames().stream().filter(k -> k.startsWith(id+".")).forEach(k -> user.add(k.substring(id.length()+1)));
+        cacPhien.get().stream().filter(p -> p.phong.contains(id) || p.choVao.getOrDefault(id,0L)>nay)
+                .forEach(p -> user.add(p.nguoi.id));
+        return user.size();
     }
 
     // ===== LICH SU VA MSG ID THEO PHONG =====
@@ -236,10 +275,10 @@ public final class QuanLyPhong {
     private boolean trungMa(String ma) { return phong.values().stream().anyMatch(n -> n.phong.maPhong.equals(ma)); }
 
     private static void kiemTraNoiDung(String ten,String moTa,int gioiHan) {
-        if (ten.isBlank() || ten.strip().getBytes(StandardCharsets.UTF_8).length>80
+        if (ten.strip().codePointCount(0,ten.strip().length())<3 || ten.strip().codePointCount(0,ten.strip().length())>30
                 || moTa.getBytes(StandardCharsets.UTF_8).length>240 || ten.contains("\n") || ten.contains("\r")
-                || moTa.contains("\n") || moTa.contains("\r") || gioiHan<1 || gioiHan>1000) {
-            throw new IllegalArgumentException("Tên tối đa 80 byte, mô tả 240 byte, một dòng; giới hạn 1–1000 người");
+                || moTa.contains("\n") || moTa.contains("\r") || gioiHan<2 || gioiHan>500) {
+            throw new IllegalArgumentException("Tên cần 3–30 ký tự, mô tả tối đa 240 byte một dòng; giới hạn 2–500 người");
         }
     }
     private static void kiemTraMatKhau(String matKhau) {

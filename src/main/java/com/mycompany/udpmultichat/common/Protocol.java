@@ -32,5 +32,7 @@ public final class Protocol {
     public static final String HET_DONG_BO = "SYNC_END";
     public static final String MOC_TIN = "HEAD";
     public static final String DANH_SACH_PHONG = "ROOMS";
+    public static final int TIN_TOI_DA = 600;
+    public static final String CHUYEN_CHU = "TRANSFER", KET_NOI_LAI = "RECONNECT", THU_SERVER = "HELLO";
     private Protocol() { }
 }

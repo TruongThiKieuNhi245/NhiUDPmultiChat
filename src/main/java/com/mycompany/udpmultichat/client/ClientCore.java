@@ -42,7 +42,9 @@ public final class ClientCore implements AutoCloseable {
     private ScheduledExecutorService dongHo;
     private volatile long pingThanhCong;
     private long phienBanPhong=-1;
-    private volatile boolean choPing;
+    private volatile boolean choPing, dangKhoiPhuc, thuLai;
+    private char[] matKhauPhien=new char[0];
+    private String tenPhien="";
 
     public ClientCore(Listener listener) { this(listener,true); }
     public ClientCore(Listener listener,boolean tuDongPing) { this(listener,tuDongPing,tin -> true); }
@@ -71,7 +73,9 @@ public final class ClientCore implements AutoCloseable {
             if (p.length!=9+Phong.SO_TRUONG) {
                 return CompletableFuture.failedFuture(new IOException("Phản hồi đăng nhập sai định dạng"));
             }
-            token=p[3]; toi=NguoiDung.tuTruong(p,4); batHeartbeat();
+            token=p[3]; toi=NguoiDung.tuTruong(p,4);
+            tenPhien=ten; matKhauPhien=matKhau.toCharArray(); batHeartbeat();
+            try { CauHinhClient.ghi(ten,ip); } catch (IOException e) { listener.onLoi("Không ghi được tên/Server lần trước"); }
             return moKenh(Phong.tuTruong(p,9)).thenApply(r -> {
                 return toi;
             });
@@ -80,6 +84,7 @@ public final class ClientCore implements AutoCloseable {
         });
     }
     public CompletableFuture<Void> dangXuat() {
+        thuLai=false;
         if (token.isEmpty()) { close(); return CompletableFuture.completedFuture(null); }
         return yeuCau(Protocol.DANG_XUAT,token).handle((p,e) -> {
             close();
@@ -132,10 +137,21 @@ public final class ClientCore implements AutoCloseable {
             return CompletableFuture.failedFuture(e);
         }
     }
+    public CompletableFuture<Void> chuyenChu(String id,String userId) {
+        return yeuCau(Protocol.CHUYEN_CHU,token,id,userId).thenApply(p -> null);
+    }
+    public CompletableFuture<Void> kiemTraServer(String ip,int cong) {
+        try { ketNoi(ip,cong); return yeuCau(Protocol.THU_SERVER).thenApply(p -> null); }
+        catch (IOException | RuntimeException e) { return CompletableFuture.failedFuture(e); }
+    }
+    public boolean sanSang() { return toi!=null && !thuLai; }
     public CompletableFuture<Void> roiPhong(String id) {
         return yeuCau(Protocol.ROI_PHONG,token,id).thenApply(p -> { dongKenh(id,"Bạn đã rời phòng."); return null; });
     }
     public CompletableFuture<Void> guiTin(String id,String noiDung) {
+        if (thuLai) { return CompletableFuture.failedFuture(new IOException("Đang khôi phục kết nối, chưa thể gửi")); }
+        int soByte=noiDung.strip().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        if (soByte>Protocol.TIN_TOI_DA) { return CompletableFuture.failedFuture(new IOException("Tin vượt 600 byte UTF-8 (hiện tại "+soByte+" byte). Hãy rút ngắn tin.")); }
         if (!daVao.containsKey(id)) { return CompletableFuture.failedFuture(new IOException("Bạn chưa vào phòng")); }
         return yeuCau(Protocol.GUI_TIN,token,id,noiDung.trim()).thenApply(p -> null);
     }
@@ -196,8 +212,8 @@ public final class ClientCore implements AutoCloseable {
                 }
                 break;
             case Protocol.DANH_SACH_PHONG: nhanDanhSach(p); break;
-            case Protocol.ONLINE: if (p.length==7) { nhanThanhVien(p); } break;
-            case Protocol.DA_ROI_PHONG: if (p.length==3) { dongKenh(p[1],p[2]); } break;
+            case Protocol.ONLINE: if (p.length==9) { nhanThanhVien(p); } break;
+            case Protocol.DA_ROI_PHONG: if (p.length==3 && !thuLai) { dongKenh(p[1],p[2]); } break;
             case Protocol.MUC_DONG_BO:
                 if (p.length==10 && cacDongBo.containsKey(p[1])) {
                     TinNhan tin=TinNhan.tuTruong(java.util.Arrays.copyOfRange(p,3,10));
@@ -237,8 +253,8 @@ public final class ClientCore implements AutoCloseable {
         long ban=Long.parseLong(p[2]); int so=Integer.parseInt(p[3]), viTri=Integer.parseInt(p[4]);
         if (ban<bang.ban || so<1 || so>1000 || viTri<0 || viTri>=so) { return; }
         if (ban>bang.ban) { bang.ten.clear(); bang.ban=ban; }
-        bang.ten.put(viTri,p[6]);
-        if (bang.ten.size()==so) { listener.onThanhVien(p[1],List.copyOf(bang.ten.values())); }
+        bang.ten.put(viTri,new Phong.ThanhVien(p[5],p[6],p[7],Boolean.parseBoolean(p[8])));
+        if (bang.ten.size()==so) { listener.onThanhVienChiTiet(p[1],List.copyOf(bang.ten.values())); }
     }
 
     // ===== HEARTBEAT VA DONG =====
@@ -251,7 +267,8 @@ public final class ClientCore implements AutoCloseable {
         dongHo.scheduleAtFixedRate(this::ping,Protocol.PING_MS,Protocol.PING_MS,TimeUnit.MILLISECONDS);
     }
     private void ping() {
-        if (token.isEmpty() || choPing) { return; }
+        if (token.isEmpty() || choPing || dangKhoiPhuc) { return; }
+        if (thuLai) { khoiPhuc(); return; }
         choPing=true;
         yeuCau(Protocol.PING,token).whenComplete((p,e) -> {
             choPing=false;
@@ -261,7 +278,37 @@ public final class ClientCore implements AutoCloseable {
             }
         });
     }
-    private void matKetNoi(String lyDo) { if (toi!=null) { close(); listener.onMatKetNoi(lyDo); } }
+    private void matKetNoi(String lyDo) {
+        if (toi==null) { return; }
+        if (!tuDongPing) { close(); listener.onMatKetNoi(lyDo); return; }
+        thuLai=true; listener.onKetNoi(false,"Mất kết nối, đang thử kết nối lại…");
+    }
+    // Dang nhap lai cung endpoint, giu bo dem msgId de RESYNC thay vi nhan trung lich su.
+    private void khoiPhuc() {
+        if (matKhauPhien.length==0 || toi==null) { return; }
+        dangKhoiPhuc=true; String cu=token;
+        yeuCau(Protocol.KET_NOI_LAI,tenPhien,new String(matKhauPhien),cu).thenCompose(p -> {
+            if (toi==null) { return CompletableFuture.failedFuture(new IOException("Đã đăng xuất")); }
+            token=p[3]; toi=NguoiDung.tuTruong(p,4);
+            synchronized (this) { phienBanPhong=-1; choDanhSach.clear(); cacThanhVien.clear(); }
+            CompletableFuture<Void> viec=CompletableFuture.completedFuture(null);
+            for (Phong r : phongDaVao()) {
+                viec=viec.thenCompose(v -> yeuCau(Protocol.CHUAN_BI_VAO,token,r.maPhong,"")
+                    .thenCompose(k -> yeuCau(Protocol.SAN_SANG,token,r.id)).thenCompose(k -> dongBoPhong(r.id))
+                    .exceptionallyCompose(e -> {
+                        String lyDo=loiDeHieu(e);
+                        if (lyDo.contains("không tồn tại") || lyDo.contains("Không tìm thấy") || lyDo.contains("bị cấm")) {
+                            dongKenh(r.id,"Không khôi phục được phòng: "+lyDo); return CompletableFuture.completedFuture(null);
+                        }
+                        return CompletableFuture.failedFuture(e);
+                    }));
+            }
+            return viec.thenCompose(v -> yeuCau(Protocol.PING,token)).thenApply(k -> (Void)null);
+        }).whenComplete((v,e) -> {
+            dangKhoiPhuc=false;
+            if (e==null && toi!=null) { thuLai=false; pingThanhCong=System.nanoTime(); listener.onKetNoi(true,"Đã kết nối lại và đồng bộ tin nhắn."); }
+        });
+    }
     public static String loiDeHieu(Throwable loi) {
         while (loi.getCause()!=null) { loi=loi.getCause(); }
         return loi instanceof java.util.concurrent.TimeoutException?"Server chưa phản hồi":String.valueOf(loi.getMessage());
@@ -269,7 +316,8 @@ public final class ClientCore implements AutoCloseable {
     @Override public void close() {
         ReliableUdp kenhCu;
         synchronized (this) {
-            toi=null; token=""; kenhCu=udp; udp=null;
+            toi=null; token=""; kenhCu=udp; udp=null; thuLai=false;
+            java.util.Arrays.fill(matKhauPhien,'\0'); matKhauPhien=new char[0]; tenPhien="";
             if (dongHo!=null) { dongHo.shutdownNow(); dongHo=null; }
             choDanhSach.clear(); danhSach=List.of(); phienBanPhong=-1; choPing=false;
         }
@@ -282,6 +330,6 @@ public final class ClientCore implements AutoCloseable {
     /** Bo dem ghep danh sach thanh vien rieng tung phong. */
     private static final class BangTen {
         long ban=-1;
-        final TreeMap<Integer,String> ten=new TreeMap<>();
+        final TreeMap<Integer,Phong.ThanhVien> ten=new TreeMap<>();
     }
 }

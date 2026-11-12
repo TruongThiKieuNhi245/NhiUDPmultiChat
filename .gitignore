@@ -3,3 +3,7 @@ data/
 reports/
 .selftest/
 *.log
+
+client.properties
+client.properties.tmp
+client-*.tmp

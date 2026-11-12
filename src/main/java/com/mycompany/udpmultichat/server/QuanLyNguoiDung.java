@@ -75,6 +75,18 @@ public final class QuanLyNguoiDung {
         return p;
     }
 
+    // Chi cho phep khoi phuc cung endpoint va token; khong da nguoi dang nhap o noi khac.
+    public synchronized Phien ketNoiLai(String ten,String matKhau,String token,InetSocketAddress diaChi) {
+        Phien cu=phien.get(token);
+        if (cu!=null && cu.diaChi.equals(diaChi) && cu.nguoi.tenDangNhap.equals(chuanHoaTen(ten))) {
+            TaiKhoan tk=taiKhoan.get(cu.nguoi.tenDangNhap);
+            if (!BaoMat.dungMatKhau(tk.salt,tk.hash,matKhau)) { throw new IllegalArgumentException("Sai mật khẩu"); }
+            cu.pingCuoi=System.nanoTime(); return cu;
+        }
+        return dangNhap(ten,matKhau,diaChi);
+    }
+    public synchronized List<NguoiDung> tatCa() { return taiKhoan.values().stream().map(t -> t.nguoi).toList(); }
+
     // ===== HEARTBEAT =====
     public synchronized void ping(Phien p) { p.pingCuoi = System.nanoTime(); }
     public synchronized void dangXuat(Phien p) { phien.remove(p.token); }

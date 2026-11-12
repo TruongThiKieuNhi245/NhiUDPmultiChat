@@ -35,12 +35,16 @@ public final class SelfTest {
     // ===== DIEM CHAY =====
     public static void main(String[] args) throws Exception {
         MangUtil.dungIPv4();
+        Files.createDirectories(Path.of(".selftest"));
+        Path prefs=Files.createTempDirectory(Path.of(".selftest"),"prefs-").resolve("client.properties");
+        System.setProperty("udpmultichat.clientConfig",prefs.toAbsolutePath().toString());
         chay("UTF-8, escape va gioi han 1399 byte", SelfTest::testGoi);
         chay("ACK, gui lai, loai trung voi mat goi 20% (seed co dinh)", SelfTest::testReliable);
         chay("Mat 100%: dung sau 3 lan gui lai, khong treo", SelfTest::testHetLuot);
         testServerClient();
         PhongSelfTest.chayTatCa();
-        System.out.println("KET QUA M1/M2: " + pass + " PASS, " + fail + " FAIL");
+        GiaoDienSelfTest.chayTatCa();
+        System.out.println("KET QUA M1/M2/M2.5: " + pass + " PASS, " + fail + " FAIL");
         if (fail > 0) { throw new IllegalStateException("Co muc kiem thu FAIL; xem log o tren"); }
     }
 
@@ -157,7 +161,7 @@ public final class SelfTest {
                 cho(a.dangNhap("127.0.0.1", server.cong(), "sinhvien_a", "abcdef123"));
                 server.close();
                 can(ngheA.matKetNoi.await(24, TimeUnit.SECONDS), "Client khong phat hien Server dung");
-                can(a.nguoiDung() == null, "Client chua don phien sau mat Server");
+                can(!a.sanSang(), "Client khong khoa gui khi mat Server");
             });
         } finally { server.close(); }
     }
@@ -196,5 +200,6 @@ public final class SelfTest {
         @Override public void onDanhSachOnline(List<String> ds) { online = List.copyOf(ds); }
         @Override public void onLoi(String s) { loiNen(s); }
         @Override public void onMatKetNoi(String s) { matKetNoi.countDown(); }
+        @Override public void onKetNoi(boolean ok,String s) { if (!ok) { matKetNoi.countDown(); } }
     }
 }
