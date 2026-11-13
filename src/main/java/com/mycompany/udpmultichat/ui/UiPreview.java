@@ -58,17 +58,17 @@ public final class UiPreview {
     // Sticker, thu hoi va ba trang thai dung API UI that, khong mo mang.
     private static void xuatTroChuyen() throws IOException {
         xuatForm(StickerKho.bangChon(ma -> { }),"32-bang-sticker.png");
-        javax.swing.JPanel kho=new javax.swing.JPanel(new java.awt.GridLayout(3,4,Theme.S8,Theme.S8)); kho.setBorder(Theme.le(Theme.S16));
+        javax.swing.JPanel kho=new javax.swing.JPanel(new java.awt.GridLayout(6,6,Theme.S8,Theme.S8)); kho.setBorder(Theme.le(Theme.S16));
         for (String ma:Protocol.MA_STICKER) {
-            javax.swing.JLabel l=Theme.nhan(StickerKho.ten(ma),false); l.setIcon(StickerKho.icon(ma,128)); l.setHorizontalTextPosition(javax.swing.JLabel.CENTER); l.setVerticalTextPosition(javax.swing.JLabel.BOTTOM); kho.add(l);
+            javax.swing.JLabel l=Theme.nhan(StickerKho.ten(ma),false); l.setIcon(StickerKho.icon(ma,96)); l.setHorizontalTextPosition(javax.swing.JLabel.CENTER); l.setVerticalTextPosition(javax.swing.JLabel.BOTTOM); kho.add(l);
         }
-        xuat(kho,"37-kho-sticker-day-du.png",640,520);
+        xuat(kho,"37-kho-sticker-day-du.png",900,840);
         ChatMulticastUI f=new ChatMulticastUI(); long luc=java.time.Instant.parse("2026-11-13T05:00:00Z").toEpochMilli();
         try {
             NguoiDung n=new NguoiDung("nhi","nhikieu","Kiều Nhi",VaiTro.ADMIN,"2026-11-13");
             Phong p=new Phong("sanh","Sảnh chung","","SANH01","HE_THONG","239.255.42.1",9001,500,true,false,true,2,"2026-11-13").voiThongTin(true,"Hệ thống",2);
             FormKiemTra.kiemTraThuHoi(p); f.duLieuMau(n,List.of(p)); f.onThanhVienChiTiet("sanh",List.of(new Phong.ThanhVien("nhi","nhikieu","Kiều Nhi","ADMIN",true),new Phong.ThanhVien("an","minhan","Minh An","THANH_VIEN",true)));
-            TinNhan sticker=new TinNhan(1,"sanh","an","Minh An","tim",luc,"a".repeat(22),"S"); f.onTinNhan(sticker,false);
+            TinNhan sticker=new TinNhan(1,"sanh","an","Minh An","2764",luc,"a".repeat(22),"S"); f.onTinNhan(sticker,false);
             TinNhan thu=new TinNhan(2,"sanh","an","Minh An","Nội dung cũ cần xóa",luc,"b".repeat(22),"T"); f.onTinNhan(thu,false); f.onThuHoi("sanh",2);
             f.onTrangThaiGui(new TinNhan(0,"sanh","nhi","Kiều Nhi","Tin đang chờ xác nhận",luc,"c".repeat(22),"T"),"WAIT","");
             f.onTrangThaiGui(new TinNhan(3,"sanh","nhi","Kiều Nhi","Tin đã được Server xác nhận và nhận lại multicast",luc,"d".repeat(22),"T"),"SENT","");
@@ -187,7 +187,7 @@ public final class UiPreview {
             xuat(frame.getRootPane(),"06-toast-ba-muc.png",1240,800);
             frame.toast(ThongBao.Muc.LOI,"Phòng đã đầy. Hãy liên hệ chủ phòng.");
             xuat(frame.getRootPane(),"07-toast-loi.png",1240,800);
-            xuat(frame.menuAvatar(),"08-menu-nguoi-dung.png",240,140);
+            xuat(frame.menuAvatar(),"08-menu-nguoi-dung.png",260,180);
             HopThoai tao=new HopThoai(null,false); xuatForm(tao,"09-tao-phong.png");
             xuatForm(new HopThoai(nhom,false),"10-sua-phong.png");
             HopThoai vao=new HopThoai(null,true); vao.coMatKhau(); xuatForm(vao,"11-vao-phong.png");

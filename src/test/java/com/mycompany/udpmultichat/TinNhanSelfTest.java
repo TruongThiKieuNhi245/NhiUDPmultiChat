@@ -74,13 +74,13 @@ public final class TinNhanSelfTest {
         }
         // Ma hop le di qua multicast; Server tu choi ma la, so tin khong tang.
         void sticker() throws Exception {
-            String ma=TinNhan.taoMa(); cho(a.troChuyen().guiCoMa(room.id,"tim","S",ma));
-            doi(() -> ngheB.tin.stream().anyMatch(t -> t.maClient.equals(ma) && t.loai.equals("S") && t.noiDung.equals("tim")),4000);
+            String ma=TinNhan.taoMa(); cho(a.troChuyen().guiCoMa(room.id,"2764","S",ma));
+            doi(() -> ngheB.tin.stream().anyMatch(t -> t.maClient.equals(ma) && t.loai.equals("S") && t.noiDung.equals("2764")),4000);
             can(ngheAd.tin.stream().noneMatch(t -> t.roomId.equals(room.id)),"Sticker lot sang phong khac");
             idSticker=ngheB.tin.stream().filter(t -> t.maClient.equals(ma)).findFirst().orElseThrow().msgId;
-            biChan(a.troChuyen().gui(room.id,"MA_LA","S")); can(Protocol.stickerHopLe("tim") && !Protocol.stickerHopLe("MA_LA"),"Registry sai");
+            biChan(a.troChuyen().gui(room.id,"MA_LA","S")); can(Protocol.stickerHopLe("2764") && !Protocol.stickerHopLe("MA_LA"),"Registry sai");
             cho(a.guiTin(room.id,"Sau sticker")); doi(() -> ngheB.tin.stream().anyMatch(t -> t.roomId.equals(room.id) && t.msgId==idSticker+1),4000);
-            cho(b.troChuyen().guiCoMa(room.id,"like","S",ma));
+            cho(b.troChuyen().guiCoMa(room.id,"1f44d","S",ma));
             doi(() -> ngheA.tin.stream().filter(t -> t.maClient.equals(ma)).count()==2,4000);
         }
         // Thu hoi nguoi khac bi chan; chu/admin duoc phep, RESYNC van mang tombstone.

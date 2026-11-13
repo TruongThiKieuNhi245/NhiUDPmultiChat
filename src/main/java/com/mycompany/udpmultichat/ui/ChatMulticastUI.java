@@ -171,7 +171,10 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         JPopupMenu m=new JPopupMenu();
         JMenuItem hoSo=new JMenuItem("Hồ sơ của tôi"),doi=new JMenuItem("Đổi mật khẩu");
         hoSo.addActionListener(e -> { if (toi!=null) { new HoSoDialog(client,toi,false,false).hien(this,n -> toast(ThongBao.Muc.THANH_CONG,"Đã lưu hồ sơ.")); } });
-        doi.addActionListener(e -> moMatKhau(false)); m.add(hoSo); m.add(doi); m.addSeparator();
+        doi.addActionListener(e -> moMatKhau(false)); m.add(hoSo); m.add(doi);
+        JMenuItem gioiThieu=new JMenuItem("Giới thiệu"); gioiThieu.addActionListener(e -> javax.swing.JOptionPane.showMessageDialog(this,
+            "UDP Chat\nSticker: Noto Emoji 2D — Google và cộng tác viên\nGiấy phép ảnh: Apache License 2.0\nhttps://github.com/googlefonts/noto-emoji\nGiấy phép kèm trong resources/stickers/LICENSE.","Giới thiệu",javax.swing.JOptionPane.INFORMATION_MESSAGE));
+        m.add(gioiThieu); m.addSeparator();
         JMenuItem thoat=new JMenuItem("Đăng xuất");
         thoat.addActionListener(e -> chay(client::dangXuat,v -> veDangNhap("Đã đăng xuất."),this::loi)); m.add(thoat); return m;
     }

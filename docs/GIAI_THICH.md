@@ -335,3 +335,17 @@ Chỉ bốn mục M3b đã làm. Thứ tự tiếp: **M4 → M5 → M6 → M3c �
 **Giới hạn đã biết:** UDP vẫn có thể hết lượt retry; multicast cần chung LAN và cho Java qua Windows Firewall; token/mật khẩu qua UDP không mã hóa, nguồn multicast chưa xác thực. TYPING có thể mất, không phải bằng chứng người dùng còn online. Thu hồi ghi lại log và tombstone/mã hiện giữ RAM theo lịch sử, chưa tối ưu dữ liệu rất lớn. Chưa kiểm tra tương tác IDE/ba cửa sổ đầy đủ, nhiều máy LAN hoặc DPI khác; PNG không thay thế kiểm tra tay.
 
 Ảnh [37-kho-sticker-day-du.png](screenshots/37-kho-sticker-day-du.png) cho xem đầy đủ 12 sticker Java2D ở kích thước gốc 128px.
+
+
+## Sticker PNG nguồn mở
+
+36 sticker Noto Emoji 2D (Google và cộng tác viên), ảnh Apache 2.0; xem [nguồn tài nguyên](NGUON_TAI_NGUYEN.md).
+| Chức năng | File | Hàm |
+|---|---|---|
+| Danh mục hex, tên, 4 nhóm | common/StickerDanhMuc.java | tim, maCu |
+| Kiểm tra mã ở Server | common/Protocol.java | stickerHopLe |
+| Cache PNG, bicubic, tìm nhanh | ui/StickerKho.java | anh, icon, bangChon |
+| Ghi nguồn trong ứng dụng | ui/ChatMulticastUI.java | menuAvatar |
+
+Gói vẫn là `STK|<mã hex>` qua lệnh điều khiển; Server phát tin S qua multicast phòng.
+Không truyền ảnh sticker qua mạng. Mã lịch sử cũ có ánh xạ để vẫn xem được; mã lạ hiện “Sticker không hỗ trợ”.

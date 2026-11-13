@@ -44,7 +44,7 @@ public final class Protocol {
     public static final String STICKER="STK", THU_HOI="REVOKE", DA_THU_HOI="REVOKED", DS_THU_HOI="RECALLS", DANG_GO="TYPING";
     public static final int TYPING_MS=3000, TYPING_HIEN_MS=4000, CHO_TIN_MS=8000;
     public static final long THU_HOI_MS=10*60*1000L;
-    public static final String[] MA_STICKER={"vui","tim","like","votay","cuoi","nga","buon","gian","ngu","phao","pizza","cafe"};
+    public static final String[] MA_STICKER=StickerDanhMuc.CAC_MUC.stream().map(StickerDanhMuc.Muc::ma).toArray(String[]::new);
     // Kiem tra ma dung chung, Server khong phu thuoc UI hay anh.
     public static boolean stickerHopLe(String ma) { return java.util.Arrays.asList(MA_STICKER).contains(ma); }
     // Khoi tao lop va noi cac thanh phan can thiet.

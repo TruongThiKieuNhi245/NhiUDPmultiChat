@@ -50,7 +50,7 @@ final class HangTin extends JPanel {
         if (tin.loai.equals("S")) {
             JPanel p=new JPanel(new BorderLayout(0,Theme.S4)); p.setOpaque(false); JLabel n=Theme.nhan(ten.get(),true); n.setFont(Theme.NHO.deriveFont(Font.BOLD)); p.add(n,BorderLayout.NORTH);
             JLabel h=Theme.nhan(StickerKho.ten(tin.noiDung),false);
-            if (com.mycompany.udpmultichat.common.Protocol.stickerHopLe(tin.noiDung)) { h.setText(""); h.setIcon(StickerKho.icon(tin.noiDung,112)); }
+            if (StickerKho.anh(tin.noiDung)!=null) { h.setText(""); h.setIcon(StickerKho.icon(tin.noiDung,112)); }
             h.setToolTipText(StickerKho.ten(tin.noiDung)); p.add(h); return p;
         }
         return new ThanhPhan.BongTin(ten.get(),tin.noiDung,"",toi);

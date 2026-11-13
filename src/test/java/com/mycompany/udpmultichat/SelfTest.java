@@ -49,7 +49,18 @@ public final class SelfTest {
         chay("M2.6 goi 1000 byte va escape nam trong MTU",DanhTinhSelfTest::kiemTraGoi);
         HoSoSelfTest.chayTatCa();
         TinNhanSelfTest.chayTatCa();
+        chay("36 PNG Noto Emoji doc duoc, ma la an toan",SelfTest::testStickerPng);
         ketLuan();
+    }
+    // Danh muc Server va tai nguyen Client phai khop nhau.
+    private static void testStickerPng() throws Exception {
+        for (var m:com.mycompany.udpmultichat.common.StickerDanhMuc.CAC_MUC) {
+            try (var in=SelfTest.class.getResourceAsStream("/stickers/"+m.ma()+".png")) {
+                can(in!=null,"Thieu PNG "+m.ma()); var h=javax.imageio.ImageIO.read(in);
+                can(h!=null && h.getWidth()==128 && h.getHeight()==128,"PNG khong hop le "+m.ma());
+            }
+        }
+        can(!Protocol.stickerHopLe("../khong-co"),"Ma la duoc chap nhan");
     }
     // Bao loi exit code ca khi chay rieng nhom M3a.
     static void ketLuan() {
