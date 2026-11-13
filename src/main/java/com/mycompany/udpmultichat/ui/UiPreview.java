@@ -75,7 +75,7 @@ public final class UiPreview {
             f.onTrangThaiGui(new TinNhan(0,"sanh","nhi","Kiều Nhi","Tin gửi lỗi có thể gửi lại",luc,"e".repeat(22),"T"),"ERROR","Chưa nhận đủ xác nhận.");
             f.onDangGo("sanh","an","Minh An"); f.onDangGo("sanh","ha","Thu Hà"); f.onDangGo("sanh","binh","Bình");
             xuat(f.getRootPane(),"33-chat-sticker-trang-thai.png",1240,980);
-            if (demNhan(f.getRootPane(),"Đang gửi")!=1 || demNhan(f.getRootPane(),"Đã gửi")!=1 || demNhan(f.getRootPane(),"Lỗi")!=1) { throw new AssertionError("Sai ba trang thai gui"); }
+            if (demNhan(f.getRootPane(),"Đang gửi")!=1 || demNhan(f.getRootPane(),"Đã gửi")!=0 || demNhan(f.getRootPane(),"Lỗi")!=1) { throw new AssertionError("Sai ba trang thai gui"); }
             HangTin h=new HangTin(new TinNhan(4,"sanh","nhi","Kiều Nhi","Menu tin nhắn",System.currentTimeMillis(),"f".repeat(22),"T"),true,() -> null,() -> "Kiều Nhi",() -> true,l -> { });
             xuatForm(h.menu(),"34-menu-tin-nhan.png");
             f.onTrangThaiGui(new TinNhan(0,"sanh","nhi","Kiều Nhi","Tin đang chờ xác nhận",luc,"c".repeat(22),"T"),"SENT","");
@@ -83,7 +83,7 @@ public final class UiPreview {
             f.capNhatDangGo(System.nanoTime()+Protocol.TYPING_HIEN_MS*1000000L+1);
             xuat(f.getRootPane(),"35-cap-nhat-khong-trung.png",1240,980);
             if (demNhan(f.getRootPane(),"Minh An và 2 người khác đang nhập...")!=0) { throw new AssertionError("Typing khong tat sau 4 giay"); }
-            if (demNhan(f.getRootPane(),"Đang gửi")!=0 || demNhan(f.getRootPane(),"Đã gửi")!=2 || demNhan(f.getRootPane(),"Lỗi")!=0) { throw new AssertionError("Trang thai gui lai bi trung"); }
+            if (demNhan(f.getRootPane(),"Đang gửi")!=0 || demNhan(f.getRootPane(),"Đã gửi")!=1 || demNhan(f.getRootPane(),"Lỗi")!=0) { throw new AssertionError("Trang thai gui lai bi trung"); }
             HangTin la=new HangTin(new TinNhan(5,"sanh","an","Minh An","khong_co",luc,"g".repeat(22),"S"),false,() -> null,() -> "Minh An",() -> false,l -> { });
             xuat(la,"36-sticker-khong-ho-tro.png",500,180);
         } finally { f.dispose(); }

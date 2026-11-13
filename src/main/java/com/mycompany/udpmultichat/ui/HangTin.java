@@ -19,6 +19,7 @@ final class HangTin extends JPanel {
     private final Consumer<String> hanhDong;
     private final BooleanSupplier quanLy;
     private String trangThai="",lyDo="";
+    private boolean hienDaGui=true;
     private final JPanel the=new JPanel(new BorderLayout(0,Theme.S4));
     // Renderer doc cache RAM; callback chi gui lenh qua UI/Core.
     HangTin(TinNhan t,boolean toi,Supplier<BufferedImage> anh,Supplier<String> ten,BooleanSupplier quanLy,Consumer<String> hanhDong) {
@@ -32,15 +33,23 @@ final class HangTin extends JPanel {
     TinNhan tin() { return tin; }
     // Trang thai chi duoc Core phat, renderer khong tu doan ACK.
     void trangThai(String ma,String loi) { trangThai=ma; lyDo=loi; veLai(); }
+    // Chi tin moi nhat cua minh duoc hien nhan Da gui.
+    void hienDaGui(boolean hien) { if (hienDaGui!=hien) { hienDaGui=hien; veLai(); } }
+    // Doc vai tro cua hang de chon tin moi nhat trong phong.
+    boolean laToi() { return toi; }
     // Ve lai giu JPanel ngoai de khong doi vi tri trong khung chat.
     void veLai() {
         removeAll(); the.removeAll();
-        if (!toi) { add(new ThanhPhan.Avatar(ten.get(),null,anh)); }
+        if (!toi) {
+            JPanel tren=new JPanel(new BorderLayout()); tren.setOpaque(false); tren.add(new ThanhPhan.Avatar(ten.get(),null,anh),BorderLayout.NORTH); add(tren);
+        }
         JComponent nd=noiDung(); the.add(nd);
         JPanel duoi=new JPanel(new BorderLayout(Theme.S8,0)); duoi.setOpaque(false);
         JLabel gio=Theme.nhan(GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU);
-        duoi.add(gio,BorderLayout.WEST); if (toi && !trangThai.isEmpty()) { duoi.add(trangThaiGui()); }
-        the.add(duoi,BorderLayout.SOUTH); add(the); ganMenu(this); revalidate(); repaint();
+        duoi.add(gio,BorderLayout.WEST); if (toi && !trangThai.isEmpty() && (!trangThai.equals("SENT") || hienDaGui)) { duoi.add(trangThaiGui()); }
+        the.add(duoi,BorderLayout.SOUTH); add(the);
+        if (!toi && getComponentCount()>1) { getComponent(0).setPreferredSize(new Dimension(40,the.getPreferredSize().height)); }
+        ganMenu(this); revalidate(); repaint();
     }
     // Sticker khong bong nen; thu hoi khong giu noi dung trong component hay tooltip.
     private JComponent noiDung() {
@@ -61,7 +70,11 @@ final class HangTin extends JPanel {
         String text=switch (trangThai) { case "WAIT" -> "Đang gửi"; case "ERROR" -> "Lỗi"; default -> "Đã gửi"; };
         JLabel l=Theme.nhan(text,false); l.setFont(Theme.NHO); l.setForeground(trangThai.equals("ERROR")?Theme.LOI:Theme.PHU); l.setToolTipText(lyDo); p.add(l);
         if (trangThai.equals("ERROR")) {
-            for (String lenh:new String[]{"Gửi lại","Xóa"}) { JButton b=Theme.nutNhe(lenh,""); b.setFont(Theme.NHO); b.addActionListener(e -> hanhDong.accept(lenh)); p.add(b); }
+            for (String lenh:new String[]{"Gửi lại","Xóa"}) { JButton b=Theme.nutNhe(lenh,""); b.setFont(Theme.NHO); b.setForeground(Theme.CHINH); b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                b.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseEntered(java.awt.event.MouseEvent e) { b.setFont(Theme.NHO.deriveFont(java.util.Map.of(java.awt.font.TextAttribute.UNDERLINE,java.awt.font.TextAttribute.UNDERLINE_ON))); }
+                    public void mouseExited(java.awt.event.MouseEvent e) { b.setFont(Theme.NHO); }
+                }); b.addActionListener(e -> hanhDong.accept(lenh)); p.add(b); }
         }
         return p;
     }
@@ -72,11 +85,11 @@ final class HangTin extends JPanel {
     }
     // Server kiem tra lai quyen va 10 phut, khong tin viec an menu tren Client.
     JPopupMenu menu() {
-        JPopupMenu m=new JPopupMenu();
+        JPopupMenu m=new JPopupMenu(); m.setBorder(javax.swing.BorderFactory.createCompoundBorder(m.getBorder(),Theme.le(Theme.S4)));
         if (!tin.thuHoi) {
             JMenuItem copy=new JMenuItem("Sao chép"); copy.addActionListener(e -> DanhSachPhongPanel.saoChep(tin.loai.equals("S")?StickerKho.ten(tin.noiDung):tin.noiDung)); m.add(copy);
             if (tin.msgId>0 && (quanLy.getAsBoolean() || (toi && System.currentTimeMillis()-tin.thoiGian<=com.mycompany.udpmultichat.common.Protocol.THU_HOI_MS))) {
-                JMenuItem thu=new JMenuItem("Thu hồi"); thu.addActionListener(e -> hanhDong.accept("Thu hồi")); m.add(thu);
+                m.addSeparator(); JMenuItem thu=new JMenuItem("Thu hồi"); thu.setForeground(Theme.LOI); thu.addActionListener(e -> hanhDong.accept("Thu hồi")); m.add(thu);
             }
         }
         return m;

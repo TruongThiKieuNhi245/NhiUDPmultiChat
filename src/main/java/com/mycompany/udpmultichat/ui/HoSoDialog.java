@@ -147,7 +147,7 @@ public final class HoSoDialog extends JPanel {
         }));
     }
     // Icon tron dung cung renderer voi avatar trong chat.
-    private void capNhatAnh() { anh.setIcon(Theme.avatar(nguoi.tenHienThi,xemTruoc,96)); xoaAnh.setEnabled(!ban && (xemTruoc!=null || (!xoa && !nguoi.anhHash.isEmpty()))); }
+    private void capNhatAnh() { anh.setIcon(Theme.avatar(nguoi.tenHienThi,xemTruoc,96)); xoaAnh.setEnabled(!ban && (xemTruoc!=null || (!xoa && !nguoi.anhHash.isEmpty()))); xoaAnh.setDisabledIcon(null); }
     // ===== GUI BAT DONG BO =====
     private void gui() {
         if (ban || !kiemTra() || core==null) { return; }

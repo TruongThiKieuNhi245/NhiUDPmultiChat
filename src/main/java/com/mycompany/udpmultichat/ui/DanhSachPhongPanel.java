@@ -98,6 +98,12 @@ final class DanhSachPhongPanel extends JPanel {
     }
     // Preview tin cuoi khong duoc giu noi dung da thu hoi.
     void thuHoi(String room,long id) { TinNhan t=tinCuoi.get(room); if (t!=null && t.msgId==id) { tinCuoi.put(room,t.daThuHoi()); loc(); } }
+    // Nhan nguoi gui dung id, khong so sanh ten hien thi.
+    private String xemTruoc(TinNhan tin) {
+        var n=toi.get(); String ten=n!=null && n.id.equals(tin.userId)?"Bạn":tin.ten;
+        String nd=tin.thuHoi?"Tin nhắn đã thu hồi":tin.loai.equals("S")?"[Sticker] "+StickerKho.ten(tin.noiDung):tin.noiDung.replace('\n',' ');
+        return ten+": "+nd;
+    }
     // Don danh sach sau dang xuat.
     void xoa() { tinCuoi.clear(); danhSach=List.of(); dangChon=""; loc(); }
     // Chon phong tu sidebar, khong tao them tab.
@@ -138,7 +144,7 @@ final class DanhSachPhongPanel extends JPanel {
         JPanel tren=new JPanel(new BorderLayout(Theme.S4,0)); tren.setOpaque(false);
         JLabel ten=Theme.nhan(p.ten,true),gio=Theme.nhan(tin==null?"":GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false);
         ten.setIcon(p.congKhai?null:Theme.icon("lock")); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU); tren.add(ten); tren.add(gio,BorderLayout.EAST);
-        JLabel nd=Theme.nhan(tin==null?(p.dangMo?p.moTa:"Phòng đang đóng"):(tin.thuHoi?"Tin nhắn đã được thu hồi":tin.ten+": "+(tin.loai.equals("S")?"[Sticker] "+StickerKho.ten(tin.noiDung):tin.noiDung.replace('\n',' '))),false); nd.setForeground(Theme.PHU); nd.setFont(Theme.NHO);
+        JLabel nd=Theme.nhan(tin==null?(p.dangMo?p.moTa:"Phòng đang đóng"):xemTruoc(tin),false); nd.setForeground(Theme.PHU); nd.setFont(Theme.NHO);
         text.add(tren); text.add(nd); h.add(text); h.add(nutPhong(p,thamGia),BorderLayout.EAST);
         h.setToolTipText(p.moTa+" · Mã: "+p.maPhong+" · Giới hạn "+p.gioiHan);
         ganClick(h,() -> { if (choPhep) { vao.accept(p); } }); h.setComponentPopupMenu(menu(p));

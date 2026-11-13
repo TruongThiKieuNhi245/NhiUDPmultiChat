@@ -50,8 +50,8 @@ final class KhungChatPanel extends JPanel {
         if (thuHoi.contains(t.msgId)) { t=t.daThuHoi(); }
         HangTin cu=theoId.get(t.msgId);
         if (cu==null && !t.maClient.isEmpty()) { cu=theoMa.get(khoa(t)); }
-        if (cu!=null) { cu.capNhat(t); theoId.put(t.msgId,cu); return; }
-        HangTin h=taoHang(t,toi); if (toi) { h.trangThai("SENT",""); } theoId.put(t.msgId,h); if (!t.maClient.isEmpty()) { theoMa.put(khoa(t),h); } them(h);
+        if (cu!=null) { cu.capNhat(t); theoId.put(t.msgId,cu); capNhatNhanGui(); return; }
+        HangTin h=taoHang(t,toi); if (toi) { h.trangThai("SENT",""); } theoId.put(t.msgId,h); if (!t.maClient.isEmpty()) { theoMa.put(khoa(t),h); } them(h); capNhatNhanGui();
     }
     // Tao hang, ten hien thi lay snapshot moi nhat theo id bat bien.
     private HangTin taoHang(TinNhan t,boolean toi) {
@@ -66,11 +66,17 @@ final class KhungChatPanel extends JPanel {
     void trangThai(TinNhan t,String ma,String loi) {
         HangTin h=theoMa.get(khoa(t));
         if (ma.equals("REMOVE")) {
-            if (h!=null) { ds.remove(h); theoMa.remove(khoa(t)); HangTin xoa=h; theoId.values().removeIf(v -> v==xoa); ds.revalidate(); ds.repaint(); } return;
+            if (h!=null) { ds.remove(h); theoMa.remove(khoa(t)); HangTin xoa=h; theoId.values().removeIf(v -> v==xoa); ds.revalidate(); ds.repaint(); capNhatNhanGui(); } return;
         }
         if (h==null) { h=taoHang(t,true); theoMa.put(khoa(t),h); them(h); }
         if (t.msgId>0) { if (thuHoi.contains(t.msgId)) { t=t.daThuHoi(); } h.capNhat(t); theoId.put(t.msgId,h); }
-        h.trangThai(ma,loi);
+        h.trangThai(ma,loi); capNhatNhanGui();
+    }
+    // Hang sau cung theo thu tu hien thi la tin moi nhat cua minh.
+    private void capNhatNhanGui() {
+        HangTin cuoi=null;
+        for (var c:ds.getComponents()) { if (c instanceof HangTin h && h.laToi()) { cuoi=h; } }
+        for (var c:ds.getComponents()) { if (c instanceof HangTin h) { h.hienDaGui(h==cuoi); } }
     }
     // Tombstone den truoc ban tin van chan noi dung cu den cham.
     void thuHoi(long id) {

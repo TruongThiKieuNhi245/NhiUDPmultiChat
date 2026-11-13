@@ -349,3 +349,16 @@ Chỉ bốn mục M3b đã làm. Thứ tự tiếp: **M4 → M5 → M6 → M3c �
 
 Gói vẫn là `STK|<mã hex>` qua lệnh điều khiển; Server phát tin S qua multicast phòng.
 Không truyền ảnh sticker qua mạng. Mã lịch sử cũ có ánh xạ để vẫn xem được; mã lạ hiện “Sticker không hỗ trợ”.
+
+
+## M3b.1: Chỉnh chi tiết chat
+
+| Chức năng | File | Hàm |
+|---|---|---|
+| Liên kết gửi lại/xóa, avatar căn đầu, menu có quyền | ui/HangTin.java | veLai, trangThaiGui, menu |
+| Chỉ tin cuối của mình hiện Đã gửi | ui/KhungChatPanel.java | capNhatNhanGui |
+| Xem trước sticker/thu hồi, tiền tố Bạn | ui/DanhSachPhongPanel.java | xemTruoc |
+| Nút Xóa ảnh vô hiệu nếu chưa có ảnh | ui/HoSoDialog.java | capNhatAnh |
+
+Popup sticker dùng tab gạch chân FlatLaf; hình Vỗ tay đã thay bằng PNG Noto Emoji.
+Trạng thái Đang gửi và Lỗi luôn hiện; Đã gửi chỉ hiện khi đó là tin cuối của chính mình.
