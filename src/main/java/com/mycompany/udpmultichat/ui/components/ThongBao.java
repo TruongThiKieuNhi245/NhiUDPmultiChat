@@ -37,6 +37,10 @@ public final class ThongBao implements AutoCloseable {
         if (ds.size()==3) { xoa(ds.get(0)); }
         Toast t=new Toast(muc,Theme.vietHoaDau(noiDung)); ds.add(t); lop.add(t,JLayeredPane.POPUP_LAYER); sapXep();
     }
+    // Toast tai tep co nut mo thu muc, khong tu mo tep vua tai.
+    public void hien(Muc muc,String noiDung,String nhan,Runnable hanhDong) {
+        hien(muc,noiDung); Toast t=ds.get(ds.size()-1); JButton b=Theme.nutNhe(nhan,""); b.addActionListener(e -> { hanhDong.run(); xoa(t); }); t.add(b,BorderLayout.SOUTH); t.themCao=32; sapXep();
+    }
     // Dat vung chat de toast nam ngay tren o soan, khong che toolbar/header.
     public void datVung(javax.swing.JComponent vung) {
         if (this.vung!=null) { this.vung.removeComponentListener(doiCo); }
@@ -69,7 +73,7 @@ public final class ThongBao implements AutoCloseable {
     private final class Toast extends JPanel {
         private final Timer timer;
         private final JTextArea text;
-        private int con;
+        private int con,themCao;
         // Tao mot toast co icon, mau va thoi gian tu dong dong.
         Toast(Muc muc,String noiDung) {
             super(new BorderLayout(Theme.S8,0));
@@ -106,7 +110,7 @@ public final class ThongBao implements AutoCloseable {
             for (String doan:text.getText().split("\n",-1)) { dong+=soDong(doan,beRong); }
             int cao=dong*text.getFontMetrics(Theme.FONT).getHeight();
             text.setPreferredSize(new Dimension(beRong,cao));
-            return Math.max(Theme.TOAST_CAO,cao+Theme.S24+2);
+            return Math.max(Theme.TOAST_CAO,cao+Theme.S24+2)+themCao;
         }
         // Do theo tu de word-wrap khong cat dong cuoi khi component chua hien tren man hinh.
         private int soDong(String doan,int rong) {

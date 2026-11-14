@@ -249,9 +249,13 @@ public final class QuanLyPhong {
     public TinNhan themTin(Phien p,String id,String nd) throws IOException { return themTin(p,id,nd,"","T"); }
     // Kiem tra quyen/phong truoc khi loai trung va luu tin.
     public TinNhan themTin(Phien p,String id,String nd,String ma,String loai) throws IOException {
-        kiemTraThanhVien(p,id);
-        if (!lay(id).dangMo) { throw new IllegalArgumentException("Phòng đang đóng, chưa thể gửi tin"); }
+        kiemTraGui(p,id);
         return tinNhan.them(p,id,nd,ma,loai);
+    }
+    // Diem chung cho tin va tep; M5 bo sung mute/ban tai day de khong bo sot quyen.
+    public void kiemTraGui(Phien p,String id) {
+        kiemTraThanhVien(p,id);
+        if (!lay(id).dangMo) { throw new IllegalArgumentException("Phòng đang đóng, chưa thể gửi tin hoặc tệp."); }
     }
     // Lay lich su 50 tin hoac lo dong bo tiep theo.
     public List<TinNhan> layTin(String id,boolean ganNhat,long sauId) { lay(id); return tinNhan.lay(id,ganNhat,sauId); }

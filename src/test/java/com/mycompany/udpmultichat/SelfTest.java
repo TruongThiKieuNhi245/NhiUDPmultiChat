@@ -50,6 +50,7 @@ public final class SelfTest {
         HoSoSelfTest.chayTatCa();
         TinNhanSelfTest.chayTatCa();
         chay("36 PNG Noto Emoji doc duoc, ma la an toan",SelfTest::testStickerPng);
+        TepSelfTest.chayTatCa();
         ketLuan();
     }
     // Danh muc Server va tai nguyen Client phai khop nhau.
@@ -64,7 +65,7 @@ public final class SelfTest {
     }
     // Bao loi exit code ca khi chay rieng nhom M3a.
     static void ketLuan() {
-        System.out.println("KET QUA den M3b: " + pass + " PASS, " + fail + " FAIL");
+        System.out.println("KET QUA den M4: " + pass + " PASS, " + fail + " FAIL");
         if (fail > 0) { throw new IllegalStateException("Co muc kiem thu FAIL; xem log o tren"); }
     }
 

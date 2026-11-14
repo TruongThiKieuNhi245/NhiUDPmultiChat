@@ -20,6 +20,7 @@ final class KhungChatPanel extends JPanel {
     private java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo=id -> null;
     private final java.util.Map<Long,HangTin> theoId=new java.util.LinkedHashMap<>();
     private final java.util.Map<String,HangTin> theoMa=new java.util.LinkedHashMap<>();
+    private java.util.function.Function<String,java.awt.image.BufferedImage> anhTep=id -> null;
     private final java.util.Set<Long> thuHoi=new java.util.HashSet<>();
     private java.util.function.BooleanSupplier quanLy=() -> false;
     private java.util.function.BiConsumer<String,TinNhan> hanhDong=(l,t) -> { };
@@ -51,7 +52,9 @@ final class KhungChatPanel extends JPanel {
         HangTin cu=theoId.get(t.msgId);
         if (cu==null && !t.maClient.isEmpty()) { cu=theoMa.get(khoa(t)); }
         if (cu!=null) { cu.capNhat(t); theoId.put(t.msgId,cu); capNhatNhanGui(); return; }
-        HangTin h=taoHang(t,toi); if (toi) { h.trangThai("SENT",""); } theoId.put(t.msgId,h); if (!t.maClient.isEmpty()) { theoMa.put(khoa(t),h); } them(h); capNhatNhanGui();
+        HangTin h=taoHang(t,toi);
+        if (t.loai.equals("F")) { var tep=com.mycompany.udpmultichat.common.TepTin.doc(t.roomId,t.userId,t.noiDung,t.thoiGian); h.datTep(null,() -> anhTep.apply(tep.id())); }
+        if (toi) { h.trangThai("SENT",""); } theoId.put(t.msgId,h); if (!t.maClient.isEmpty()) { theoMa.put(khoa(t),h); } them(h); capNhatNhanGui();
     }
     // Tao hang, ten hien thi lay snapshot moi nhat theo id bat bien.
     private HangTin taoHang(TinNhan t,boolean toi) {
@@ -77,6 +80,30 @@ final class KhungChatPanel extends JPanel {
         HangTin cuoi=null;
         for (var c:ds.getComponents()) { if (c instanceof HangTin h && h.laToi()) { cuoi=h; } }
         for (var c:ds.getComponents()) { if (c instanceof HangTin h) { h.hienDaGui(h==cuoi); } }
+    }
+    // Cap nhat theo ma Client upload hoac id tep download, giu nguyen hang chat.
+    void tienDoTep(com.mycompany.udpmultichat.common.TepTienDo td,String ten) {
+        HangTin h=theoMa.get(td.tep().user()+":"+td.maClient());
+        if (!td.gui()) { h=timTep(td.tep().id()); }
+        if (h==null && td.gui()) {
+            var t=td.tep(); TinNhan tin=new TinNhan(0,t.room(),t.user(),ten,t.dongGoi(),t.luc(),td.maClient(),"F");
+            h=taoHang(tin,true); theoMa.put(khoa(tin),h); them(h);
+        }
+        if (h!=null) {
+            if (td.gui() && h.tin().msgId==0) { var t=h.tin(); h.capNhat(new TinNhan(0,t.roomId,t.userId,t.ten,td.tep().dongGoi(),t.thoiGian,t.maClient,"F")); }
+            h.datTep(td,() -> anhTep.apply(td.tep().id()));
+        }
+    }
+    // Thumbnail duoc nap nen, renderer chi doc cache.
+    void datAnhTep(java.util.function.Function<String,java.awt.image.BufferedImage> anh) { anhTep=anh; }
+    // Cap nhat anh khi tai xong, khong lam thay doi vi tri cuon.
+    void anhTepMoi(String id) { HangTin h=timTep(id); if (h!=null) { h.veLai(); } }
+    // Tim the trong so hang cua phong, khong giu noi dung tep trong RAM.
+    private HangTin timTep(String id) {
+        for (var c:ds.getComponents()) {
+            if (c instanceof HangTin h && h.tin().loai.equals("F") && com.mycompany.udpmultichat.common.TepTin.doc(phong.id,h.tin().userId,h.tin().noiDung,h.tin().thoiGian).id().equals(id)) { return h; }
+        }
+        return null;
     }
     // Tombstone den truoc ban tin van chan noi dung cu den cham.
     void thuHoi(long id) {

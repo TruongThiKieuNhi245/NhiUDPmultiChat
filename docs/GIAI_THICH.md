@@ -1,4 +1,4 @@
-# Giải thích đến M3b — Socket UDP và Multicast
+# Giải thích đến M4 — Socket UDP và Multicast
 
 ## Luồng chạy và đối chiếu chương 6
 
@@ -208,7 +208,7 @@ M1/M2 đã được người dùng xác nhận. M2.6: **28 PASS, 0 FAIL** trên 
 
 UiPreview xuất 24 PNG bằng các component Swing thật, không socket; đã kiểm tra bố cục ảnh, không khẳng định đã thử chuột/phím toàn bộ. F5/Run File và tương tác ba cửa sổ cần người dùng kiểm tra; nhiều máy LAN, DPI cao chưa thử. 31 file ứng dụng + 4 file test, file dài nhất dưới 400 dòng; compiler bật Xlint:all/failOnWarning.
 
-**UDP không đảm bảo**. **Multicast cần chung LAN và cho Java qua Windows Firewall**. **Token/mật khẩu đi qua UDP không mã hóa**, multicast chưa xác thực nguồn; salt/hash chỉ bảo vệ trên đĩa. Tự nối lại cần credentials/IP/cổng còn đúng và lịch sử Server còn. Lịch sử hiện nạp RAM, chưa tối ưu quy mô lớn. Discovery chưa triển khai. M3a được bổ sung bên dưới; M3b–M7 chờ xác nhận.
+**UDP không đảm bảo**. **Multicast cần chung LAN và cho Java qua Windows Firewall**. **Token/mật khẩu đi qua UDP không mã hóa**, multicast chưa xác thực nguồn; salt/hash chỉ bảo vệ trên đĩa. Tự nối lại cần credentials/IP/cổng còn đúng và lịch sử Server còn. Lịch sử hiện nạp RAM, chưa tối ưu quy mô lớn. Discovery chưa triển khai. Các mốc tiếp theo của phần lịch sử này được cập nhật bên dưới.
 
 ## M2.8
 
@@ -266,7 +266,7 @@ UiPreview xuất **30 PNG**: 25/26 hồ sơ chưa/có avatar, 27/28 mật khẩu
 
 Bốn file ứng dụng mới: PhanManh, HoSoClient, QuanLyHoSo, HoSoDialog; tổng **35 file ứng dụng + 5 file test**, giữ bốn gói, mỗi file dưới 400 dòng. Không đổi tên/xóa lớp cũ ở M3a; không thêm thư viện. NguoiDung bổ sung snapshot 8 trường, CSV giữ 7 cột cũ và nối 2 cột mới; đóng toàn bộ tiến trình cũ trước khi chạy cùng phiên bản.
 
-**Giới hạn đã biết:** UDP không đảm bảo; hết 3 lần gửi lại vẫn có thể lỗi và cần thử Lưu lại. Multicast cần chung LAN, bật Java qua Windows Firewall. Token/mật khẩu đi qua UDP không mã hóa; CRC32 chỉ kiểm tra lỗi, không xác thực nguồn. Ảnh đầu vào tối đa 2 MB và 16 triệu pixel để giới hạn giải nén; ảnh chuẩn hóa tối đa 64 KB. Cache chỉ ở RAM, logout xóa. Ghi avatar và users.csv là hai file riêng: có rollback khi gặp lỗi I/O trong tiến trình, chưa phải giao dịch chống mất điện giữa hai bước. M3b–M7 chưa thực hiện.
+**Giới hạn đã biết:** UDP không đảm bảo; hết 3 lần gửi lại vẫn có thể lỗi và cần thử Lưu lại. Multicast cần chung LAN, bật Java qua Windows Firewall. Token/mật khẩu đi qua UDP không mã hóa; CRC32 chỉ kiểm tra lỗi, không xác thực nguồn. Ảnh đầu vào tối đa 2 MB và 16 triệu pixel để giới hạn giải nén; ảnh chuẩn hóa tối đa 64 KB. Cache chỉ ở RAM, logout xóa. Ghi avatar và users.csv là hai file riêng: có rollback khi gặp lỗi I/O trong tiến trình, chưa phải giao dịch chống mất điện giữa hai bước. Phần mới hơn được cập nhật bên dưới.
 
 
 ## M3a.1 — sửa lỗi từ ảnh
@@ -283,7 +283,7 @@ File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemT
 | Chức năng | File | Hàm |
 |---|---|---|
 | Mã sticker hợp lệ, hạn 10 phút/typing/8 giây | common/Protocol | stickerHopLe, MA_STICKER, THU_HOI_MS, TYPING_MS, CHO_TIN_MS |
-| 12 hình Java2D, 128px; popup 3 nhóm và hover tên | ui/StickerKho | ve, mat, tim, tay, phao, pizza, cafe, bangChon |
+| 36 PNG Noto Emoji 128px; popup 4 nhóm và hover tên | common/StickerDanhMuc; ui/StickerKho | tim; anh, icon, bangChon |
 | Nút mặt cười mở picker, text gõ kích hoạt callback | ui/SoanTinPanel / ui/ChatMulticastUI | nutDinhKem, theoDoiNhap, datChucNang / guiSticker |
 | Mã Client 128-bit, loại T/S/D, cờ thu hồi, nạp log cũ 7 trường | common/model/TinNhan | taoMa, constructor, dongGoi, tuTruong, daThuHoi |
 | Server kiểm tra STK, room + user + mã để loại trùng | server/QuanLyTinNhan / server/QuanLyPhong | them, nap / themTin |
@@ -334,7 +334,7 @@ Chỉ bốn mục M3b đã làm. Thứ tự tiếp: **M4 → M5 → M6 → M3c �
 
 **Giới hạn đã biết:** UDP vẫn có thể hết lượt retry; multicast cần chung LAN và cho Java qua Windows Firewall; token/mật khẩu qua UDP không mã hóa, nguồn multicast chưa xác thực. TYPING có thể mất, không phải bằng chứng người dùng còn online. Thu hồi ghi lại log và tombstone/mã hiện giữ RAM theo lịch sử, chưa tối ưu dữ liệu rất lớn. Chưa kiểm tra tương tác IDE/ba cửa sổ đầy đủ, nhiều máy LAN hoặc DPI khác; PNG không thay thế kiểm tra tay.
 
-Ảnh [37-kho-sticker-day-du.png](screenshots/37-kho-sticker-day-du.png) cho xem đầy đủ 12 sticker Java2D ở kích thước gốc 128px.
+Ảnh [37-kho-sticker-day-du.png](screenshots/37-kho-sticker-day-du.png) cho xem đầy đủ 36 PNG Noto Emoji, ảnh nguồn 128px, thu phóng bicubic.
 
 
 ## Sticker PNG nguồn mở
@@ -362,3 +362,107 @@ Không truyền ảnh sticker qua mạng. Mã lịch sử cũ có ánh xạ đ�
 
 Popup sticker dùng tab gạch chân FlatLaf; hình Vỗ tay đã thay bằng PNG Noto Emoji.
 Trạng thái Đang gửi và Lỗi luôn hiện; Đã gửi chỉ hiện khi đó là tin cuối của chính mình.
+
+
+## M4: Gửi và nhận tệp bằng UDP
+
+| Chức năng | File | Hàm |
+|---|---|---|
+| Header nhị phân, cửa sổ 32, ACK bitmap, gửi lại | common/TruyenTep.java | guiCuaSo, nhanAck, nhanManh |
+| Ghi đúng vị trí, loại mảnh trùng, CRC32, timeout/hủy | common/TruyenTep.java | nhanManh, crc, huy, loi |
+| Tên sạch, dung lượng, tránh ghi đè | common/TepTin.java | tenAnToan, kiemTra, tenChuaCo |
+| Thumbnail tối đa 240 px, ảnh hỏng thành thẻ thường | common/AnhTep.java | tao, thuNho |
+| Quyền thành viên, phòng đóng, tối đa hai lượt gửi | server/QuanLyTep.java | batDau, chuanBiTai, sanSang, hoanTat |
+| INIT/DONE gửi lại không tạo tin trùng | server/QuanLyTep.java | timLai |
+| Tệp `.bin`, metadata UTF-8, nạp/dọn orphan | server/KhoTep.java | duong, luu, nap, constructor |
+| Thu hồi/xóa phòng xóa tệp, timeout/đăng xuất dọn tạm | server/QuanLyTep.java | xoaTin, xoaPhong, matPhien, quet |
+| Số tệp và dung lượng theo phòng/người gửi | server/ServerCore.java | thongKeTep |
+| Hàng đợi hai upload, tiến độ, tải CRC, hủy/thử lại | client/TepClient.java | gui, guiThat, taiThat, huy, thuLai |
+| Cache thumbnail có giới hạn, tải nền | client/TepClient.java | napAnh, anh |
+| Chọn tệp/ảnh, kéo thả, nơi lưu, mở thư mục | ui/TepGiaoDien.java | chon, datKeoTha, tai, moThuMuc |
+| Thẻ tệp/ảnh và các trạng thái truyền | ui/TheTep.java | constructor, tienDo |
+| File trong lịch sử/RESYNC/multicast | common/model/TinNhan.java; server/ServerCore.java | dongGoi, tuTruong; guiLichSu |
+| Kiểm thử tích hợp và lỗi mạng | TepSelfTest.java; TepMangSelfTest.java (src/test/java) | chayTatCa; chay |
+
+### UDP được dùng thế nào để truyền tệp?
+
+1. Client gửi `FILE_INIT` qua **UDP unicast có ACK** (`ReliableUdp`). Server kiểm tra phiên,
+   thành viên, phòng mở, dung lượng và số lượt gửi; cấp UUID tệp và cổng UDP dữ liệu.
+2. `TruyenTep` dùng **DatagramSocket riêng**. Mỗi gói nhị phân có 23 byte header:
+   loại (1), UUID (16), số mảnh (4), độ dài (2), sau đó tối đa 1.000 byte dữ liệu.
+   Tổng 1.023 byte, nhỏ hơn giới hạn 1.399; không phải mã hóa Base64.
+3. Bên gửi cho phép **32 mảnh đang chờ**. ACK chứa mốc các mảnh liên tiếp đã nhận và
+   bitmap 32 mảnh tiếp theo. Chỉ gửi lại mảnh thiếu, chờ ban đầu 300 ms rồi tăng gấp đôi,
+   tối đa 2.400 ms. Khi ACK xác nhận nhiều mảnh sau lỗ hổng, có thể gửi lại sớm.
+   `upload.maxRetries=8` cấu hình số lần gửi lại (đã được người dùng duyệt).
+4. Bên nhận ghi `offset = số mảnh × 1.000` bằng FileChannel, bỏ mảnh trùng.
+   Luồng receive chỉ đưa gói vào hàng đợi tối đa 2.048; worker ghi đĩa và kiểm CRC32.
+   Dữ liệu tệp không được giữ toàn bộ trong RAM. Mỗi nhịp tối đa 32 gói/2 ms để nhường chat.
+5. ACK cuối chỉ gửi sau khi CRC32 đúng. Client gửi `FILE_DONE`; Server lưu metadata,
+   tạo tin loại F rồi **phát tin qua multicast của phòng**. Nội dung file đi unicast;
+   thông báo thẻ file đi multicast và có roomId như mọi tin khác.
+6. Tải xuống dùng `FILE_GET` → Client chuẩn bị tệp tạm → `FILE_READY` → cửa sổ DATA/ACK
+   theo chiều ngược lại → CRC32 → đổi tên. Không dùng REPLACE_EXISTING; nếu trùng tên
+   tự thêm ` (1)`, ` (2)`... Hủy dùng cả CANCEL nhị phân và lệnh UDP có ACK.
+
+ReliableUdp vẫn dùng cho điều khiển; PhanManh vẫn dùng cho avatar nhỏ.
+Không dùng hai lớp đó để dừng-chờ từng mảnh tệp lớn vì sẽ chậm trên Wi-Fi.
+Các lớp M4 mới tách phần cửa sổ UDP, lưu trữ, điều phối Client và Swing để mỗi file dễ đọc,
+không gộp socket vào UI hoặc để ServerCore/ClientCore vượt khoảng 400 dòng.
+
+### Lưu trữ và cấu hình
+
+- `data/config.properties`: `upload.maxBytes=10485760`, `upload.maxRetries=8`.
+- `data/uploads/<roomId>/<UUID>.bin`: bản gốc; `.jpg`: thumbnail; `.properties`: metadata
+  tên gốc đã làm sạch, người gửi, phòng, kích thước, CRC32, thời gian. `.part` chỉ dùng tạm.
+- UUID do Server cấp, đường dẫn được normalize/kiểm containment; không dùng tên gốc làm đường dẫn.
+- Quá 60 giây không có gói, hủy hoặc đăng xuất: đóng kênh và xóa tệp tạm. Khởi động quét orphan.
+- Tối đa hai upload/người, hàng đợi Client 16; engine tối đa 64 lượt, cache thumbnail 100 ảnh.
+- Tệp cũ vẫn tải sau restart; thu hồi xóa bản gốc, thumbnail và metadata; xóa phòng dọn uploads.
+
+### Giới hạn đã biết
+
+UDP không đảm bảo giao nhận; CRC32 kiểm tra lỗi, không xác thực người gửi như chữ ký số.
+Không tiếp tục một tệp đang dở sau mất kết nối: cần bấm Thử lại. Mạng Wi-Fi yếu có thể chậm
+hoặc hết số lượt gửi lại. Multicast cần cùng mạng LAN và cho Java qua Windows Firewall;
+cổng UDP dữ liệu được cấp động nên cần cho ứng dụng Java qua firewall, không chỉ mở cổng 5000.
+Token, mật khẩu và tệp đi qua UDP **không mã hóa**. Ảnh động chỉ xem trước khung đầu.
+Tệp tải về không tự thực thi; chỉ ảnh PNG/JPG/GIF có thao tác mở ảnh do người dùng chọn.
+
+M5 sẽ bổ sung kiểm tra mute/ban vào `QuanLyPhong.kiemTraGui`: cả tin và FILE_INIT/FILE_DONE đều đi qua điểm kiểm tra chung này.
+
+
+### Kết quả đo M4 trên máy phát triển (14/11/2026)
+
+`TepSelfTest`: **12 PASS, 0 FAIL**, tiến trình exit code 0. Dữ liệu 5 MB được so từng byte
+và CRC32 ở hai chiều. Tốc độ dưới đây tính cả INIT, CRC và DONE, đo localhost bằng UDP thật:
+
+| Mất DATA/ACK tại mỗi đầu | Kích thước | Gửi lên | Tải xuống |
+|---|---:|---:|---:|
+| 0% | 1 MB | 0,768 giây — 1,30 MB/s | 0,749 giây — 1,34 MB/s |
+| 0% | 5 MB | 3,015 giây — 1,66 MB/s | 2,657 giây — 1,88 MB/s |
+| 20%, seed cố định | 5 MB | 28,130 giây — 0,18 MB/s | 39,886 giây — 0,13 MB/s |
+
+Độ trễ tin chat khi hai người đang truyền: khoảng **14,3 ms** trong lượt này.
+Số MB/s trong phép đo dùng 1 MB = 1.048.576 byte. Tốc độ thay đổi theo CPU, đĩa và lịch chạy luồng;
+đây không phải cam kết tốc độ Wi-Fi, cũng chưa phải phép đo giữa hai máy LAN.
+
+Kiểm thử dùng `127.0.0.1` cho endpoint dữ liệu giả lập thủ công để tránh trộn IPv4/IPv6;
+ứng dụng thật lấy cùng địa chỉ Server đã xác thực, và gọi MangUtil.dungIPv4 trước khi mở socket.
+Đã kiểm tra trực tiếp cổng 5000: HELLO/RESPONSE thành công khi Server đã Bắt đầu.
+Lỗi trong ảnh Client "Không nhận được ACK" xảy ra khi chưa có Server lắng nghe localhost:5000.
+Thông báo kết nối mới hướng dẫn chạy Server trước. KenhPhong.close đóng lặp lại an toàn và
+xử lý lỗi drop-membership Windows/JDK được bọc trong AssertionError có SocketException bên trong.
+
+Chưa kiểm tra: tốc độ giữa hai máy LAN/Wi-Fi, firewall máy khác, DPI khác, tương tác kéo thả/chọn
+file/mở thư mục và mở ảnh bằng chuột trên ba cửa sổ thật. UiPreview là vẽ component Swing thật,
+không thay thế kiểm thử thao tác người dùng. M5 (mute/ban/dashboard/báo cáo) chưa triển khai.
+
+
+Lượt hồi quy cuối cùng `SelfTest`: **56 PASS, 0 FAIL**, exit code 0 (14/11/2026).
+Riêng lượt này tệp 5 MB mất 20% gói: upload 44,552 giây (0,11 MB/s), download 28,659 giây
+(0,17 MB/s); chat đang truyền 10,4 ms. Hai lượt có seed giống nhau nhưng thời gian chạy,
+thứ tự lịch luồng và thứ tự DATA/ACK có thể khác, vì vậy tốc độ không hoàn toàn giống nhau.
+`mvn -q compile` thành công với `-Xlint:all`, `failOnWarning=true`. UiPreview: 43 PNG và assertions PASS.
+Không file Java ứng dụng nào quá 400 dòng; ui không import java.net, logic không import Swing
+(ngoại trừ ServerMain theo yêu cầu). Không thêm thư viện Maven ở M4.

@@ -47,6 +47,9 @@ public final class Protocol {
     public static final String[] MA_STICKER=StickerDanhMuc.CAC_MUC.stream().map(StickerDanhMuc.Muc::ma).toArray(String[]::new);
     // Kiem tra ma dung chung, Server khong phu thuoc UI hay anh.
     public static boolean stickerHopLe(String ma) { return java.util.Arrays.asList(MA_STICKER).contains(ma); }
+    // ===== TRUYEN TEP CUA SO TRUOT =====
+    public static final long TEP_TOI_DA=10*1024*1024L;
+    public static final String TEP_INFO="FILE_INFO", TEP_INIT="FILE_INIT", TEP_DONE="FILE_DONE", TEP_GET="FILE_GET", TEP_READY="FILE_READY", TEP_CANCEL="FILE_CANCEL";
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Protocol() { }
 }

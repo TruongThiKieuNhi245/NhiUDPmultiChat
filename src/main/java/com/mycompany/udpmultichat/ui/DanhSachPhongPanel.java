@@ -101,7 +101,7 @@ final class DanhSachPhongPanel extends JPanel {
     // Nhan nguoi gui dung id, khong so sanh ten hien thi.
     private String xemTruoc(TinNhan tin) {
         var n=toi.get(); String ten=n!=null && n.id.equals(tin.userId)?"Bạn":tin.ten;
-        String nd=tin.thuHoi?"Tin nhắn đã thu hồi":tin.loai.equals("S")?"[Sticker] "+StickerKho.ten(tin.noiDung):tin.noiDung.replace('\n',' ');
+        String nd=tin.thuHoi?"Tin nhắn đã thu hồi":tin.loai.equals("S")?"[Sticker] "+StickerKho.ten(tin.noiDung):tin.loai.equals("F")?"[Tệp] "+com.mycompany.udpmultichat.common.TepTin.doc(tin.roomId,tin.userId,tin.noiDung,tin.thoiGian).ten():tin.noiDung.replace('\n',' ');
         return ten+": "+nd;
     }
     // Don danh sach sau dang xuat.

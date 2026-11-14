@@ -31,7 +31,10 @@ final class SoanTinPanel extends JPanel {
         }
     };
     private java.util.function.Consumer<String> chonSticker=ma -> { },dangGo=t -> { };
-    private final JButton sticker=Theme.nutNhe("","smile");
+    private final JButton sticker=Theme.nutNhe("","smile"),file=Theme.nutNhe("","plus");
+    private Consumer<javax.swing.JComponent> dinhKem=b -> { };
+    // Gan menu tep khi cua so da duoc tao.
+    void datTep(Consumer<javax.swing.JComponent> menu) { dinhKem=menu; }
     // Gan thao tac sau khi cua so chinh da tao xong Client.
     void datChucNang(Consumer<String> sticker,Consumer<String> dangGo) { chonSticker=sticker; this.dangGo=dangGo; capNhat(); }
     private final JButton gui=Theme.nutGui();
@@ -64,7 +67,7 @@ final class SoanTinPanel extends JPanel {
     // Nut emoji va dinh kem nhe, can day; chua co chuc nang thi an.
     private JPanel nutDinhKem() {
         JPanel nut=new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT,0,0)); nut.setOpaque(false);
-        JButton emoji=sticker,file=Theme.nutNhe("","plus");
+        JButton emoji=sticker; file.addActionListener(e -> dinhKem.accept(file));
         emoji.setToolTipText("Emoji và sticker"); file.setToolTipText("Đính kèm"); file.setEnabled(false);
         emoji.addActionListener(e -> { var m=StickerKho.bangChon(chonSticker); m.show(emoji,0,-m.getPreferredSize().height); });
         nut.add(emoji); nut.add(file); JPanel boc=new JPanel(new BorderLayout()); boc.setOpaque(false); boc.add(nut,BorderLayout.SOUTH); return boc;
@@ -124,7 +127,7 @@ final class SoanTinPanel extends JPanel {
         dem.setText(kyTu+"/"+toiDa); dem.setVisible(bytes>=Protocol.TIN_TOI_DA*4/5);
         dem.setForeground(qua?Theme.LOI:Theme.PHU); String thongBao=qua?Protocol.LOI_TIN_DAI:loiGui;
         loi.setText(thongBao); loi.setVisible(!thongBao.isBlank()); loi.setRows(thongBao.isBlank()?0:2);
-        sticker.setEnabled(choPhep);
+        sticker.setEnabled(choPhep); file.setEnabled(choPhep);
         gui.setEnabled(choPhep && !dangGui && !text.isBlank() && !qua); o.setEnabled(choPhep && !dangGui);
         java.awt.Color nen=choPhep?Theme.THE:Theme.NEN_KHOA;
         vien.setBackground(nen); o.setBackground(nen); cuon.getViewport().setBackground(nen);

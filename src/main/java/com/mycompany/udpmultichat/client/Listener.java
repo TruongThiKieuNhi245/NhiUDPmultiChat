@@ -24,6 +24,10 @@ public interface Listener {
     // Nhan trang thai phien da ngat.
     void onMatKetNoi(String lyDo);
 
+    // Tien do tep phat tu worker, UI tu chuyen ve EDT.
+    default void onTep(com.mycompany.udpmultichat.common.TepTienDo tienDo) { }
+    // Anh xem truoc da nam trong cache RAM.
+    default void onAnhTep(String room,String fileId) { }
     // Trang thai hang gui cuc bo: WAIT/SENT/ERROR/REMOVE.
     default void onTrangThaiGui(TinNhan tin,String trangThai,String lyDo) { }
     // Tombstone chi chua roomId va msgId.

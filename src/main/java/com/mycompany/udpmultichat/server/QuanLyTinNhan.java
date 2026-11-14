@@ -30,7 +30,7 @@ public final class QuanLyTinNhan {
     // Ghi thanh cong moi them RAM, retry cung user/room/ma khong tao msgId moi.
     public TinNhan them(Phien p,String id,String nd,String ma,String loai) throws IOException {
         if (!ma.isEmpty() && !ma.matches("[A-Za-z0-9_-]{22}")) { throw new IllegalArgumentException("Mã tin nhắn không hợp lệ."); }
-        if (!loai.equals("T") && !loai.equals("S")) { throw new IllegalArgumentException("Loại tin không hợp lệ."); }
+        if (!loai.equals("T") && !loai.equals("S") && !loai.equals("F")) { throw new IllegalArgumentException("Loại tin không hợp lệ."); }
         if (loai.equals("S") && !Protocol.stickerHopLe(nd)) { throw new IllegalArgumentException("Sticker không hỗ trợ."); }
         TinNhan cu=daGui.get(id).get(p.nguoi.id+":"+ma);
         if (!ma.isEmpty() && cu!=null) {
@@ -45,6 +45,18 @@ public final class QuanLyTinNhan {
     public List<TinNhan> lay(String id,boolean ganNhat,long sau) {
         List<TinNhan> ds=lichSu.get(id); int dau=ganNhat?Math.max(0,ds.size()-50):(int)Math.min(Math.max(0,sau),ds.size());
         return List.copyOf(ds.subList(dau,ganNhat?ds.size():Math.min(ds.size(),dau+50)));
+    }
+    // Tra dung msgId truoc khi thu hoi de don tep, tu choi id ngoai lich su.
+    public TinNhan theoId(String room,long id) {
+        var ds=lichSu.get(room); if (id<1 || id>ds.size()) { throw new IllegalArgumentException("Không tìm thấy tin nhắn."); } return ds.get((int)id-1);
+    }
+    // Khoa Client luu ben vung, giup gui lai tep sau mat ACK/restart khong tao tin trung.
+    public TinNhan theoMa(String room,String user,String ma) { return daGui.get(room).get(user+":"+ma); }
+    // Danh muc file con tin hop le, dung cho quyen GET va phuc hoi sau crash.
+    public Set<String> cacTep() {
+        Set<String> ids=new HashSet<>();
+        for (var ds:lichSu.values()) { for (var t:ds) { if (t.loai.equals("F")) { ids.add(TepTin.doc(t.roomId,t.userId,t.noiDung,t.thoiGian).id()); } } }
+        return ids;
     }
     // ===== THU HOI CO QUYEN VA LUU BEN VUNG =====
     public TinNhan thuHoi(Phien p,Phong r,long msgId) throws IOException {

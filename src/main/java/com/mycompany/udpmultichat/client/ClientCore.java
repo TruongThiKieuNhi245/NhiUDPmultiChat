@@ -26,6 +26,7 @@ import java.util.function.Predicate;
 public final class ClientCore implements AutoCloseable {
     private final Listener listener;
     private final TroChuyenClient troChuyen;
+    private final TepClient tep;
     private final HoSoClient hoSo=new HoSoClient(this,this::phatHoSo);
     private double matGoi;
     private long seed;
@@ -49,17 +50,19 @@ public final class ClientCore implements AutoCloseable {
     private volatile boolean choPing, dangKhoiPhuc, thuLai;
     private volatile char[] matKhauPhien=new char[0];
     private String tenPhien="";
-
     // Khoi tao lop va noi cac thanh phan can thiet.
     public ClientCore(Listener listener) { this(listener,true); }
     // Khoi tao lop va noi cac thanh phan can thiet.
     public ClientCore(Listener listener,boolean tuDongPing) { this(listener,tuDongPing,tin -> true); }
     // Bo loc chi de SelfTest chu dong lam mat goi multicast; ban thuong giu moi goi.
     public ClientCore(Listener listener,boolean tuDongPing,Predicate<TinNhan> giuMulticast) {
-        this.listener=listener; troChuyen=new TroChuyenClient(this,listener); this.tuDongPing=tuDongPing; this.giuMulticast=giuMulticast;
+        this.listener=listener; tep=new TepClient(this,listener); troChuyen=new TroChuyenClient(this,listener); this.tuDongPing=tuDongPing; this.giuMulticast=giuMulticast;
     }
-
     // Chuc nang tin moi tach khoi Core de file de trinh bay.
+    public TepClient tep() { return tep; }
+    // Endpoint dieu khien da duoc Client chon.
+    InetSocketAddress diaChiServer() { return server; }
+    // Truy cap chuc nang tro chuyen.
     public TroChuyenClient troChuyen() { return troChuyen; }
     // Datagram nhanh di cung socket Client, khong ACK va khong tao them luong.
     void guiTyping(String room) {
@@ -73,7 +76,7 @@ public final class ClientCore implements AutoCloseable {
     // SelfTest dat mat goi truoc khi ket noi, seed giu ket qua tai lap.
     public void moPhongMatGoi(double tiLe,long hat) { if (udp!=null) { throw new IllegalStateException("Đã kết nối"); } matGoi=tiLe; seed=hat; }
     // Goi da xac thuc dung chung cho ho so, avatar va chuc nang tin.
-    CompletableFuture<String[]> yeuCauHoSo(String lenh,String... p) { return yeuCau(lenh,Goi.noi(new String[]{token},p)); }
+    public CompletableFuture<String[]> yeuCauHoSo(String lenh,String... p) { return yeuCau(lenh,Goi.noi(new String[]{token},p)); }
     // Doi mat khau phien trong RAM de heartbeat ket noi lai dung hash moi.
     public CompletableFuture<NguoiDung> doiMatKhau(String cu,String moi) {
         return yeuCauHoSo(Protocol.DOI_MAT_KHAU,cu,moi).thenApply(g -> {
@@ -135,7 +138,6 @@ public final class ClientCore implements AutoCloseable {
     public List<Phong> danhSachPhong() { return danhSach; }
     // Phong da vao.
     public List<Phong> phongDaVao() { return List.copyOf(daVao.values()); }
-
     // ===== API PHONG =====
     public CompletableFuture<Phong> taoPhong(String ten,String moTa,boolean congKhai,String matKhau,int gioiHan) {
         return yeuCau(Protocol.TAO_PHONG,token,ten,moTa,Boolean.toString(congKhai),matKhau,Integer.toString(gioiHan))
@@ -204,7 +206,6 @@ public final class ClientCore implements AutoCloseable {
     }
     // Ham cu duoc giu cho SelfTest va truong hop chi chat Sanh chung.
     public CompletableFuture<Void> guiTin(String noiDung) { return guiTin(Protocol.SANH_ID,noiDung); }
-
     // ===== DONG BO TIN NHAN =====
     public CompletableFuture<Void> dongBoPhong(String id) {
         DongBoTinNhan db=cacDongBo.get(id);
@@ -234,7 +235,6 @@ public final class ClientCore implements AutoCloseable {
         cacThanhVien.remove(id); troChuyen.roiPhong(id);
         if (cu!=null) { listener.onRoiPhong(id,lyDo); }
     }
-
     // ===== REQUEST / RESPONSE =====
     private CompletableFuture<String[]> yeuCau(String lenh,String... thamSo) {
         ReliableUdp kenh=udp;
@@ -282,7 +282,6 @@ public final class ClientCore implements AutoCloseable {
             default: break;
         }
     }
-
     // ===== SNAPSHOT DANH SACH THEO PHIEN BAN =====
     private synchronized void nhanDanhSach(String[] p) {
         if (p.length<4) { return; }
@@ -311,7 +310,6 @@ public final class ClientCore implements AutoCloseable {
         bang.ten.put(viTri,new Phong.ThanhVien(p[5],p[6],p[7],p[8],Boolean.parseBoolean(p[9])));
         if (bang.ten.size()==so) { listener.onThanhVienChiTiet(p[1],List.copyOf(bang.ten.values())); }
     }
-
     // ===== HEARTBEAT VA DONG =====
     private synchronized void batHeartbeat() {
         pingThanhCong=System.nanoTime();
@@ -338,7 +336,7 @@ public final class ClientCore implements AutoCloseable {
     private void matKetNoi(String lyDo) {
         if (toi==null) { return; }
         if (!tuDongPing) { close(); listener.onMatKetNoi(lyDo); return; }
-        thuLai=true; listener.onKetNoi(false,"Mất kết nối, đang thử kết nối lại…");
+        tep.xoa(); thuLai=true; listener.onKetNoi(false,"Mất kết nối, đang thử kết nối lại…");
     }
     // Dang nhap lai cung endpoint, giu bo dem msgId de RESYNC thay vi nhan trung lich su.
     private void khoiPhuc() {
@@ -374,6 +372,7 @@ public final class ClientCore implements AutoCloseable {
     // Loi de hieu.
     public static String loiDeHieu(Throwable loi) {
         while (loi.getCause()!=null) { loi=loi.getCause(); }
+        if (String.valueOf(loi.getMessage()).contains("ACK")) { return "Không kết nối được Server. Hãy chạy Server trước, kiểm tra địa chỉ và cho Java qua Windows Firewall."; }
         return loi instanceof java.util.concurrent.TimeoutException?"Server chưa phản hồi":String.valueOf(loi.getMessage());
     }
     // Dong tai nguyen cua lop, ke ca khi co loi.
@@ -389,7 +388,7 @@ public final class ClientCore implements AutoCloseable {
         for (String id : List.copyOf(daVao.keySet())) { dongKenh(id,"Đã đóng kết nối."); }
         if (kenhCu!=null) { kenhCu.close(); }
         dangCho.values().forEach(f -> f.completeExceptionally(new IOException("Kết nối đã đóng")));
-        dangCho.clear(); cacThanhVien.clear(); hoSo.xoa(); troChuyen.xoa();
+        dangCho.clear(); cacThanhVien.clear(); hoSo.xoa(); troChuyen.xoa(); tep.xoa();
     }
     /** Bo dem ghep danh sach thanh vien rieng tung phong. */
     private static final class BangTen {

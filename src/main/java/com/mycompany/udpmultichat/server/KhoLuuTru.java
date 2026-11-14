@@ -47,6 +47,7 @@ public final class KhoLuuTru {
         }
         cauHinh.putIfAbsent("admin.username", "admin");
         cauHinh.putIfAbsent("upload.maxBytes", "10485760");
+        cauHinh.putIfAbsent("upload.maxRetries", "8");
         cauHinh.putIfAbsent("multicast.portBase", "9000");
         if (cauHinh.containsKey("admin.password") || !cauHinh.containsKey("admin.passwordHash")) {
             String matKhau = cauHinh.getProperty("admin.password", "admin123");

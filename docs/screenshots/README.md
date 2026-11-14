@@ -76,7 +76,7 @@ File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemT
 
 | Ảnh | Nội dung |
 |---|---|
-| [32-bang-sticker.png](32-bang-sticker.png) | Popup 3 nhóm, 12 sticker Java2D, không dùng ký tự emoji |
+| [32-bang-sticker.png](32-bang-sticker.png) | Popup 4 nhóm, 36 PNG Noto Emoji, không dùng ký tự emoji |
 | [33-chat-sticker-trang-thai.png](33-chat-sticker-trang-thai.png) | Sticker 112px, thu hồi, Đang gửi/Đã gửi/Lỗi, typing nhiều người |
 | [34-menu-tin-nhan.png](34-menu-tin-nhan.png) | Chuột phải tin: Sao chép, Thu hồi |
 | [35-cap-nhat-khong-trung.png](35-cap-nhat-khong-trung.png) | Cập nhật trạng thái cùng mã không thêm hàng, xóa hàng lỗi, typing hết 4 giây |
@@ -84,4 +84,23 @@ File/hàm: ui/HopThoai.loiServer/kiemTra; ui/FormKiemTra.chay/kiemTraPhong/kiemT
 
 UiPreview xuất tổng 37 PNG, kiểm tra đúng số nhãn trạng thái trước/sau cập nhật, typing tự tắt và tombstone chặn tin tới chậm. Ảnh 31 chứng minh thanh cuộn chỉ xuất hiện khi quá 5 dòng. Những ảnh trước được xuất lại bằng renderer mới; màu/font vẫn lấy Theme. Chưa thay thế thử tương tác bằng chuột/phím.
 
-Ảnh [37-kho-sticker-day-du.png](37-kho-sticker-day-du.png) cho xem đầy đủ 12 sticker Java2D ở kích thước gốc 128px.
+Ảnh [37-kho-sticker-day-du.png](37-kho-sticker-day-du.png) cho xem đầy đủ 36 PNG Noto Emoji, ảnh nguồn 128px, thu phóng bicubic.
+
+
+## M3b.1 và M4 — 43 PNG hiện tại
+
+Ảnh 32/37 cập nhật bộ Noto Emoji; 33/35 chỉ hiện Đã gửi ở tin gần nhất của mình,
+avatar sticker căn trên, Gửi lại/Xóa là liên kết; 34 có menu lề trong và Thu hồi màu đỏ.
+
+| Ảnh | Nội dung |
+|---|---|
+| [38-menu-dinh-kem.png](38-menu-dinh-kem.png) | Menu +: Gửi tệp, Gửi ảnh |
+| [39-the-tep-cac-trang-thai.png](39-the-tep-cac-trang-thai.png) | Chờ/gửi 45%/xong/lỗi/tải/hủy, nút Thử lại/Hủy/Tải về |
+| [40-the-anh-xem-truoc.png](40-the-anh-xem-truoc.png) | Thumbnail 240px trong thẻ, nút Mở thư mục |
+| [41-chat-the-tep.png](41-chat-the-tep.png) | Tin tệp của mình/người khác và tiến độ trong chat thật |
+| [42-tep-qua-lon.png](42-tep-qua-lon.png) | Toast giới hạn 10 MB, không che ô soạn |
+| [43-hop-luu-tep.png](43-hop-luu-tep.png) | JFileChooser mặc định Downloads với tên tiếng Việt |
+
+UiPreview có assertion cả hai thẻ tệp thực sự xuất hiện trong ảnh 41.
+Các ảnh dùng component thật, dữ liệu mẫu trong RAM, không mở Server/socket.
+Thao tác chọn tệp, kéo thả, mở ảnh/thư mục và nhiều máy LAN vẫn cần thử tay.

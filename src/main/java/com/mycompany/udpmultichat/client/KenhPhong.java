@@ -63,10 +63,14 @@ public final class KenhPhong implements AutoCloseable {
     }
 
     // Roi dung nhom va card da su dung, sau do dong receive.
-    @Override public void close() {
-        dangChay = false;
-        try { socket.leaveGroup(new InetSocketAddress(nhom, cong), giaoDien); }
-        catch (IOException e) { baoLoi.accept("Lỗi rời phòng: " + e.getMessage()); }
-        finally { socket.close(); }
+    @Override public synchronized void close() {
+        if (!dangChay) { return; } dangChay=false;
+        try { socket.leaveGroup(new InetSocketAddress(nhom,cong),giaoDien); }
+        catch (IOException e) { baoLoi.accept("Không rời được nhóm; đã đóng kênh phòng."); }
+        catch (AssertionError e) {
+            // JDK/Windows boc loi drop membership thanh AssertionError khi card thay doi.
+            if (!(e.getCause() instanceof java.net.SocketException)) { throw e; }
+            baoLoi.accept("Card mạng đã thay đổi; đã đóng kênh phòng.");
+        } finally { socket.close(); }
     }
 }

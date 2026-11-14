@@ -22,7 +22,6 @@ public final class Theme {
     public static final Color THANH_CONG=new Color(0x217347),LOI=new Color(0xBC303A),CANH_BAO=new Color(0x8A5B00),THONG_TIN=new Color(0x245FB3);
     public static final Color NEN_XANH=new Color(0xEDF8F0),NEN_DO=new Color(0xFFF0F1),NEN_VANG=new Color(0xFFF6DC),NEN_TIN=new Color(0xEDF4FF);
     public static final Color OFFLINE=new Color(0x777F8D),AVATAR=new Color(0x4261B9);
-    public static final Color STICKER_VANG=new Color(0xFFD45C),STICKER_DA=new Color(0xF3BB8A),STICKER_DO=new Color(0xEF6575),STICKER_XANH=new Color(0x55A9E6);
     public static final Color NEN_KHOA=new Color(0xECEEF2);
     public static final Font FONT=new Font("Segoe UI",Font.PLAIN,14),DAM=FONT.deriveFont(Font.BOLD),NHO=FONT.deriveFont(12f);
     public static final Font DON_CACH=new Font(tenFontLog(),Font.PLAIN,13);

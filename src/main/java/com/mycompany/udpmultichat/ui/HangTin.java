@@ -20,6 +20,10 @@ final class HangTin extends JPanel {
     private final BooleanSupplier quanLy;
     private String trangThai="",lyDo="";
     private boolean hienDaGui=true;
+    private com.mycompany.udpmultichat.common.TepTienDo tepTienDo;
+    private Supplier<BufferedImage> anhTep=() -> null;
+    // Tien do va thumbnail chi la snapshot, khong truy cap dia/mang.
+    void datTep(com.mycompany.udpmultichat.common.TepTienDo td,Supplier<BufferedImage> anh) { tepTienDo=td; anhTep=anh; veLai(); }
     private final JPanel the=new JPanel(new BorderLayout(0,Theme.S4));
     // Renderer doc cache RAM; callback chi gui lenh qua UI/Core.
     HangTin(TinNhan t,boolean toi,Supplier<BufferedImage> anh,Supplier<String> ten,BooleanSupplier quanLy,Consumer<String> hanhDong) {
@@ -46,7 +50,7 @@ final class HangTin extends JPanel {
         JComponent nd=noiDung(); the.add(nd);
         JPanel duoi=new JPanel(new BorderLayout(Theme.S8,0)); duoi.setOpaque(false);
         JLabel gio=Theme.nhan(GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU);
-        duoi.add(gio,BorderLayout.WEST); if (toi && !trangThai.isEmpty() && (!trangThai.equals("SENT") || hienDaGui)) { duoi.add(trangThaiGui()); }
+        duoi.add(gio,BorderLayout.WEST); if (toi && !tin.loai.equals("F") && !trangThai.isEmpty() && (!trangThai.equals("SENT") || hienDaGui)) { duoi.add(trangThaiGui()); }
         the.add(duoi,BorderLayout.SOUTH); add(the);
         if (!toi && getComponentCount()>1) { getComponent(0).setPreferredSize(new Dimension(40,the.getPreferredSize().height)); }
         ganMenu(this); revalidate(); repaint();
@@ -55,6 +59,15 @@ final class HangTin extends JPanel {
     private JComponent noiDung() {
         if (tin.thuHoi) {
             JLabel l=Theme.nhan("Tin nhắn đã được thu hồi",false); l.setFont(Theme.FONT.deriveFont(Font.ITALIC)); l.setForeground(Theme.PHU); return l;
+        }
+        if (tin.loai.equals("F")) {
+            try {
+                var t=com.mycompany.udpmultichat.common.TepTin.doc(tin.roomId,tin.userId,tin.noiDung,tin.thoiGian);
+                TheTep p=new TheTep(t,toi,tepTienDo,anhTep.get(),hanhDong); p.setForeground(toi?Theme.CHINH:Theme.NEN);
+                if (toi) { return p; }
+                JPanel boc=new JPanel(new BorderLayout(0,Theme.S4)); boc.setOpaque(false);
+                JLabel nguoi=Theme.nhan(ten.get(),true); nguoi.setFont(Theme.NHO.deriveFont(Font.BOLD)); boc.add(nguoi,BorderLayout.NORTH); boc.add(p); return boc;
+            } catch (IllegalArgumentException e) { return Theme.nhan("Tệp không hỗ trợ",false); }
         }
         if (tin.loai.equals("S")) {
             JPanel p=new JPanel(new BorderLayout(0,Theme.S4)); p.setOpaque(false); JLabel n=Theme.nhan(ten.get(),true); n.setFont(Theme.NHO.deriveFont(Font.BOLD)); p.add(n,BorderLayout.NORTH);

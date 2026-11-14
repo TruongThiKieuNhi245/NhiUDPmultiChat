@@ -45,7 +45,7 @@ public final class UiPreview {
         kiemTraGanLoi(); FormKiemTra.chay();
         xuatLoiForm();
         xuatChat();
-        xuatHoSo(); xuatTroChuyen();
+        xuatHoSo(); xuatTroChuyen(); TepPreview.xuat();
         xuatVaoCuoi();
         SoanTinPanel soan=new SoanTinPanel(text -> { }); soan.xemTruoc("ắ".repeat(334));
         xuat(soan,"13-tin-qua-dai.png",760,220);
@@ -254,7 +254,7 @@ public final class UiPreview {
         return false;
     }
     // Doc nhan Swing that, khong reflection hay so sanh anh gia.
-    private static int demNhan(Container c,String text) {
+    static int demNhan(Container c,String text) {
         int so=0;
         for (var con:c.getComponents()) {
             if (con instanceof javax.swing.JLabel l && l.getText().equals(text)) { so++; }
@@ -263,7 +263,7 @@ public final class UiPreview {
         return so;
     }
     // Ve ca cay component len BufferedImage; khong chup desktop hoac gui du lieu ra ngoai.
-    private static void xuat(JComponent c,String ten,int rong,int cao) throws IOException {
+    static void xuat(JComponent c,String ten,int rong,int cao) throws IOException {
         c.setSize(rong,cao); boCuc(c);
         kiemTraONhap(c); FormKiemTra.kiemTraCuon(c);
         kiemTraFontNoiDung(c);
@@ -313,7 +313,7 @@ public final class UiPreview {
         return SwingUtilities.getAncestorOfClass(javax.swing.JSpinner.class,t)==null?28:22;
     }
     // Anh form dung kich thuoc tu nhien sau khi bat/tat dong loi.
-    private static void xuatForm(JComponent c,String ten) throws IOException {
+    static void xuatForm(JComponent c,String ten) throws IOException {
         var d=c.getPreferredSize(); xuat(c,ten,d.width,d.height);
     }
     // Nut Tao phong phai du be rong cho chu, ke ca o cua so 960x600.
