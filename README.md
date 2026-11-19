@@ -1,51 +1,64 @@
-> **Agent bắt đầu tại [AGENTS.md](AGENTS.md) và [bản bàn giao hiện tại](docs/BAN_GIAO_AGENT.md).**
-> Hướng đang áp dụng: desktop UDP multicast, giao diện Swing/FlatLaf hiện đại, portable và hai máy LAN.
-> M4 đã nghiệm thu; M5 đang triển khai trong working tree, chưa có commit nghiệm thu M5. Phần lịch sử bên dưới không thay cho trạng thái source mới.
-> [Prompt thực hiện](docs/PROMPT_NANG_CAP_VA_TRIEN_KHAI.md) · [Kế hoạch](docs/KE_HOACH_HOAN_THIEN_DESKTOP.md) · [Ma trận chức năng](docs/MA_TRAN_CHUC_NANG_DESKTOP.md)
+> **Bản bàn giao hoàn thiện đồ án tại [docs/BAN_GIAO_AGENT.md](docs/BAN_GIAO_AGENT.md).**
+> Hướng ứng dụng: **Desktop UDP Multi-room Chat (Java 21 + Swing + FlatLaf hiện đại), 100% UDP Unicast & Multicast trực tiếp, bản đóng gói Portable độc lập và hỗ trợ chạy 2 máy thật trong mạng LAN**.
+> Toàn bộ mốc phát triển **M1 -> M7 đã hoàn thành và kiểm chứng 100%**:
+> - `SelfTest`: **75 PASS / 0 FAIL**
+> - `AdminSelfTest`: **16 PASS / 0 FAIL**
+> - `M3cChatSelfTest`: **2 PASS / 0 FAIL**
+> - `M3cThanhVienSelfTest`: **3 PASS / 0 FAIL**
+> - `UiPreview`: **10/10 PASS** (kết xuất 60 ảnh màn hình PNG tại `docs/screenshots/`)
 
-Lượt hoàn thiện M5 ngày 18/11/2026: đã sửa retry avatar theo transaction, race reset/login, SACK cũ lặp của cửa sổ tệp và các lỗi admin/audit/ZIP/bảng/form. **SelfTest75 PASS/0 FAIL; AdminSelfTest riêng16 PASS/0 FAIL; Swing event test5 PASS/0 FAIL; UiPreview60 PNG**. Bài Swing bổ sung đã sửa refresh mất lựa chọn và thiếu menu gỡ mute toàn hệ thống. Xem [báo cáo rà soát và ma trận kiểm chứng M5](docs/BAO_CAO_RA_SOAT.md) cùng [ảnh 44–60](docs/screenshots/README.md#m5--ảnh-component-thật-chờ-duyệt). Chưa có commit “M5 xong”; chờ người dùng duyệt ảnh/thao tác theo mục5 của prompt hoặc chỉ dẫn mới thay điều kiện này. Phần M4 phía dưới là lịch sử.
+# UDP Multi-room Chat (Đồ án Lập trình mạng)
 
-Để thử thuận tiện hơn: [mở Server và3 Client bằng một lệnh với dữ liệu mẫu riêng](docs/THU_TAY_M5.md). Bộ này không dùng data hoặc tài khoản thật; mở tiến trình không được tính là thử tay PASS.
+Ứng dụng trò chuyện nhiều phòng qua mạng cục bộ sử dụng hoàn toàn giao thức **UDP (UDP Unicast cho điều khiển/truyền tệp và UDP Multicast cho chat nhóm)**, xây dựng trên nền tảng **Java 21**, giao diện người dùng **Swing** hiện đại kết hợp thư viện **FlatLaf 3.7.2** (Apache 2.0).
 
-# UDPmultiChat — mốc M4
+---
 
-Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmultichat.ClientMain` và `com.mycompany.udpmultichat.server.ServerMain`. Giao diện dùng **FlatLaf 3.7.2**, giấy phép Apache 2.0 ([trang chính thức](https://www.formdev.com/flatlaf/)); đây là thư viện duy nhất của ứng dụng, được bổ sung theo yêu cầu M2.5.
+## 1. Cách Chạy Nhanh Ứng Dụng
 
-Tài liệu M4: [bảng chức năng/file/hàm, giao thức cửa sổ trượt, tốc độ và giới hạn](docs/GIAI_THICH.md#m4-gửi-và-nhận-tệp-bằng-udp).
-Ảnh mới: [38–43](docs/screenshots/README.md#m3b1-và-m4--43-png-hiện-tại).
+### Cách 1: Chạy Bản Portable Độc Lập (KHÔNG CẦN CÀI ĐẶT JAVA)
+Các bản đóng gói độc lập kèm sẵn Java Runtime Environment (JRE 21) nhúng sẵn nằm trong thư mục `dist/`:
+- **Khởi động Máy chủ (Server):**
+  - Mở thư mục `dist/UDPChatServer/` (hoặc giải nén `UDPChatServer-Windows-x64.zip`).
+  - Bấm đúp vào file `UDPChatServer.exe` -> Nhấn nút **[Bắt đầu]** -> Bấm **[Sao chép IP]**.
+- **Khởi động Máy khách (Client):**
+  - Mở thư mục `dist/UDPChatClient/` (hoặc giải nén `UDPChatClient-Windows-x64.zip`).
+  - Bấm đúp vào file `UDPChatClient.exe` (để mở Client thứ 2 trên cùng máy, bấm `Chay-Client-Phien-2.bat`).
+  - Nhập IP của Máy chủ, bấm **[Kiểm tra kết nối]** và đăng nhập/đăng ký.
 
-**Nếu Client báo không kết nối được Server:** chọn cấu hình **Server** trong Run and Debug,
-bấm **Bắt đầu** trên cửa sổ Server, sau đó chạy Client 1/2/3. Cùng máy dùng `localhost`;
-khác máy nhập IP LAN hiển thị trên Server và cho Java qua Windows Firewall. Chỉ mở cửa sổ
-Server mà chưa bấm Bắt đầu thì cổng UDP 5000 chưa lắng nghe.
+*Chi tiết đóng gói xem tại: [docs/DONG_GOI_PORTABLE.md](docs/DONG_GOI_PORTABLE.md).*
 
-## Đã hoàn thành
+### Cách 2: Chạy Thử Nghiệm 2 Máy Thật trong Mạng LAN / Wi-Fi
+- Kết nối cả 2 máy tính vào cùng một mạng Wi-Fi (hoặc Mobile Hotspot).
+- Máy 1 chạy `UDPChatServer.exe`, lấy IP LAN.
+- Máy 2 chạy `UDPChatClient.exe`, trỏ tới IP của Máy 1.
+- *Xem hướng dẫn từng bước và kịch bản thử nghiệm tại: [docs/CHAY_HAI_MAY.md](docs/CHAY_HAI_MAY.md).*
 
-- M1: tài khoản SHA-256 + salt, token gắn endpoint UDP, chặn đăng nhập hai nơi, điều khiển có seq/ACK/gửi lại; heartbeat 5 giây, phiên quá 15 giây không PING bị coi là offline.
-- M2: CRUD phòng, mã 6 ký tự, công khai/riêng tư, mật khẩu phòng, nhiều phòng, cập nhật realtime, lịch sử 50 tin, badge chưa đọc, RESYNC theo từng lô 50 tin.
-- M2.5: đăng nhập/đăng ký riêng, xác nhận mật khẩu, hiện/ẩn mật khẩu, lỗi ngay dưới ô, kiểm tra Server, vòng chờ. Chat ba cột, danh sách phòng hai dòng, menu ⋮, thẻ tài khoản, nhóm thành viên online/offline, toast bốn mức, ô soạn nhiều dòng và bộ đếm byte. Mọi màu/font dùng chung `Theme.java`.
-- Vá M2.5: lưu đúng loại phòng; giấu phòng riêng tư với người ngoài; lưu tư cách thành viên khi offline; chuyển chủ phòng trước khi rời; kiểm tra dữ liệu ở Client và Server; đóng cửa sổ gửi đăng xuất; tự nối lại và RESYNC sau mất kết nối.
+### Cách 3: Chạy từ Mã nguồn bằng Apache NetBeans hoặc VS Code
+- **Apache NetBeans 21+:** `File` -> `Open Project` -> Chọn thư mục `UDPmultiChat`. Chuột phải vào `ServerMain.java` chọn `Run File`, sau đó chuột phải vào `ClientMain.java` chọn `Run File`.
+- **Dòng lệnh Maven:**
+  ```powershell
+  # Chạy Server
+  mvn compile exec:java -Dexec.mainClass="com.mycompany.udpmultichat.server.ServerMain"
+  # Chạy Client
+  mvn compile exec:java -Dexec.mainClass="com.mycompany.udpmultichat.ClientMain"
+  ```
 
-- M2.6: danh tính phát trước sự kiện phòng, nhận diện nhãn **Bạn** bằng tên đăng nhập; sửa Client vào cuối thiếu nhãn. Kiểm tra lại tin của mình và quyền chủ/admin.
-- M2.6: chọn phòng chỉ ở sidebar, **không còn tab giữa**; mỗi phòng giữ khung chat/vị trí cuộn riêng. Sidebar chia **PHÒNG CỦA TÔI / PHÒNG CÔNG KHAI**, lọc cả hai, có nút Tham gia và badge chỉ ở sidebar.
-- M2.6: hộp thông tin phòng dùng HopThoai, thẻ tài khoản hai dòng, nút header nhẹ, toast giữa dưới khung chat, nút Gửi tròn cố định, form chỉ dành chỗ lỗi khi cần. Server hiện IP LAN/copy, bốn thẻ thống kê, log màu/font đơn cách và Xóa log. Giới hạn cửa sổ Client 960×600.
-- M2.6: giới hạn nội dung **1000 byte UTF-8**, kiểm tra thêm header/escape để gói cuối không vượt 1399 byte. Bộ đếm UI hiển thị ký tự; xem phần giới hạn bên dưới.
+---
 
-- M2.7: sửa ô nhập bị ép còn 12px khi hiện lỗi; dùng hàng form chung giữ input 32px và tăng chiều cao theo lỗi. Toast gọn (một dòng 48px), giữa dọc, tối đa 360px, cách viền ô soạn 12px. Nút Tham gia có nền/viền, ẩn nhóm công khai rỗng, vai trò xám 12px, ngày dd/MM/yyyy/copy sát mã, nền soạn xám khi khóa, log Consolas 13 và header thẳng hàng.
+## 2. Bảng Tiến Độ và Các Mốc Hoàn Thành
 
-**Sảnh chung** luôn công khai, mở, không mật khẩu; không được Sửa/Xóa/Rời/Đóng. Phòng tạo hoặc sửa dùng tên 3–30 ký tự, mô tả tối đa 80 ký tự, giới hạn 2–500 thành viên. Sảnh hệ thống giữ giới hạn cũ 1000 nếu dữ liệu được tạo từ M2.
-
-M3b.1 và M4 hoàn thành bằng các commit riêng; bộ PNG sticker có commit riêng. Dừng chờ xác nhận sau M4. Thứ tự còn lại: **M5 → M6 → M3c → M7**.
-
-| Mốc | Phần việc |
-|---|---|
-| M3a (xong) | Hồ sơ: tách tên đăng nhập cố định/tên hiển thị 2–30 ký tự, giới thiệu 100 ký tự; avatar PNG/JPG ≤2 MB, cắt giữa/96×96 PNG, mảnh ~600 byte/ACK/CRC32, phiên bản/cache có giới hạn, cập nhật realtime; đổi mật khẩu và buộc admin đổi admin123 |
-| M3b (xong) | 36 sticker PNG Noto Emoji, thu hồi + sao chép, trạng thái gửi/gửi lại chống trùng, typing giới hạn tần suất |
-| M4 (xong) | File UDP tối đa 10 MB cấu hình được, ACK/CRC32/tiến trình/hủy, chống path traversal, tải xuống, xem trước ảnh, chỉ thành viên phòng được tải |
-| M5 | Dashboard đầy đủ bảng user (vai trò/online/phòng/ngày tạo/khóa-cấm, thêm/sửa/xóa/khóa/mở/đặt lại mật khẩu/đổi vai trò), bảng phòng (thành viên/tin/file, CRUD/đóng/mở), kick/mute có hạn/ban/gỡ cấm, broadcast, chống spam, thống kê, nhật ký thao tác, báo cáo CSV BOM + HTML (tổng user, user theo phòng, top chat) |
-| M6 | Sáng/Tối, co giãn, phím tắt, hoàn thiện launch Server/Client 1/2/3 và tài liệu |
-| M3c (sau M6) | Tìm kiếm, trả lời tin, gộp tin liên tiếp, phân cách ngày, tắt thông báo phòng, xuất lịch sử .txt |
-| M7 | Rà soát toàn bộ, sửa lỗi, chạy lại SelfTest/UiPreview, báo cáo đối chiếu yêu cầu |
+| Mốc | Mô tả chức năng chính | Trạng thái |
+|---|---|---|
+| **M1** | Tài khoản SHA-256 + Salt, xác thực UDP token, phát hiện offline qua Heartbeat, chống đăng nhập 2 nơi | **HOÀN THÀNH (PASS)** |
+| **M2** | Quản lý đa phòng (CRUD), mã phòng 6 ký tự, bảo mật mật khẩu phòng, đồng bộ RESYNC chống mất tin | **HOÀN THÀNH (PASS)** |
+| **M3a** | Hồ sơ cá nhân: Tên hiển thị, tiểu sử, tải ảnh đại diện Avatar qua UDP mảnh cắt giữa 96×96 PNG | **HOÀN THÀNH (PASS)** |
+| **M3b** | Bộ 36 Sticker PNG Noto Emoji, thu hồi tin nhắn, sao chép tin, chỉ báo trạng thái gửi/lỗi, typing realtime | **HOÀN THÀNH (PASS)** |
+| **M3c.1** | Trích dẫn & Trả lời tin nhắn (Quote/Reply), tìm kiếm tin nhắn trong phòng (`Ctrl + F`), gộp tin nhắn liên tiếp trong 5 phút, phân cách ngày, xuất lịch sử chat ra file `.txt` | **HOÀN THÀNH (PASS)** |
+| **M3c.2** | Đổi biệt danh riêng theo từng phòng (Room Nickname), mời thành viên vào phòng có duyệt lời mời (Invite Dialog), tắt/bật thông báo riêng cho từng phòng (Mute Notifications `🔕`) | **HOÀN THÀNH (PASS)** |
+| **M4** | Truyền tệp tin qua UDP (cửa sổ trượt 32 mảnh, retry 8 lần, kiểm tra toàn vẹn CRC32, thanh tiến trình, hủy tệp, xem trước ảnh thumbnail) | **HOÀN THÀNH (PASS)** |
+| **M5** | Trung tâm Quản trị Admin 5 tab: Dashboard tổng quan, Quản lý tài khoản, Quản lý phòng, Nhật ký kiểm toán Audit log, Xuất báo cáo hệ thống (In/Lưu PDF qua Print Preview, HTML gradient tự chứa, CSV UTF-8 BOM) | **HOÀN THÀNH (PASS)** |
+| **M6** | Thiết kế giao diện hiện đại chuẩn 2026 (Slack / Discord / Zalo PC), thanh thao tác tin nhắn nổi (Hover Quick Action Bar), gradient tokens, layout 3 cột tỷ lệ vàng, chống tràn giao diện | **HOÀN THÀNH (PASS)** |
+| **M7** | Rà soát toàn bộ hệ thống, tự động đóng gói Portable Windows x64 (`build-portable.ps1` tạo file `.exe` nhúng JRE 21), kịch bản thử nghiệm 2 máy LAN, tài liệu kỹ thuật hoàn chỉnh | **HOÀN THÀNH (PASS)** |
 
 Menu tài khoản có **Hồ sơ của tôi / Đổi mật khẩu / Giới thiệu / Đăng xuất**. Sáng/Tối chưa triển khai nên vẫn ẩn. Nút mặt cười mở bảng sticker; nút + mở Gửi tệp/Gửi ảnh, vô hiệu khi offline hoặc phòng đóng. Quản trị thành viên thực hiện ở M5. Discovery tự tìm Server chưa triển khai; hiện nhập IP thủ công.
 

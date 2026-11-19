@@ -7,4 +7,5 @@ reports/
 client.properties
 client.properties.tmp
 client-*.tmp
+dist/
 docs/screenshots/bao-cao-mau/

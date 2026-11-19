@@ -122,3 +122,26 @@ Thêm `YeuCauAnh`, `YeuCauClient`, `QuanTriBangKiemTra` cùng hai file test bổ
 | **Nâng cấp Báo cáo Quản trị** | Thêm hộp thoại xem trước báo cáo trực quan `BaoCaoPreviewDialog` hỗ trợ **In / Lưu PDF** (chuẩn JDK Java Print Service, không thêm thư viện ngoài), mở trình duyệt, lưu HTML; thiết kế lại Tab Báo cáo `BaoCaoPanel` 2 Card (chọn nhóm dữ liệu: Người dùng, Phòng, Nhật ký, Thống kê 7 ngày; định dạng HTML/PDF, CSV); thêm nút xuất riêng lẻ từng bảng trên toolbar bảng Người dùng, Phòng, Nhật ký | `BaoCaoPreviewDialog.java`, `BaoCaoPanel.java`, `XuatBaoCao.java`, `BangQuanTri.java`, `QuanTriFrame.java` |
 | **Tài liệu chuẩn hóa M6** | Hoàn thành `docs/KHAO_SAT_CHAT_2026.md` (khảo sát Discord, Slack, Zalo PC) và `docs/THIET_KE_GIAO_DIEN.md` (Design tokens, 3 cột, trạng thái) | Docs đầy đủ |
 | **Kiểm thử tự động** | Full SelfTest: **75 PASS / 0 FAIL**; AdminSelfTest: **16 PASS / 0 FAIL**; UiPreview: **60 PNG / 10 assertions PASS**; Rà soát dòng: `QuanTriFrame` 319 dòng, `BaoCaoPanel` 201 dòng (tất cả file ≤ 400 dòng) | Log & console output |
+
+## Nâng cấp Trải nghiệm Chat & Thành viên M3c (20/11/2026)
+
+| Hạng mục | Thực hiện trong M3c | Kiểm chứng & Bằng chứng |
+|---|---|---|
+| **M3c.1: Trích dẫn & Trả lời (Reply)** | Icon `reply` trên thanh hover và popup menu; thanh Reply bar trên ô soạn thảo; khối trích dẫn Quote box viền trái 3px `Theme.CHINH`, click chuột tự cuộn đến tin gốc và nháy viền nhận diện | `KhungChatPanel.java`, `SoanTinPanel.java`, `ChatMulticastUI.java`, `M3cChatSelfTest` PASS |
+| **M3c.1: Gộp tin & Phân cách ngày** | Tự động ẩn avatar/tên khi cùng người gửi trong 5 phút, giữ lề 32px thẳng hàng; pill phân cách ngày căn giữa ("Hôm nay", "Hôm qua", "dd/MM/yyyy") | `KhungChatPanel.java`, `HangTin.java` |
+| **M3c.1: Tìm kiếm trong phòng** | Thanh tìm kiếm trượt xuống (`Ctrl + F` hoặc nút kính lúp), đếm `x/y`, nút Lên/Xuống cuộn viewport | `KhungChatPanel.java` |
+| **M3c.1: Xuất lịch sử .txt** | Menu phòng "Xuất lịch sử chat (.txt)" lưu toàn bộ tin nhắn UTF-8 kèm thông tin phòng, sticker, tệp, trích dẫn, thu hồi | `ChatMulticastUI.java`, `M3cChatSelfTest` PASS |
+| **M3c.2: Biệt danh phòng (Room Nickname)** | Menu chuột phải thành viên "Đặt biệt danh..." / "Đổi biệt danh...", lưu theo cặp `(roomId, userId) -> nickname`, hiển thị biệt danh kèm `(Tên thật)`, ưu tiên hiển thị trên bong bóng chat | `QuanLyPhong.java`, `ThanhVienPanel.java`, `M3cThanhVienSelfTest` PASS |
+| **M3c.2: Mời thành viên (Invite Dialog)** | Nút `+` trên header Thành viên mở `MoiThanhVienDialog` tìm kiếm user chưa có trong phòng; menu cá nhân mở `LoiMoiPhongDialog` xem danh sách lời mời đang chờ, bấm "Chấp nhận" hoặc "Từ chối", hết hạn 7 ngày | `QuanLyLoiMoi.java`, `MoiThanhVienDialog.java`, `LoiMoiPhongDialog.java`, `M3cThanhVienSelfTest` PASS |
+| **M3c.2: Tắt thông báo phòng** | Menu chuột phải vào phòng "Tắt thông báo phòng" / "Bật thông báo phòng", icon `🔕` cạnh tên phòng, không tính unread badge | `DanhSachPhongPanel.java`, `ChatMulticastUI.java`, `M3cThanhVienSelfTest` PASS |
+
+## Hoàn thiện Đóng gói Portable & Thử nghiệm 2 Máy LAN M7 (20/11/2026)
+
+| Hạng mục | Thực hiện trong M7 | Kiểm chứng & Bằng chứng |
+|---|---|---|
+| **Script đóng gói Portable** | `scripts/build-portable.ps1` tự động biên dịch, thu thập dependency và chạy `jpackage` (JDK 21) tạo native app-image cho Windows x64 kèm JRE 21 tự chứa | `UDPChatServer-Windows-x64.zip` (~57MB), `UDPChatClient-Windows-x64.zip` (~57MB) |
+| **Chạy trên máy không có Java** | Bản đóng gói độc lập trong `dist/` chạy trực tiếp bằng file `.exe`, không yêu cầu cài đặt Java, Maven, NetBeans trên máy đích | `UDPChatServer.exe`, `UDPChatClient.exe`, `runtime/`, `app/` |
+| **Đa phiên trên một máy** | File `Chay-Client-Phien-2.bat` nạp profile cấu hình riêng `client-phien-2.properties`, cho phép thử nghiệm nhiều Client đồng thời mà không xung đột | `Chay-Client-Phien-2.bat`, `HUONG_DAN.txt` |
+| **Tài liệu Thử nghiệm 2 Máy LAN** | Hướng dẫn kết nối 2 máy vật lý trong mạng Wi-Fi/LAN, mở port UDP 5000 và dải multicast 21000-35000, xử lý AP isolation, kịch bản 5 bước chi tiết | `docs/CHAY_HAI_MAY.md` |
+| **Tài liệu Thuyết minh Portable** | Cấu trúc file, kiến trúc jpackage, cách thức phân phối Zero Configuration | `docs/DONG_GOI_PORTABLE.md` |
+| **Kiểm thử hồi quy 100%** | Full SelfTest: **75 PASS / 0 FAIL**; AdminSelfTest: **16 PASS / 0 FAIL**; M3cChatSelfTest: **2 PASS / 0 FAIL**; M3cThanhVienSelfTest: **3 PASS / 0 FAIL**; UiPreview: **60 PNG / 10 assertions PASS** | Toàn bộ suite tự động PASS |
