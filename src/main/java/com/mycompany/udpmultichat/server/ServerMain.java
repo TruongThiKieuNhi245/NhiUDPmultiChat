@@ -67,13 +67,15 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         JPanel duoi=new JPanel(new BorderLayout()); duoi.add(trangThai,BorderLayout.WEST);
         JPanel bao=new JPanel(new FlowLayout(FlowLayout.RIGHT)); JButton xuat=Theme.nut("Xuất báo cáo",true),folder=Theme.nut("Mở thư mục",false),html=Theme.nut("Mở HTML",false); bao.add(xuat); bao.add(folder); bao.add(html); duoi.add(bao,BorderLayout.EAST); thanh.add(duoi,BorderLayout.SOUTH);
         xuat.addActionListener(e -> { xuat.setEnabled(false); viecNen.execute(() -> {
-            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); } else { baoCao=p; trangThai.setText("Đã xuất báo cáo: "+p); onLog("Đã xuất báo cáo: "+p); toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất báo cáo.","Mở thư mục",() -> moBaoCao(false)); } })); }
+            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); } else { baoCao=p; trangThai.setText("Đã xuất báo cáo: "+tenNgan(p)); onLog("Đã xuất báo cáo: "+p); toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất báo cáo.","Mở thư mục",() -> moBaoCao(false)); } })); }
             catch (java.io.IOException loi) { SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); onLog("Lỗi: "+loi.getMessage()); }); }
         }); });
         folder.addActionListener(e -> moBaoCao(false)); html.addActionListener(e -> moBaoCao(true)); return thanh;
     }
     // Mo HTML/thu muc tren worker, khong chan EDT.
     private void moBaoCao(boolean html) { if (baoCao!=null) { viecNen.execute(() -> { try { java.awt.Desktop.getDesktop().open((html?baoCao.resolve("tong_hop.html"):baoCao).toFile()); } catch (java.io.IOException e) { onLog("Lỗi mở báo cáo."); } }); } }
+    // Chi hien ten thu muc cuoi, khong hien duong dan day du tren UI.
+    private static String tenNgan(Path p) { return p==null?"":p.getFileName().toString(); }
     // Sau the co cung kich thuoc va trinh bay so ro rang.
     private JPanel theThongKe() {
         JPanel hang=new JPanel(new GridLayout(2,3,Theme.S12,0));

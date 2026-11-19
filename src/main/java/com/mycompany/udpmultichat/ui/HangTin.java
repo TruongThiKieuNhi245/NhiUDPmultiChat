@@ -53,7 +53,26 @@ final class HangTin extends JPanel {
         duoi.add(gio,BorderLayout.WEST); if (toi && !tin.loai.equals("F") && !trangThai.isEmpty() && (!trangThai.equals("SENT") || hienDaGui)) { duoi.add(trangThaiGui()); }
         the.add(duoi,BorderLayout.SOUTH); add(the);
         if (!toi && getComponentCount()>1) { getComponent(0).setPreferredSize(new Dimension(40,the.getPreferredSize().height)); }
-        ganMenu(this); revalidate(); repaint();
+        ganMenu(this);
+        JPanel nhanh=taoNutNhanh();
+        if (nhanh!=null) { add(nhanh); }
+        revalidate(); repaint();
+    }
+    // Nut nhanh duoi bong tin: Sao chep cho text, Thu hoi cho tin cua minh chua thu hoi.
+    private JPanel taoNutNhanh() {
+        if (tin.thuHoi || tin.loai.equals("Y")) { return null; }
+        JPanel p=new JPanel(new FlowLayout(toi?FlowLayout.RIGHT:FlowLayout.LEFT,Theme.S4,0)); p.setOpaque(false);
+        if (!tin.loai.equals("F") && !tin.loai.equals("S")) {
+            JButton cp=Theme.nutNhe("Sao chép",""); cp.setFont(Theme.NHO); cp.setForeground(Theme.CHINH);
+            cp.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            cp.addActionListener(e -> hanhDong.accept("Sao chép")); p.add(cp);
+        }
+        if (toi && tin.msgId>0) {
+            JButton th=Theme.nutNhe("Thu hồi",""); th.setFont(Theme.NHO); th.setForeground(Theme.LOI);
+            th.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            th.addActionListener(e -> hanhDong.accept("Thu hồi")); p.add(th);
+        }
+        return p.getComponentCount()==0?null:p;
     }
     // Sticker khong bong nen; thu hoi khong giu noi dung trong component hay tooltip.
     private JComponent noiDung() {
