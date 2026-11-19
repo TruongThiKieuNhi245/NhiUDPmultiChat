@@ -134,6 +134,8 @@ public final class Theme {
             case "up": a.drawPolyline(new int[]{4,9,14},new int[]{11,6,11},3); break;
             case "send": a.drawLine(9,15,9,3); a.drawPolyline(new int[]{4,9,14},new int[]{8,3,8},3); break;
             case "plus": a.drawLine(9,3,9,15); a.drawLine(3,9,15,9); break;
+            case "copy": a.drawRoundRect(3,3,9,9,2,2); a.drawRoundRect(6,6,9,9,2,2); break;
+            case "undo": a.drawArc(5,5,8,8,0,270); a.drawPolyline(new int[]{3,5,7},new int[]{5,3,5},3); break;
             default: a.drawOval(2,2,14,14); a.drawLine(9,7,9,12); a.fillOval(8,4,2,2); break;
         }
     }

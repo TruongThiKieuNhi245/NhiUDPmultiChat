@@ -54,7 +54,7 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         batDau.addActionListener(e -> doiTrangThai(true)); dung.addActionListener(e -> doiTrangThai(false));
         copy.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(ipLan),null));
         addWindowListener(new WindowAdapter() { public void windowClosing(WindowEvent e) { dongCuaSo(); } });
-        capNhat.start(); viecNen.execute(this::napDiaChi); onLog("Bấm Bắt đầu. Dữ liệu: "+thuMucDuLieu.toAbsolutePath().normalize());
+        capNhat.start(); viecNen.execute(this::napDiaChi); onLog("Bấm Bắt đầu. Thư mục dữ liệu: "+tenNgan(thuMucDuLieu));
     }
     // Thanh dia chi, sao chep, bat/dung va xoa log dung cung Theme.
     private JPanel thanhCongCu() {
@@ -64,10 +64,10 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S8,0));
         JButton xoa=Theme.nut("Xóa log",false); xoa.addActionListener(e -> log.setText(""));
         nut.add(copy); nut.add(batDau); nut.add(dung); nut.add(xoa); dung.setEnabled(false); copy.setEnabled(false); thanh.add(nut,BorderLayout.EAST);
-        JPanel duoi=new JPanel(new BorderLayout()); duoi.add(trangThai,BorderLayout.WEST);
-        JPanel bao=new JPanel(new FlowLayout(FlowLayout.RIGHT)); JButton xuat=Theme.nut("Xuất báo cáo",true),folder=Theme.nut("Mở thư mục",false),html=Theme.nut("Mở HTML",false); bao.add(xuat); bao.add(folder); bao.add(html); duoi.add(bao,BorderLayout.EAST); thanh.add(duoi,BorderLayout.SOUTH);
+        JPanel duoi=new JPanel(new BorderLayout(Theme.S8,0)); duoi.add(trangThai,BorderLayout.CENTER);
+        JPanel bao=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); JButton xuat=Theme.nut("Xuất báo cáo",true),folder=Theme.nut("Mở thư mục",false),html=Theme.nut("Mở HTML",false); bao.add(xuat); bao.add(folder); bao.add(html); duoi.add(bao,BorderLayout.EAST); thanh.add(duoi,BorderLayout.SOUTH);
         xuat.addActionListener(e -> { xuat.setEnabled(false); viecNen.execute(() -> {
-            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); } else { baoCao=p; trangThai.setText("Đã xuất báo cáo: "+tenNgan(p)); onLog("Đã xuất báo cáo: "+p); toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất báo cáo.","Mở thư mục",() -> moBaoCao(false)); } })); }
+            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); } else { baoCao=p; trangThai.setText("Đã xuất báo cáo: "+tenNgan(p)); trangThai.setToolTipText(p.toAbsolutePath().toString()); onLog("Đã xuất báo cáo: "+tenNgan(p)); toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất báo cáo.","Mở thư mục",() -> moBaoCao(false)); } })); }
             catch (java.io.IOException loi) { SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); onLog("Lỗi: "+loi.getMessage()); }); }
         }); });
         folder.addActionListener(e -> moBaoCao(false)); html.addActionListener(e -> moBaoCao(true)); return thanh;

@@ -107,3 +107,13 @@ Có thể dùng [bộ thử một lệnh](THU_TAY_M5.md): `scripts/thu-tay-m5.ps
 Đã đọc nội dung trích xuất cả 40 trang UDP và14 trang Multicast tại thư mục tailieu; lưu bản text riêng trong `.selftest/`. Giữ hai PDF gốc. Kiến trúc vẫn DatagramSocket/Packet/send/receive; multicast join/leave trực tiếp từng phòng. ACK/seq/retry/CRC/RESYNC là lớp ứng dụng tự cài, không phải bảo đảm có sẵn của UDP.
 
 Thêm `YeuCauAnh`, `YeuCauClient`, `QuanTriBangKiemTra` cùng hai file test bổ sung. Sau lượt75/0 thêm tiện ích fixture `ChuanBiThuTayM5`, `QuanTriTuongTacSelfTest`/`SwingThu` và script/hướng dẫn thử tay; hiện có68 file main,14 file Java dưới src/test. Phần M5 dở có sẵn được giữ và sửa tiếp. Không xóa/chuyển source, dữ liệu thật, sticker, ảnh tham chiếu01–43 hoặc giấy phép. Không thêm dependency Maven.
+
+## Nâng cấp và hoàn thiện giao diện M6 (19/11/2026)
+
+| Hạng mục | Thực hiện trong M6 | Kiểm chứng & Bằng chứng |
+|---|---|---|
+| **Hover Action Bar tin nhắn** | Thay thế nút inline thô bằng thanh công cụ nổi bo góc nhỏ (26px), ẩn mặc định, xuất hiện khi rê chuột vào hàng tin: icon Sao chép, icon Thu hồi (tin của mình / admin trong 10 phút), icon `···` mở popup menu | `HangTin.java`, `UiPreview` 33-chat-sticker-trang-thai.png, 34-menu-tin-nhan.png |
+| **Giao diện ServerMain** | Rút gọn đường dẫn dài (`tenNgan(p)`), tách layout `trangThai` ở `CENTER` và cụm nút xuất báo cáo ở `EAST`, chống đè chữ/tràn nút | `ServerMain.java`, `UiPreview` 12-server.png |
+| **Vector Icons Java2D** | Bổ sung vector icon `copy` và `undo` trong `Theme.java`, chuẩn hóa nét vẽ không phụ thuộc font hệ thống | `Theme.java` |
+| **Tài liệu chuẩn hóa M6** | Hoàn thành `docs/KHAO_SAT_CHAT_2026.md` (khảo sát Discord, Slack, Zalo PC) và `docs/THIET_KE_GIAO_DIEN.md` (Design tokens, 3 cột, trạng thái) | Docs đầy đủ |
+| **Kiểm thử tự động** | Full SelfTest: **75 PASS / 0 FAIL**; AdminSelfTest: **16 PASS / 0 FAIL**; UiPreview: **60 PNG / 10 assertions PASS** | Log & console output |

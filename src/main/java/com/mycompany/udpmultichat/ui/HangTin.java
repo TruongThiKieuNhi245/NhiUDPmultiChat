@@ -1,5 +1,6 @@
 package com.mycompany.udpmultichat.ui;
 
+import com.mycompany.udpmultichat.common.Protocol;
 import com.mycompany.udpmultichat.common.model.TinNhan;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -8,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.function.*;
 import javax.swing.*;
 
-/** Vai tro: Mot tin co menu, sticker/thu hoi va trang thai gui. Ai goi: KhungChatPanel, UiPreview. Goi: ThanhPhan, StickerKho, Theme. */
+/** Vai tro: Mot tin co thanh thao tac hover, menu va trang thai gui. Ai goi: KhungChatPanel, UiPreview. Goi: ThanhPhan, StickerKho, Theme. */
 @SuppressWarnings("serial")
 final class HangTin extends JPanel {
     private static final DateTimeFormatter GIO=DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
@@ -25,11 +26,26 @@ final class HangTin extends JPanel {
     // Tien do va thumbnail chi la snapshot, khong truy cap dia/mang.
     void datTep(com.mycompany.udpmultichat.common.TepTienDo td,Supplier<BufferedImage> anh) { tepTienDo=td; anhTep=anh; veLai(); }
     private final JPanel the=new JPanel(new BorderLayout(0,Theme.S4));
+    private final JPanel barHanhDong=taoBarHanhDong();
+
     // Renderer doc cache RAM; callback chi gui lenh qua UI/Core.
     HangTin(TinNhan t,boolean toi,Supplier<BufferedImage> anh,Supplier<String> ten,BooleanSupplier quanLy,Consumer<String> hanhDong) {
         super(new FlowLayout(toi?FlowLayout.RIGHT:FlowLayout.LEFT,Theme.S16,Theme.S8));
         tin=t; this.toi=toi; this.anh=anh; this.ten=ten; this.quanLy=quanLy; this.hanhDong=hanhDong;
         setOpaque(false); the.setOpaque(false); veLai();
+    }
+    // Tao thanh thao tac hover an mac dinh, chi hien khi chuot vao vung tin.
+    private JPanel taoBarHanhDong() {
+        JPanel bar=new JPanel(new FlowLayout(FlowLayout.CENTER,2,0)) {
+            @Override protected void paintComponent(Graphics g) {
+                Theme.boTron(g,getWidth(),getHeight(),Theme.THE,Theme.BO); super.paintComponent(g);
+            }
+        };
+        bar.setOpaque(false);
+        bar.setBorder(BorderFactory.createCompoundBorder(
+            new javax.swing.border.LineBorder(Theme.VIEN,1,true),Theme.le(2)));
+        bar.setVisible(false);
+        return bar;
     }
     // Tin Server thay tin cuc bo, khong tao them dong khi ma Client trung.
     void capNhat(TinNhan t) { tin=t; veLai(); }
@@ -51,28 +67,46 @@ final class HangTin extends JPanel {
         JPanel duoi=new JPanel(new BorderLayout(Theme.S8,0)); duoi.setOpaque(false);
         JLabel gio=Theme.nhan(GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU);
         duoi.add(gio,BorderLayout.WEST); if (toi && !tin.loai.equals("F") && !trangThai.isEmpty() && (!trangThai.equals("SENT") || hienDaGui)) { duoi.add(trangThaiGui()); }
-        the.add(duoi,BorderLayout.SOUTH); add(the);
-        if (!toi && getComponentCount()>1) { getComponent(0).setPreferredSize(new Dimension(40,the.getPreferredSize().height)); }
-        ganMenu(this);
-        JPanel nhanh=taoNutNhanh();
-        if (nhanh!=null) { add(nhanh); }
+        the.add(duoi,BorderLayout.SOUTH);
+        napBarHanhDong();
+        if (toi) { add(barHanhDong); add(the); } else { add(the); add(barHanhDong); }
+        if (!toi && getComponentCount()>2) { getComponent(0).setPreferredSize(new Dimension(40,the.getPreferredSize().height)); }
+        ganMenu(this); ganHover(this);
         revalidate(); repaint();
     }
-    // Nut nhanh duoi bong tin: Sao chep cho text, Thu hoi cho tin cua minh chua thu hoi.
-    private JPanel taoNutNhanh() {
-        if (tin.thuHoi || tin.loai.equals("Y")) { return null; }
-        JPanel p=new JPanel(new FlowLayout(toi?FlowLayout.RIGHT:FlowLayout.LEFT,Theme.S4,0)); p.setOpaque(false);
+    // Nap cac nut vao thanh hover: sao chep, thu hoi va menu tuy chon.
+    private void napBarHanhDong() {
+        barHanhDong.removeAll(); barHanhDong.setVisible(false);
+        if (tin.thuHoi || tin.loai.equals("Y")) { barHanhDong.putClientProperty("co",false); return; }
         if (!tin.loai.equals("F") && !tin.loai.equals("S")) {
-            JButton cp=Theme.nutNhe("Sao chép",""); cp.setFont(Theme.NHO); cp.setForeground(Theme.CHINH);
+            JButton cp=Theme.nutNhe("","copy"); cp.setToolTipText("Sao chép");
             cp.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            cp.addActionListener(e -> hanhDong.accept("Sao chép")); p.add(cp);
+            cp.addActionListener(e -> hanhDong.accept("Sao chép")); barHanhDong.add(cp);
         }
-        if (toi && tin.msgId>0) {
-            JButton th=Theme.nutNhe("Thu hồi",""); th.setFont(Theme.NHO); th.setForeground(Theme.LOI);
+        if (toi && tin.msgId>0 && (quanLy.getAsBoolean() || System.currentTimeMillis()-tin.thoiGian<=Protocol.THU_HOI_MS)) {
+            JButton th=Theme.nutNhe("","undo"); th.setForeground(Theme.LOI); th.setToolTipText("Thu hồi tin nhắn");
             th.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            th.addActionListener(e -> hanhDong.accept("Thu hồi")); p.add(th);
+            th.addActionListener(e -> hanhDong.accept("Thu hồi")); barHanhDong.add(th);
         }
-        return p.getComponentCount()==0?null:p;
+        JButton more=Theme.nutNhe("","more"); more.setToolTipText("Tuỳ chọn khác");
+        more.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        more.addActionListener(e -> menu().show(more,0,more.getHeight())); barHanhDong.add(more);
+        barHanhDong.putClientProperty("co",true);
+    }
+    // Hover lan xuong moi component con: vao hien bar, ra khoi hang an bar.
+    private void ganHover(JComponent c) {
+        c.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                if (Boolean.TRUE.equals(barHanhDong.getClientProperty("co"))) { barHanhDong.setVisible(true); }
+            }
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                Point p=SwingUtilities.convertPoint(e.getComponent(),e.getPoint(),HangTin.this);
+                if (!HangTin.this.contains(p)) { barHanhDong.setVisible(false); }
+            }
+        });
+        for (var con:c.getComponents()) {
+            if (con instanceof JComponent j && j!=barHanhDong) { ganHover(j); }
+        }
     }
     // Sticker khong bong nen; thu hoi khong giu noi dung trong component hay tooltip.
     private JComponent noiDung() {
@@ -116,14 +150,14 @@ final class HangTin extends JPanel {
     // Chuot phai tren ca noi dung, avatar va trang thai deu mo cung menu.
     private void ganMenu(JComponent c) {
         c.setComponentPopupMenu(menu());
-        for (var con:c.getComponents()) { if (con instanceof JComponent j) { ganMenu(j); } }
+        for (var con:c.getComponents()) { if (con instanceof JComponent j && j!=barHanhDong) { ganMenu(j); } }
     }
     // Server kiem tra lai quyen va 10 phut, khong tin viec an menu tren Client.
     JPopupMenu menu() {
         JPopupMenu m=new JPopupMenu(); m.setBorder(javax.swing.BorderFactory.createCompoundBorder(m.getBorder(),Theme.le(Theme.S4)));
         if (!tin.thuHoi) {
             JMenuItem copy=new JMenuItem("Sao chép"); copy.addActionListener(e -> DanhSachPhongPanel.saoChep(tin.loai.equals("S")?StickerKho.ten(tin.noiDung):tin.noiDung)); m.add(copy);
-            if (tin.msgId>0 && (quanLy.getAsBoolean() || (toi && System.currentTimeMillis()-tin.thoiGian<=com.mycompany.udpmultichat.common.Protocol.THU_HOI_MS))) {
+            if (tin.msgId>0 && (quanLy.getAsBoolean() || (toi && System.currentTimeMillis()-tin.thoiGian<=Protocol.THU_HOI_MS))) {
                 m.addSeparator(); JMenuItem thu=new JMenuItem("Thu hồi"); thu.setForeground(Theme.LOI); thu.addActionListener(e -> hanhDong.accept("Thu hồi")); m.add(thu);
             }
         }

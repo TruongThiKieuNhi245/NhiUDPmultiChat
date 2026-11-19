@@ -57,7 +57,7 @@ Chỉ dùng kết quả mới ở mục này cho bản bàn giao; số56PASS M4 
 | M5 | Backend/admin5tab/moderation/audit/stats/CSV+HTML/ZIP transfer đã có | Hoàn thiện checklist và test coverage, ảnh/tương tác, docs, rồi mới commit |
 | Thêm thành viên | Vào bằng mã và danh sách đã có | Lời mời trong app/accept/reject/offline/ban/full/race chưa có, làm M3c |
 | Biệt danh | Tên hiển thị toàn hệ thống đã có | Nickname riêng roomId-userId chưa có, làm M3c; không nhầm với profile |
-| UI mới | FlatLaf light, Theme, layout/component/preview đã có | M6 thống nhất/polish/dark/HiDPI, duyệt ảnh; không tạo lớp UI cạnh tranh |
+| UI mới | FlatLaf light, Theme, layout/component/preview đã có | M6 hoàn thiện hover action bar chuẩn Discord/Slack/Zalo PC, chống tràn ServerMain, hoàn thành tài liệu khảo sát & thiết kế |
 | Portable/LAN | Hướng dẫn sơ bộ IP, IDE chạy3Client | Build app-image kèm runtime/config paths, chẩn đoán/profiles, thử máy không Java và hai máy vật lý |
 
 ## 5. Lỗi và khoảng trống ưu tiên cho Agent
