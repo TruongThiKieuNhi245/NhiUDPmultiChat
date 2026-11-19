@@ -167,7 +167,7 @@ public final class Theme {
             public void paintIcon(java.awt.Component c,Graphics g,int x,int y) {
                 Graphics2D a=(Graphics2D)g.create(); a.translate(x,y); a.setColor(c.getForeground());
                 a.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
-                a.setStroke(new java.awt.BasicStroke(1.6f));
+                a.setStroke(new java.awt.BasicStroke(1.6f, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND));
                 veIcon(a,loai);
                 a.dispose();
             }
@@ -185,9 +185,19 @@ public final class Theme {
             case "up": a.drawPolyline(new int[]{4,9,14},new int[]{11,6,11},3); break;
             case "send": a.drawLine(9,15,9,3); a.drawPolyline(new int[]{4,9,14},new int[]{8,3,8},3); break;
             case "plus": a.drawLine(9,3,9,15); a.drawLine(3,9,15,9); break;
-            case "copy": a.drawRoundRect(3,3,9,9,2,2); a.drawRoundRect(6,6,9,9,2,2); break;
-            case "undo": a.drawArc(5,5,8,8,0,270); a.drawPolyline(new int[]{3,5,7},new int[]{5,3,5},3); break;
-            case "reply": a.drawArc(7,6,7,7,90,270); a.drawPolyline(new int[]{7,3,7},new int[]{4,6,8},3); break;
+            case "copy": a.drawRoundRect(3,3,8,8,2,2); a.drawRoundRect(6,6,8,8,2,2); break;
+            case "undo": {
+                a.drawPolyline(new int[]{6,3,6},new int[]{3,6,9},3);
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(4,6); p.quadTo(12,3,14,9); p.quadTo(15,14,10,15); p.quadTo(6,15,6,12);
+                a.draw(p); break;
+            }
+            case "reply": {
+                a.drawPolyline(new int[]{7,3,7},new int[]{4,7,10},3);
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(4,7); p.quadTo(10,7,13,14);
+                a.draw(p); break;
+            }
             default: a.drawOval(2,2,14,14); a.drawLine(9,7,9,12); a.fillOval(8,4,2,2); break;
         }
     }
