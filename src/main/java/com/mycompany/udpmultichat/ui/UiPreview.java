@@ -23,7 +23,7 @@ public final class UiPreview {
     // ===== VAI TRO VA CAC THAO TAC =====
     // Khoi tao lop va noi cac thanh phan can thiet.
     private UiPreview() { }
-    private static final Path THU_MUC=Path.of("docs","screenshots");
+    private static final Path THU_MUC=Path.of(System.getProperty("udpmultichat.previewDir","docs/screenshots"));
     private static int soAnh;
 
     // Maven: exec:java -Dexec.mainClass=com.mycompany.udpmultichat.ui.UiPreview
@@ -45,7 +45,7 @@ public final class UiPreview {
         kiemTraGanLoi(); FormKiemTra.chay();
         xuatLoiForm();
         xuatChat();
-        xuatHoSo(); xuatTroChuyen(); TepPreview.xuat();
+        xuatHoSo(); xuatTroChuyen(); TepPreview.xuat(); QuanTriPreview.xuat();
         xuatVaoCuoi();
         SoanTinPanel soan=new SoanTinPanel(text -> { }); soan.xemTruoc("ắ".repeat(334));
         xuat(soan,"13-tin-qua-dai.png",760,220);
@@ -53,7 +53,7 @@ public final class UiPreview {
         settings.xemTruocDangNhap(); settings.xemTruocServer();
         xuat(settings,"14-cai-dat-server.png",1120,800);
         ServerMain server=new ServerMain();
-        try { server.duLieuMau(); xuat(server.getRootPane(),"12-server.png",900,620); } finally { server.dispose(); }
+        try { server.duLieuMau(); xuat(server.getRootPane(),"12-server.png",1100,740); } finally { server.dispose(); }
     }
     // Sticker, thu hoi va ba trang thai dung API UI that, khong mo mang.
     private static void xuatTroChuyen() throws IOException {

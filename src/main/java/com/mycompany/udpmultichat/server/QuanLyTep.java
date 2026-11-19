@@ -18,6 +18,7 @@ final class QuanLyTep implements AutoCloseable {
     private final GhiTin ghiTin;
     private final long max;
     private final int retries;
+    private final Map<String,BaoCao> baoCao=new HashMap<>();
     private final Map<String,Luot> luot=new HashMap<>();
     private final ScheduledExecutorService don;
     // Khoi tao cong du lieu rieng, toc do khong anh huong ReliableUdp dieu khien.
@@ -29,6 +30,22 @@ final class QuanLyTep implements AutoCloseable {
         truyen=new TruyenTep(0,mat,seed,retries);
         don=Executors.newSingleThreadScheduledExecutor(r -> { Thread t=new Thread(r,"tep-don"); t.setDaemon(true); return t; });
         don.scheduleWithFixedDelay(this::quet,5,5,TimeUnit.SECONDS);
+    }
+    // Bao cao la capability gan user ADMIN; khong cong bo vao lich su phong.
+    synchronized TepTin dangKyBaoCao(Phien p,Path file) throws IOException {
+        baoCao.values().removeIf(b -> System.currentTimeMillis()-b.luc>3600000);
+        if (p.nguoi.vaiTro!=com.mycompany.udpmultichat.common.model.VaiTro.ADMIN || baoCao.size()>=16) { throw new IllegalArgumentException("Không thể cấp lượt tải báo cáo."); }
+        if (Files.size(file)>max) { throw new IllegalArgumentException("ZIP báo cáo vượt giới hạn tải tệp. Hãy xuất trực tiếp tại cửa sổ Server."); }
+        String id=UUID.randomUUID().toString(); TepTin t=new TepTin(id,"bao_cao",p.nguoi.id,file.getFileName().toString(),Files.size(file),TruyenTep.crc(file),System.currentTimeMillis()); baoCao.put(id,new BaoCao(p.nguoi.id,file,t,System.currentTimeMillis())); return t;
+    }
+    // So luot DATA dang chay, khong dem cache ACK da hoan tat.
+    synchronized int dangTruyen() { return (int)luot.values().stream().filter(l -> l.viec!=null && !l.viec.isDone()).count(); }
+    // Retry cung ma file khong phai mot tin moi de tinh vao quota chong spam.
+    synchronized boolean laGuiLai(Phien p,String[] g) {
+        if (g.length!=11) { return false; }
+        phong.kiemTraGui(p,g[3]);
+        return phong.tinNhan().theoMa(g[3],p.nguoi.id,g[10])!=null ||
+            luot.values().stream().anyMatch(l -> l.upload && l.user.equals(p.nguoi.id) && l.t.room().equals(g[3]) && l.ma.equals(g[10]));
     }
     // ===== DIEU KHIEN DA XAC THUC =====
     synchronized String[] xuLy(Phien p,String[] g) throws IOException {
@@ -97,6 +114,12 @@ final class QuanLyTep implements AutoCloseable {
     // GET chi tao luot; doi READY de Client mo kenh nhan truoc khi Server gui.
     private String[] chuanBiTai(Phien p,String[] g) throws IOException {
         if (g.length!=6 || luot.size()>=64) { throw new IllegalArgumentException("Quá nhiều lượt tải hoặc thiếu thông tin."); }
+        BaoCao bc=baoCao.get(g[3]);
+        if (bc!=null) {
+            if (!bc.user.equals(p.nguoi.id) || p.nguoi.vaiTro!=com.mycompany.udpmultichat.common.model.VaiTro.ADMIN) { throw new IllegalArgumentException("Không có quyền tải báo cáo."); }
+            UUID id=UUID.randomUUID(); Luot l=new Luot(p,bc.t,diaChi(p,g[4]),false,bc.file,""); l.size=bc.t.kichThuoc(); l.crc=bc.t.crc(); luot.put(id.toString(),l);
+            return new String[]{id.toString(),""+l.size,""+l.crc,""+truyen.cong()};
+        }
         TepTin t=kho.lay(g[3]); phong.kiemTraThanhVien(p,t.room());
         if (!phong.tinNhan().cacTep().contains(t.id())) { throw new IllegalArgumentException("Tệp đã được thu hồi."); }
         Path nguon=kho.duong(t.room(),t.id(),Boolean.parseBoolean(g[5])?".jpg":".bin");
@@ -109,7 +132,8 @@ final class QuanLyTep implements AutoCloseable {
     // READY lap lai khong tao luong gui thu hai.
     private String[] sanSang(Phien p,String[] g) throws IOException {
         Luot l=tim(p,g); if (l.upload) { throw new IllegalArgumentException("Lượt tải không hợp lệ."); }
-        phong.kiemTraThanhVien(p,l.t.room());
+        if (!l.t.room().equals("bao_cao")) { phong.kiemTraThanhVien(p,l.t.room()); }
+        else if (p.nguoi.vaiTro!=com.mycompany.udpmultichat.common.model.VaiTro.ADMIN) { throw new IllegalArgumentException("Không có quyền tải báo cáo."); }
         if (l.viec==null) { l.viec=truyen.gui(UUID.fromString(g[3]),l.ban,l.tam,l.size,l.crc,n -> { }); }
         return new String[]{"OK"};
     }
@@ -157,6 +181,7 @@ final class QuanLyTep implements AutoCloseable {
         don.shutdownNow(); truyen.close();
         for (var e:List.copyOf(luot.entrySet())) { try { donLuot(e.getKey(),e.getValue()); } catch (IOException ignored) { } }
     }
+    private record BaoCao(String user,Path file,TepTin t,long luc) { }
     /** Mot luot co han, so luong toi da 64. */
     private static final class Luot {
         final String token,user,ma; final TepTin t; final InetSocketAddress ban; final boolean upload; final Path tam;

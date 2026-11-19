@@ -32,17 +32,21 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
     private final JTextPane log=new JTextPane();
     private final JLabel diaChi=Theme.nhan("IP LAN: đang xác định… · UDP "+Protocol.CONG_SERVER,false);
     private final JLabel trangThai=Theme.nhan("Chưa chạy Server",false);
-    private final JLabel[] soLieu={Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true)};
+    private final JLabel[] soLieu={Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true)};
     private final JButton batDau=Theme.nut("Bắt đầu",true),dung=Theme.nut("Dừng",false),copy=Theme.nutNhe("Sao chép IP","");
     private final ExecutorService viecNen=Executors.newSingleThreadExecutor(v -> { Thread t=new Thread(v,"ui-server-task"); t.setDaemon(true); return t; });
-    private final ServerCore server=new ServerCore(Path.of("data"),this);
+    private final Path thuMucDuLieu=Path.of(System.getProperty("udpmultichat.dataDir","data"));
+    private final ServerCore server=new ServerCore(thuMucDuLieu,this);
+    private final com.mycompany.udpmultichat.ui.components.ThongBao toast=new com.mycompany.udpmultichat.ui.components.ThongBao(getLayeredPane());
+    private Path baoCao;
+    private final javax.swing.Timer capNhat=new javax.swing.Timer(4000,e -> viecNen.execute(() -> { int[] n=server.phienVaTep(); SwingUtilities.invokeLater(() -> { soLieu[4].setText(""+n[0]); soLieu[5].setText(""+n[1]); }); }));
     private boolean dangDong;
     private String ipLan="";
 
     // ===== DUNG CUA SO =====
     // Cua so chi nhan Listener; khong tao hay xu ly DatagramSocket.
     public ServerMain() {
-        setTitle("UDP Chat — Máy chủ điều phối"); setIconImage(Theme.iconUngDung()); setSize(900,620);
+        setTitle("UDP Chat — Máy chủ điều phối"); setIconImage(Theme.iconUngDung()); setSize(1100,700);
         setMinimumSize(new Dimension(720,460)); setLocationByPlatform(true); setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         JPanel noiDung=new JPanel(new BorderLayout(0,Theme.S16)); noiDung.setBorder(Theme.le(Theme.S16)); setContentPane(noiDung);
         JPanel dau=new JPanel(new BorderLayout(0,Theme.S12)); dau.add(thanhCongCu(),BorderLayout.NORTH); dau.add(theThongKe(),BorderLayout.CENTER); noiDung.add(dau,BorderLayout.NORTH);
@@ -50,7 +54,7 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         batDau.addActionListener(e -> doiTrangThai(true)); dung.addActionListener(e -> doiTrangThai(false));
         copy.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(ipLan),null));
         addWindowListener(new WindowAdapter() { public void windowClosing(WindowEvent e) { dongCuaSo(); } });
-        viecNen.execute(this::napDiaChi); onLog("Bấm Bắt đầu. Dữ liệu: "+Path.of("data").toAbsolutePath().normalize());
+        capNhat.start(); viecNen.execute(this::napDiaChi); onLog("Bấm Bắt đầu. Dữ liệu: "+thuMucDuLieu.toAbsolutePath().normalize());
     }
     // Thanh dia chi, sao chep, bat/dung va xoa log dung cung Theme.
     private JPanel thanhCongCu() {
@@ -60,12 +64,20 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S8,0));
         JButton xoa=Theme.nut("Xóa log",false); xoa.addActionListener(e -> log.setText(""));
         nut.add(copy); nut.add(batDau); nut.add(dung); nut.add(xoa); dung.setEnabled(false); copy.setEnabled(false); thanh.add(nut,BorderLayout.EAST);
-        thanh.add(trangThai,BorderLayout.SOUTH); return thanh;
+        JPanel duoi=new JPanel(new BorderLayout()); duoi.add(trangThai,BorderLayout.WEST);
+        JPanel bao=new JPanel(new FlowLayout(FlowLayout.RIGHT)); JButton xuat=Theme.nut("Xuất báo cáo",true),folder=Theme.nut("Mở thư mục",false),html=Theme.nut("Mở HTML",false); bao.add(xuat); bao.add(folder); bao.add(html); duoi.add(bao,BorderLayout.EAST); thanh.add(duoi,BorderLayout.SOUTH);
+        xuat.addActionListener(e -> { xuat.setEnabled(false); viecNen.execute(() -> {
+            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); } else { baoCao=p; trangThai.setText("Đã xuất báo cáo: "+p); onLog("Đã xuất báo cáo: "+p); toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất báo cáo.","Mở thư mục",() -> moBaoCao(false)); } })); }
+            catch (java.io.IOException loi) { SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); onLog("Lỗi: "+loi.getMessage()); }); }
+        }); });
+        folder.addActionListener(e -> moBaoCao(false)); html.addActionListener(e -> moBaoCao(true)); return thanh;
     }
-    // Bon the co cung kich thuoc va trinh bay so ro rang.
+    // Mo HTML/thu muc tren worker, khong chan EDT.
+    private void moBaoCao(boolean html) { if (baoCao!=null) { viecNen.execute(() -> { try { java.awt.Desktop.getDesktop().open((html?baoCao.resolve("tong_hop.html"):baoCao).toFile()); } catch (java.io.IOException e) { onLog("Lỗi mở báo cáo."); } }); } }
+    // Sau the co cung kich thuoc va trinh bay so ro rang.
     private JPanel theThongKe() {
-        JPanel hang=new JPanel(new GridLayout(1,4,Theme.S12,0));
-        String[] ten={"Tài khoản","Đang online","Phòng","Tin nhắn"};
+        JPanel hang=new JPanel(new GridLayout(2,3,Theme.S12,0));
+        String[] ten={"Tài khoản","Đang online","Phòng","Tin nhắn","Phiên đang hoạt động","Tệp đang truyền"};
         for (int i=0;i<ten.length;i++) {
             JPanel the=new JPanel(new BorderLayout(0,Theme.S8)); the.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(Theme.VIEN),Theme.le(Theme.S16)));
             the.add(Theme.nhan(ten[i],false),BorderLayout.NORTH); soLieu[i].setFont(Theme.DAM.deriveFont(26f)); the.add(soLieu[i]); hang.add(the);
@@ -129,7 +141,7 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         themLog("[12:30:01] Kiều Nhi tạo phòng Bài tập mạng.\n"); themLog("[12:30:02] CẢNH BÁO: Client mất kết nối.\n"); themLog("[12:30:03] Lỗi: Không lưu được tệp.\n");
     }
     // Dong luong UI khi preview dispose ma khong mo Server.
-    @Override public void dispose() { viecNen.shutdown(); super.dispose(); }
+    @Override public void dispose() { toast.close(); capNhat.stop(); viecNen.shutdown(); super.dispose(); }
     // Diem chay Server, cai IPv4 va LAF truoc khi tao giao dien.
     public static void main(String[] args) { MangUtil.dungIPv4(); Theme.caiDat(); SwingUtilities.invokeLater(() -> new ServerMain().setVisible(true)); }
 }

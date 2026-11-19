@@ -1,3 +1,12 @@
+> **Agent bắt đầu tại [AGENTS.md](AGENTS.md) và [bản bàn giao hiện tại](docs/BAN_GIAO_AGENT.md).**
+> Hướng đang áp dụng: desktop UDP multicast, giao diện Swing/FlatLaf hiện đại, portable và hai máy LAN.
+> M4 đã nghiệm thu; M5 đang triển khai trong working tree, chưa có commit nghiệm thu M5. Phần lịch sử bên dưới không thay cho trạng thái source mới.
+> [Prompt thực hiện](docs/PROMPT_NANG_CAP_VA_TRIEN_KHAI.md) · [Kế hoạch](docs/KE_HOACH_HOAN_THIEN_DESKTOP.md) · [Ma trận chức năng](docs/MA_TRAN_CHUC_NANG_DESKTOP.md)
+
+Lượt hoàn thiện M5 ngày 18/11/2026: đã sửa retry avatar theo transaction, race reset/login, SACK cũ lặp của cửa sổ tệp và các lỗi admin/audit/ZIP/bảng/form. **SelfTest75 PASS/0 FAIL; AdminSelfTest riêng16 PASS/0 FAIL; Swing event test5 PASS/0 FAIL; UiPreview60 PNG**. Bài Swing bổ sung đã sửa refresh mất lựa chọn và thiếu menu gỡ mute toàn hệ thống. Xem [báo cáo rà soát và ma trận kiểm chứng M5](docs/BAO_CAO_RA_SOAT.md) cùng [ảnh 44–60](docs/screenshots/README.md#m5--ảnh-component-thật-chờ-duyệt). Chưa có commit “M5 xong”; chờ người dùng duyệt ảnh/thao tác theo mục5 của prompt hoặc chỉ dẫn mới thay điều kiện này. Phần M4 phía dưới là lịch sử.
+
+Để thử thuận tiện hơn: [mở Server và3 Client bằng một lệnh với dữ liệu mẫu riêng](docs/THU_TAY_M5.md). Bộ này không dùng data hoặc tài khoản thật; mở tiến trình không được tính là thử tay PASS.
+
 # UDPmultiChat — mốc M4
 
 Java **21**, Swing, Maven. Hai điểm chạy rõ ràng: `com.mycompany.udpmultichat.ClientMain` và `com.mycompany.udpmultichat.server.ServerMain`. Giao diện dùng **FlatLaf 3.7.2**, giấy phép Apache 2.0 ([trang chính thức](https://www.formdev.com/flatlaf/)); đây là thư viện duy nhất của ứng dụng, được bổ sung theo yêu cầu M2.5.
@@ -133,7 +142,7 @@ client.properties        # Chi username/server lan dang nhap thanh cong gan nhat
 
 Chỉ chạy một Server cho mỗi data, từ thư mục project. Token/trạng thái online chỉ trong RAM. CSV/properties ghi file tạm rồi thay thế, có thử lại ngắn khi Windows tạm khóa file; log ghi tuần tự và force xuống đĩa. Phòng đã xóa không còn trong danh sách; log cũ giữ để bảo toàn dữ liệu. Khi nâng từ M2, chỉ chủ phòng có thể khôi phục tư cách thành viên từ dữ liệu cũ; người khác cần vào bằng mã một lần để ghi membership mới.
 
-Đổi mật khẩu qua menu tài khoản. Nếu cần khôi phục admin khi quên mật khẩu: dừng Server, thêm `admin.password=MatKhauMoiDu6KyTu` vào config rồi bật lại. Server chuyển thành salt/hash và xóa giá trị thô sau khi đọc. Nếu đổi khi Client đang mất kết nối, Client phải đăng xuất và đăng nhập bằng mật khẩu mới.
+Đổi mật khẩu qua menu tài khoản. `admin.password` trong config chỉ dùng để tạo admin ban đầu khi chưa có tài khoản; sửa giá trị này không đặt lại mật khẩu của admin đã tồn tại trong `users.csv`. Khi cần reset, dùng một admin khác → Quản trị → Người dùng → Đặt lại mật khẩu; mật khẩu tạm chỉ hiển thị một lần và buộc đổi khi đăng nhập. Nếu mất mật khẩu của admin duy nhất, sao lưu toàn bộ `data/` trước khi xử lý phục hồi; hiện chưa có công cụ phục hồi offline, không xóa `users.csv` hoặc dữ liệu thật. Nếu đổi khi Client đang mất kết nối, đăng xuất và đăng nhập bằng mật khẩu mới.
 
 `target/`, `data/`, `reports/`, `.selftest/`, log, `client.properties` và file tạm được bỏ qua bởi Git. Commit chỉ ở repository cục bộ, không tự push lên GitHub.
 

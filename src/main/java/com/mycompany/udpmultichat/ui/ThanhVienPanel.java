@@ -19,6 +19,9 @@ final class ThanhVienPanel extends JPanel {
     private java.util.function.Function<String,java.awt.image.BufferedImage> anh=id -> null;
     // Gan bo doc cache; khong tai anh trong renderer.
     void datAnh(java.util.function.Function<String,java.awt.image.BufferedImage> anh) { this.anh=anh; }
+    private java.util.function.BiConsumer<String,Phong.ThanhVien> xuLy=(l,n) -> { };
+    // Gan callback de cot thanh vien khong can biet socket hay Core.
+    void datKiemDuyet(java.util.function.BiConsumer<String,Phong.ThanhVien> callback) { xuLy=callback; }
     private final JPanel ds=new JPanel();
     private final JLabel tong=Theme.nhan("Thành viên",true);
     // Khoi tao lop va noi cac thanh phan can thiet.
@@ -41,7 +44,8 @@ final class ThanhVienPanel extends JPanel {
             if (nhom.isEmpty()) { continue; }
             JLabel t=Theme.nhan(nhan[i].toUpperCase(java.util.Locale.ROOT),true); t.setFont(Theme.NHO); t.setForeground(Theme.PHU);
             t.setBorder(Theme.le(Theme.S8)); t.setAlignmentX(LEFT_ALIGNMENT); t.setMaximumSize(new Dimension(Integer.MAX_VALUE,36)); ds.add(t);
-            for (var n:nhom) { ds.add(hang(n,toi,quanLy)); }
+            boolean admin=danhSach.stream().anyMatch(n -> n.laToi(toi) && n.vaiTro().equals("ADMIN"));
+            for (var n:nhom) { ds.add(hang(n,toi,quanLy && (admin || !n.vaiTro().equals("ADMIN")))); }
         }
         ds.revalidate(); ds.repaint();
     }
@@ -56,8 +60,8 @@ final class ThanhVienPanel extends JPanel {
         if (n.laToi(toi)) { JLabel ban=Theme.nhan("Bạn",false); ban.setFont(Theme.NHO); ban.setForeground(Theme.CHINH); chu.add(ban,BorderLayout.EAST); }
         hang.add(chu,BorderLayout.CENTER); hang.setToolTipText(n.online()?"Đang online":"Thành viên phòng · đang offline");
         if (quanLy && !n.laToi(toi)) {
-            JPopupMenu menu=new JPopupMenu();
-            for (String lenh:new String[]{"Kick (M5)","Cấm chat (M5)","Cấm vào (M5)"}) { JMenuItem m=new JMenuItem(lenh); m.setEnabled(false); menu.add(m); }
+            JPopupMenu menu=KiemDuyetUI.menu(l -> xuLy.accept(l,n));
+            var nut=Theme.nutNhe("⋮",""); nut.addActionListener(e -> menu.show(nut,0,nut.getHeight())); hang.add(nut,BorderLayout.EAST);
             ganMenu(hang,menu);
         }
         return hang;

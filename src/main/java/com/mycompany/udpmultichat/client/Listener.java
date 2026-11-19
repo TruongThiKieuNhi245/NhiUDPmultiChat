@@ -24,6 +24,10 @@ public interface Listener {
     // Nhan trang thai phien da ngat.
     void onMatKetNoi(String lyDo);
 
+    // Thoi han mute wall-clock, 0 la da go cam.
+    default void onCamChat(String room,long den) { }
+    // Thong bao noi bat tu admin, khac thong bao vao/ra phong.
+    default void onThongBaoQuanTri(String text) { }
     // Tien do tep phat tu worker, UI tu chuyen ve EDT.
     default void onTep(com.mycompany.udpmultichat.common.TepTienDo tienDo) { }
     // Anh xem truoc da nam trong cache RAM.

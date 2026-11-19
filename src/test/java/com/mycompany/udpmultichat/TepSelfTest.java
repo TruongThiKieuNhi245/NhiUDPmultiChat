@@ -19,6 +19,9 @@ public final class TepSelfTest {
     public static void main(String[] args) throws Exception {
         Files.createDirectories(Path.of(".selftest")); MangUtil.dungIPv4();
         System.setProperty("udpmultichat.clientConfig",Files.createTempDirectory(Path.of(".selftest"),"prefs-tep-").resolve("client.properties").toString());
+        if (args.length>0 && args[0].equals("ackcu")) {
+            chay("M4 ACK bitmap cu lap",TepMangSelfTest::ackCuLap); ketLuan(); return;
+        }
         if (args.length>0 && args[0].equals("matgoi")) {
             try (BoTest t=new BoTest(.2)) { t.batDau(); chay("M4 mat goi rieng",t::matGoi); } ketLuan(); return;
         }
@@ -27,6 +30,7 @@ public final class TepSelfTest {
     // ===== CAC NHOM KIEM THU =====
     static void chayTatCa() throws Exception {
         chay("M4 ten tep doc hai, tieng Viet, gioi han Client/Server",TepSelfTest::tenVaAnh);
+        chay("M4 ACK bitmap cu lap khong dot het retry cua mot manh",TepMangSelfTest::ackCuLap);
         chay("M4 cua so: dao thu tu, trung goi, CRC sai, huy va timeout",TepMangSelfTest::chay);
         try (BoTest t=new BoTest(0)) {
             t.batDau();
@@ -64,7 +68,7 @@ public final class TepSelfTest {
         // Seed tai lap o ca ben gui va ben ACK.
         BoTest(double mat) throws Exception {
             this.mat=mat; data=Files.createTempDirectory(Path.of(".selftest"),"m4-"); nguon=Files.createDirectories(data.resolve("nguon"));
-            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase="+(mat==0?33000:35000)+"\nupload.maxRetries=8\n");
+            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nspam.burst=10000\nspam.minute=10000\nmulticast.portBase="+(mat==0?33000:35000)+"\nupload.maxRetries=8\n");
             server=new ServerCore(data,new ServerCore.Listener() {
                 public void onLog(String s) { System.out.println("  M4: "+s); }
                 public void onThongKe(int u,int o,long t) { }

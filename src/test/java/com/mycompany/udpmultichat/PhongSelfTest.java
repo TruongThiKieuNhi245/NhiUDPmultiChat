@@ -66,7 +66,7 @@ final class PhongSelfTest {
         // Cau hinh multicast rieng va ghi nhan so lo gui bu.
         PhienThu() throws Exception {
             data=Files.createTempDirectory(Path.of(".selftest"),"m2-");
-            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=21000\n",StandardCharsets.UTF_8);
+            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nspam.burst=10000\nspam.minute=10000\nmulticast.portBase=21000\n",StandardCharsets.UTF_8);
             server=new ServerCore(data,new ServerCore.Listener() {
                 // Nhan log qua Listener, chuyen ve luong phu hop.
                 public void onLog(String s) { if (s.startsWith("RESYNC")) { resync.incrementAndGet(); } System.out.println("  M2: "+s); }

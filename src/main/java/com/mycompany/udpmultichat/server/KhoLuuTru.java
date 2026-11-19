@@ -48,6 +48,7 @@ public final class KhoLuuTru {
         cauHinh.putIfAbsent("admin.username", "admin");
         cauHinh.putIfAbsent("upload.maxBytes", "10485760");
         cauHinh.putIfAbsent("upload.maxRetries", "8");
+        cauHinh.putIfAbsent("spam.burst", "5"); cauHinh.putIfAbsent("spam.minute", "20");
         cauHinh.putIfAbsent("multicast.portBase", "9000");
         if (cauHinh.containsKey("admin.password") || !cauHinh.containsKey("admin.passwordHash")) {
             String matKhau = cauHinh.getProperty("admin.password", "admin123");
@@ -72,6 +73,46 @@ public final class KhoLuuTru {
     // Cau hinh.
     public String cauHinh(String khoa) { return cauHinh.getProperty(khoa); }
 
+    // Chup cac tep cua mot giao dich tai khoan truoc khi thay doi RAM/dia.
+    synchronized BanLuu saoLuuTaiKhoan(String login) throws IOException {
+        Map<Path,byte[]> tep=new LinkedHashMap<>();
+        for (String ten:List.of("users.csv","accounts.properties","config.properties")) {
+            Path p=thuMuc.resolve(ten); tep.put(p,Files.exists(p)?Files.readAllBytes(p):null);
+        }
+        if (!login.isEmpty()) {
+            Path p=tepAnh(login); tep.put(p,Files.exists(p)?Files.readAllBytes(p):null);
+        }
+        return new BanLuu(tep,(Properties)cauHinh.clone());
+    }
+    // Chi khoi phuc tep da thay doi; loi phuc hoi duoc gan vao loi goc, khong nuot.
+    synchronized void khoiPhucTaiKhoan(BanLuu ban,Throwable loi) {
+        cauHinh.clear(); cauHinh.putAll(ban.cauHinh);
+        for (var e:ban.tep.entrySet()) {
+            try {
+                byte[] hien=Files.exists(e.getKey())?Files.readAllBytes(e.getKey()):null;
+                if (java.util.Arrays.equals(hien,e.getValue())) { continue; }
+                if (e.getValue()==null) { Files.deleteIfExists(e.getKey()); }
+                else {
+                    Path tam=Files.createTempFile(thuMuc,"rollback-",".tmp");
+                    try { Files.write(tam,e.getValue()); Files.move(tam,e.getKey(),StandardCopyOption.REPLACE_EXISTING); }
+                    finally { Files.deleteIfExists(tam); }
+                }
+            } catch (IOException phucHoi) { loi.addSuppressed(phucHoi); }
+        }
+    }
+    record BanLuu(Map<Path,byte[]> tep,Properties cauHinh) { }
+
+    // Doc trang thai tai khoan/kiem duyet rieng, khong doi dinh dang CSV cu.
+    synchronized Properties docThuocTinh(String ten) throws IOException {
+        if (!ten.matches("accounts|moderation")) { throw new IOException("Tên kho không hợp lệ."); }
+        Properties p=new Properties(); Path f=thuMuc.resolve(ten+".properties");
+        if (Files.exists(f)) { try (Reader d=Files.newBufferedReader(f,StandardCharsets.UTF_8)) { p.load(d); } } return p;
+    }
+    // Ghi nguyen tu tren khoa cua kho.
+    synchronized void ghiThuocTinh(String ten,Properties p) throws IOException {
+        if (!ten.matches("accounts|moderation")) { throw new IOException("Tên kho không hợp lệ."); }
+        StringWriter w=new StringWriter(); p.store(w,"UDP Chat UTF-8"); ghiAnToan(thuMuc.resolve(ten+".properties"),w.toString());
+    }
     // Cap nhat config admin sau khi doi mat khau; khong luu mat khau tho.
     public synchronized void doiMatKhauAdmin(String salt,String hash) throws IOException {
         String cuSalt=cauHinh.getProperty("admin.salt"),cuHash=cauHinh.getProperty("admin.passwordHash");

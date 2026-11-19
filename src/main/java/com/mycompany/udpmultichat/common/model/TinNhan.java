@@ -37,7 +37,7 @@ public final class TinNhan {
     public static TinNhan tuTruong(String[] truong) {
         if (truong.length != 7) { throw new IllegalArgumentException("Tin sai dinh dang"); }
         String nd=truong[6],ma="",loai="T";
-        if (nd.matches("(?s)~(?:[A-Za-z0-9_-]{22}~[TSFD]|~D)~.*")) {
+        if (nd.matches("(?s)~(?:[A-Za-z0-9_-]{22}~[TSFDY]|~D)~.*")) {
             int i=nd.indexOf('~',1); ma=nd.substring(1,i); loai=nd.substring(i+1,i+2); nd=nd.substring(i+3);
         }
         return new TinNhan(Long.parseLong(truong[2]),truong[1],truong[3],truong[4],nd,Long.parseLong(truong[5]),ma,loai);

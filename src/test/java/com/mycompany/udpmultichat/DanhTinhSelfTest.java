@@ -28,7 +28,7 @@ public final class DanhTinhSelfTest {
     // Dang nhap sau cung phai biet danh tinh truoc ban danh sach dau tien.
     static void kiemTra() throws Exception {
         Path data=Files.createTempDirectory(Path.of(".selftest"),"m26-identity-");
-        Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=25000\n");
+        Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nspam.burst=10000\nspam.minute=10000\nmulticast.portBase=25000\n");
         BanNghe an=new BanNghe(),binh=new BanNghe(),quanTri=new BanNghe();
         ServerCore server=new ServerCore(data,new ServerCore.Listener() {
             // Nhan log qua Listener, chuyen ve luong phu hop.

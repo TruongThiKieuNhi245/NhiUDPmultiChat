@@ -13,11 +13,26 @@ public final class QuanLyHoSo {
     private final KhoLuuTru kho;
     private final QuanLyNguoiDung nguoi;
     private final Map<String,AnhTam> dangNhan=new HashMap<>();
+    private final Map<String,PhanHoi> daXuLy=new java.util.LinkedHashMap<>();
     // Gan kho va quan ly tai khoan cua Server dang chay.
     public QuanLyHoSo(KhoLuuTru kho,QuanLyNguoiDung nguoi) { this.kho=kho; this.nguoi=nguoi; }
     // ===== PHAN LENH DA XAC THUC =====
     public synchronized String[] xuLy(Phien p,String[] g) throws IOException {
         donDep();
+        String khoa=p.token+":"+g[1];
+        boolean coMa=g[1].matches("[a-f0-9-]{36}");
+        PhanHoi cu=coMa?daXuLy.get(khoa):null;
+        if (cu!=null) {
+            if (!java.util.Arrays.equals(cu.lenh,g)) { throw new IllegalArgumentException("Mã yêu cầu ảnh đã được sử dụng."); }
+            return cu.ketQua.clone();
+        }
+        String[] ketQua=thucHien(p,g);
+        if (daXuLy.size()>=2048) { daXuLy.remove(daXuLy.keySet().iterator().next()); }
+        if (coMa) { daXuLy.put(khoa,new PhanHoi(g.clone(),ketQua.clone(),System.nanoTime())); }
+        return ketQua;
+    }
+    // Phan hoi thanh cong duoc giu de SAVE/BEGIN trung khong tao lai transaction.
+    private String[] thucHien(Phien p,String[] g) throws IOException {
         switch (g[0]) {
             case Protocol.HO_SO: du(g,4); return nguoi.lay(g[3]).cacTruong();
             case Protocol.DOI_MAT_KHAU: du(g,5); return nguoi.doiMatKhau(p,g[3],g[4]).cacTruong();
@@ -60,7 +75,12 @@ public final class QuanLyHoSo {
         a.luc=System.nanoTime(); return a;
     }
     // Thu hoi bo dem sau 60 giay khong co manh moi.
-    public synchronized void donDep() { dangNhan.values().removeIf(a -> System.nanoTime()-a.luc>60000000000L); }
+    public synchronized void donDep() {
+        long luc=System.nanoTime();
+        dangNhan.values().removeIf(a -> luc-a.luc>60000000000L);
+        daXuLy.values().removeIf(a -> luc-a.luc>120000000000L);
+    }
+    private record PhanHoi(String[] lenh,String[] ketQua,long luc) { }
     // Moi lenh co dung so truong, khong chap nhan goi thieu/du.
     private static void du(String[] g,int n) { if (g.length!=n) { throw new IllegalArgumentException("Gói hồ sơ không hợp lệ."); } }
     /** Anh tam chi ton tai trong RAM, toi da 64 KB moi phien. */

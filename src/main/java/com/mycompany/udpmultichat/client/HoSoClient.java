@@ -63,12 +63,12 @@ public final class HoSoClient {
     }
     // Ghep du lieu goc, kiem tra CRC truoc khi giai ma PNG.
     public CompletableFuture<byte[]> taiDuLieu(NguoiDung n) {
-        return core.yeuCauHoSo(Protocol.ANH_DOC,n.id,n.anhHash,"0").thenCompose(g -> {
+        return core.yeuCauAnh(Protocol.ANH_DOC,n.id,n.anhHash,"0").thenCompose(g -> {
             int so=Integer.parseInt(g[3]); PhanManh.BoGhep bo=new PhanManh.BoGhep(so,g[4]); bo.nhan(0,g[5]);
             CompletableFuture<Void> viec=CompletableFuture.completedFuture(null);
             for (int i=1;i<(so+Protocol.MANH_ANH-1)/Protocol.MANH_ANH;i++) {
                 final int viTri=i;
-                viec=viec.thenCompose(v -> core.yeuCauHoSo(Protocol.ANH_DOC,n.id,n.anhHash,Integer.toString(viTri)).thenAccept(p -> bo.nhan(viTri,p[5])));
+                viec=viec.thenCompose(v -> core.yeuCauAnh(Protocol.ANH_DOC,n.id,n.anhHash,Integer.toString(viTri)).thenAccept(p -> bo.nhan(viTri,p[5])));
             }
             return viec.thenApply(v -> { try { return bo.ketQua(); } catch (IOException e) { throw new java.util.concurrent.CompletionException(e); } });
         });
@@ -79,15 +79,15 @@ public final class HoSoClient {
         CompletableFuture<Void> viec=CompletableFuture.completedFuture(null);
         if (data!=null) {
             try { PhanManh.docAnh(data,true); } catch (IOException e) { return CompletableFuture.failedFuture(e); }
-            viec=core.yeuCauHoSo(Protocol.ANH_BAT_DAU,ma,Integer.toString(data.length),PhanManh.crc(data)).thenApply(p -> null);
+            viec=core.yeuCauAnh(Protocol.ANH_BAT_DAU,ma,Integer.toString(data.length),PhanManh.crc(data)).thenApply(p -> null);
             viec=viec.thenCompose(v -> guiAnh(ma,data,huy,tienDo));
         }
         return viec.thenCompose(v -> {
             if (huy.get()) { return CompletableFuture.failedFuture(new IOException("Đã hủy lưu hồ sơ.")); }
-            return core.yeuCauHoSo(Protocol.LUU_HO_SO,ten,gt,ma).thenApply(g -> NguoiDung.tuTruong(g,3));
+            return core.yeuCauAnh(Protocol.LUU_HO_SO,ten,gt,ma).thenApply(g -> NguoiDung.tuTruong(g,3));
         }).whenComplete((n,e) -> {
             if (e==null) { core.nhanHoSo(n); }
-            else if (data!=null) { core.yeuCauHoSo(Protocol.ANH_HUY,ma); }
+            else if (data!=null) { core.yeuCauAnh(Protocol.ANH_HUY,ma); }
         });
     }
     // Nhan nut Huy giua cac manh; manh dang cho ACK van ket thuc co gioi han.
@@ -98,7 +98,7 @@ public final class HoSoClient {
             final int viTri=i;
             viec=viec.thenCompose(v -> {
                 if (huy.get()) { return CompletableFuture.failedFuture(new IOException("Đã hủy tải ảnh.")); }
-                return core.yeuCauHoSo(Protocol.ANH_MANH,ma,Integer.toString(viTri),PhanManh.manh(data,viTri)).thenAccept(p -> tienDo.accept((viTri+1)*100/so));
+                return core.yeuCauAnh(Protocol.ANH_MANH,ma,Integer.toString(viTri),PhanManh.manh(data,viTri)).thenAccept(p -> tienDo.accept((viTri+1)*100/so));
             });
         }
         return viec;

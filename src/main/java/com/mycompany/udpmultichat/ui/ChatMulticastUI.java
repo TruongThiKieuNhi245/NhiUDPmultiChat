@@ -1,5 +1,4 @@
 package com.mycompany.udpmultichat.ui;
-
 import com.mycompany.udpmultichat.client.ClientCore;
 import com.mycompany.udpmultichat.client.Listener;
 import com.mycompany.udpmultichat.common.Protocol;
@@ -32,7 +31,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-
 /** Vai tro: Cua so hai man hinh, ba cot chat; UI chi goi ClientCore tren luong nen. Ai goi: ClientMain, UiPreview, Listener. Goi: ClientCore, cac panel Swing, HopThoai, Theme. */
 @SuppressWarnings("serial")
 public final class ChatMulticastUI extends JFrame implements Listener {
@@ -55,6 +53,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private final JLabel tenPhong=Theme.nhan("Chọn phòng để trò chuyện",true),chiTiet=Theme.nhan(" ",false),ketNoi=Theme.nhan(" ",false);
     private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã",""),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more");
     private final JLabel tenTaiKhoan=Theme.nhan("",true),vaiTaiKhoan=Theme.nhan("",false),anhTaiKhoan=Theme.nhan("",false);
+    private QuanTriFrame admin;
+    private final java.util.Map<String,Long> mute=new java.util.HashMap<>();
+    private final JLabel camChat=Theme.nhan("",false);
     private NguoiDung toi;
     private boolean dong,dangGui,online=true;
     private List<Phong> danhSach=List.of();
@@ -65,6 +66,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     // Khoi tao lop va noi cac thanh phan can thiet.
     public ChatMulticastUI() {
         soan.datTep(tepUI::menu); tepUI.datKeoTha(noiDungPhong);
+        thanhVienPanel.datKiemDuyet((l,n) -> { Phong p=phongChon(); if (p!=null) { KiemDuyetUI.thaoTac(this,client,p.id,n.id(),n.ten(),l,this::loi); } });
         thanhVienPanel.datAnh(client.hoSo()::anh);
         phongPanel=new DanhSachPhongPanel(() -> toi,khung::containsKey,id -> chuaDoc.getOrDefault(id,0),p -> vaoPhong(p.id,""),this::hanhDong);
         setIconImage(Theme.iconUngDung()); setTitle("UDP Chat"); setSize(1240,800); setMinimumSize(new Dimension(960,600)); setLocationByPlatform(true); setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -89,7 +91,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private JPanel khungSoan() {
         JPanel p=new JPanel(new BorderLayout()); dangGo.setName("dang-go"); dangGo.setFont(Theme.NHO); dangGo.setForeground(Theme.PHU);
         dangGo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0,Theme.S16,0,Theme.S16)); dangGo.setVisible(false);
-        p.add(dangGo,BorderLayout.NORTH); p.add(soan); return p;
+        p.add(dangGo,BorderLayout.NORTH); p.add(soan); camChat.setFont(Theme.NHO); camChat.setForeground(Theme.CANH_BAO); camChat.setBorder(javax.swing.BorderFactory.createEmptyBorder(0,Theme.S16,Theme.S8,Theme.S16)); camChat.setVisible(false); p.add(camChat,BorderLayout.SOUTH); return p;
     }
     // Loai nguoi ngung go sau bon giay, khong duoc ghi vao lich su.
     private void capNhatDangGo() {
@@ -176,6 +178,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         JMenuItem gioiThieu=new JMenuItem("Giới thiệu"); gioiThieu.addActionListener(e -> javax.swing.JOptionPane.showMessageDialog(this,
             "UDP Chat\nSticker: Noto Emoji 2D — Google và cộng tác viên\nGiấy phép ảnh: Apache License 2.0\nhttps://github.com/googlefonts/noto-emoji\nGiấy phép kèm trong resources/stickers/LICENSE.","Giới thiệu",javax.swing.JOptionPane.INFORMATION_MESSAGE));
         m.add(gioiThieu); m.addSeparator();
+        if (toi!=null && toi.vaiTro==VaiTro.ADMIN) {
+            JMenuItem q=new JMenuItem("Quản trị"); q.addActionListener(e -> { if (admin==null || !admin.isDisplayable()) { admin=new QuanTriFrame(client,false); } admin.setVisible(true); admin.toFront(); admin.nap(); }); m.add(q);
+        }
         JMenuItem thoat=new JMenuItem("Đăng xuất");
         thoat.addActionListener(e -> chay(client::dangXuat,v -> veDangNhap("Đã đăng xuất."),this::loi)); m.add(thoat); return m;
     }
@@ -189,7 +194,8 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }
     // Ve dang nhap.
     private void veDangNhap(String lyDo) {
-        toi=null; noiDungPhong.removeAll(); phongDangXem=""; khung.clear(); tepUI.xoa(); nguoiGo.clear(); thanhVien.clear(); chuaDoc.clear(); danhSach=List.of(); phongPanel.xoa();
+        if (admin!=null) { admin.dispose(); admin=null; }
+        toi=null; noiDungPhong.removeAll(); phongDangXem=""; khung.clear(); mute.clear(); tepUI.xoa(); nguoiGo.clear(); thanhVien.clear(); chuaDoc.clear(); danhSach=List.of(); phongPanel.xoa();
         cards.show(goc,"login"); toast.datVung(null); dangNhap.ban(false); setTitle("UDP Chat"); ketNoi.setVisible(false); capNhat(); toast(ThongBao.Muc.THONG_TIN,lyDo);
     }
     // Vao phong.
@@ -285,7 +291,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }
     // Cap nhat.
     private void capNhat() {
-        Phong p=phongChon(); soan.choPhep(toi!=null && online && p!=null && p.dangMo,dangGui);
+        Phong p=phongChon(); long den=p==null?0:mute.getOrDefault(p.id,0L); if (den<=System.currentTimeMillis()) { den=0; }
+        camChat.setText(den==Long.MAX_VALUE?"Bạn bị cấm chat vĩnh viễn.":den>0?"Bạn bị cấm chat đến "+java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM").format(java.time.Instant.ofEpochMilli(den).atZone(java.time.ZoneId.systemDefault())):""); camChat.setVisible(den>0);
+        soan.choPhep(toi!=null && online && p!=null && p.dangMo && den==0,dangGui);
         phongPanel.choPhep(toi!=null && online); copy.setEnabled(p!=null); menuPhong.setEnabled(p!=null && online);
     }
     // Dong cua so.
@@ -294,7 +302,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         nen.execute(() -> client.dangXuat().whenComplete((v,e) -> { client.close(); nen.shutdown(); trenEdt(this::dispose); }));
     }
     // Don tai nguyen UI khi cua so ket thuc.
-    @Override public void dispose() { dongHoGo.stop(); toast.close(); if (anDai!=null) { anDai.stop(); } nen.shutdown(); super.dispose(); }
+    @Override public void dispose() { if (admin!=null) { admin.dispose(); } dongHoGo.stop(); toast.close(); if (anDai!=null) { anDai.stop(); } nen.shutdown(); super.dispose(); }
     // Tren edt.
     private static void trenEdt(Runnable r) { if (SwingUtilities.isEventDispatchThread()) { r.run(); } else { SwingUtilities.invokeLater(r); } }
     // ===== SU KIEN CLIENT: CHI CAP NHAT SWING TREN EDT =====
@@ -338,6 +346,10 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         danhSach=List.copyOf(ds); ds.forEach(p -> { if (khung.containsKey(p.id)) { khung.get(p.id).capNhat(p); } });
         phongPanel.capNhat(ds); capNhatPhongDangXem();
     }); }
+    // Mute duoc kiem tra tren Server, giao dien khoa o soan theo snapshot moi.
+    @Override public void onCamChat(String room,long den) { trenEdt(() -> { mute.put(room,den); capNhat(); }); }
+    // Broadcast noi bat cho tat ca Client, dong thoi co tin Y trong lich su phong.
+    @Override public void onThongBaoQuanTri(String text) { trenEdt(() -> toast(ThongBao.Muc.THONG_TIN,"Thông báo từ quản trị viên: "+text)); }
     // Tien do tep duoc chuyen ve EDT va ghep dung hang theo ma Client/fileId.
     @Override public void onTep(com.mycompany.udpmultichat.common.TepTienDo td) { trenEdt(() -> {
         tepUI.tienDo(td); KhungChatPanel k=khung.get(td.tep().room()); if (k!=null) { k.tienDoTep(td,toi==null?"":toi.tenHienThi); }

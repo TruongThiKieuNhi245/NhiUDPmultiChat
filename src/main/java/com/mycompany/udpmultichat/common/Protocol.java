@@ -50,6 +50,9 @@ public final class Protocol {
     // ===== TRUYEN TEP CUA SO TRUOT =====
     public static final long TEP_TOI_DA=10*1024*1024L;
     public static final String TEP_INFO="FILE_INFO", TEP_INIT="FILE_INIT", TEP_DONE="FILE_DONE", TEP_GET="FILE_GET", TEP_READY="FILE_READY", TEP_CANCEL="FILE_CANCEL";
+    // ===== QUAN TRI VA KIEM DUYET =====
+    public static final String AD_SNAPSHOT="AD_SNAPSHOT",AD_READ="AD_READ",AD_ACTION="AD_ACTION",AD_EXPORT="AD_EXPORT",AD_JOB="AD_JOB";
+    public static final String MOD="MOD",MOD_LIST="MOD_LIST",MUTE_STATE="MUTE_STATE",AD_CHANGED="AD_CHANGED",FORCE_OUT="FORCE_OUT",ANNOUNCE="ANNOUNCE",USER_DELETED="USER_DELETED";
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Protocol() { }
 }

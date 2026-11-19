@@ -24,11 +24,13 @@ public final class HoSoSelfTest {
     }
     // ===== KIEM THU CAC DUONG NGHIEP VU =====
     static void chayTatCa() throws Exception {
+        chay("Avatar het ACK: thu lai cung ma, loi quyen khong lap, gioi han bon dot",com.mycompany.udpmultichat.client.YeuCauAnhSelfTest::kiemTra);
+        chay("Avatar SAVE/BEGIN trung, huy va rollback khong tao giao dich moi",HoSoSelfTest::kiemTraGiaoDich);
         chay("M3a anh PNG/JPG, cat giua 96x96, tu choi tep gia/qua 2MB",HoSoSelfTest::kiemTraAnh);
         chay("M3a Server tu choi avatar khong phai PNG 96x96/qua lon va CRC sai",HoSoSelfTest::kiemTraServer);
         chay("M3a nang cap users.csv 7 cot cu khong mat tai khoan",HoSoSelfTest::kiemTraCsvCu);
         Path data=Files.createTempDirectory(Path.of(".selftest"),"m3a-");
-        Files.writeString(data.resolve("config.properties"),"multicast.portBase=27000\n");
+        Files.writeString(data.resolve("config.properties"),"spam.burst=10000\nspam.minute=10000\nmulticast.portBase=27000\n");
         ServerCore server=new ServerCore(data,new ServerCore.Listener() {
             // Log cua Server test.
             public void onLog(String s) { System.out.println("  M3a: "+s); }
@@ -143,7 +145,7 @@ public final class HoSoSelfTest {
     }
     // Mat goi o Client anh huong ca upload DATA va ACK cua download.
     private static void kiemTraMatGoi() throws Exception {
-        Path d=Files.createTempDirectory(Path.of(".selftest"),"anh-loss-"); Files.writeString(d.resolve("config.properties"),"multicast.portBase=29000\n");
+        Path d=Files.createTempDirectory(Path.of(".selftest"),"anh-loss-"); Files.writeString(d.resolve("config.properties"),"spam.burst=10000\nspam.minute=10000\nmulticast.portBase=29000\n");
         ServerCore s=new ServerCore(d,new ServerCore.Listener() {
             // Test mat goi chi can ket qua, khong lap log Server.
             public void onLog(String t) { }
@@ -157,6 +159,34 @@ public final class HoSoSelfTest {
             Goi.thanhByte(Goi.ghep("R","x".repeat(80),Goi.ghep(Protocol.ANH_MANH,"x".repeat(36),"x".repeat(48),"x".repeat(36),"109",PhanManh.manh(manh,0))));
             byte[] tai=c.hoSo().taiDuLieu(n).get(120,TimeUnit.SECONDS); can(java.util.Arrays.equals(png,tai),"Avatar mat goi CRC khong trung"); cho(c.dangXuat());
         } finally { s.close(); }
+    }
+    // Mat phan hoi SAVE duoc tai hien bang cach phat lai nguyen request sau khi da commit.
+    private static void kiemTraGiaoDich() throws Exception {
+        Path d=Files.createTempDirectory(Path.of(".selftest"),"anh-giao-dich-");
+        KhoLuuTru k=new KhoLuuTru(d,s -> { }); QuanLyNguoiDung q=new QuanLyNguoiDung(k);
+        q.dangKy("anh_test","abcdef123");
+        var p=q.dangNhap("anh_test","abcdef123",new java.net.InetSocketAddress("localhost",33009));
+        QuanLyHoSo h=new QuanLyHoSo(k,q); byte[] png=anhMau(); String upload=java.util.UUID.randomUUID().toString();
+        String[] begin={Protocol.ANH_BAT_DAU,java.util.UUID.randomUUID().toString(),"token",upload,""+png.length,PhanManh.crc(png)};
+        h.xuLy(p,begin);
+        for (int i=0;i<(png.length+599)/600;i++) {
+            h.xuLy(p,new String[]{Protocol.ANH_MANH,java.util.UUID.randomUUID().toString(),"token",upload,""+i,PhanManh.manh(png,i)});
+            if (i==0) { h.xuLy(p,begin); }
+        }
+        String[] save={Protocol.LUU_HO_SO,java.util.UUID.randomUUID().toString(),"token","Ảnh thử","",upload};
+        String[] lanDau=h.xuLy(p,save); can(java.util.Arrays.equals(lanDau,h.xuLy(p,save)),"SAVE trung bi commit lai");
+        can(java.util.Arrays.equals(png,Files.readAllBytes(d.resolve("avatars/anh_test.png"))),"BEGIN trung da xoa manh");
+        String[] gia=save.clone(); gia[3]="Giả mạo"; chanLenh(() -> h.xuLy(p,gia));
+        String huy=java.util.UUID.randomUUID().toString();
+        h.xuLy(p,new String[]{Protocol.ANH_BAT_DAU,java.util.UUID.randomUUID().toString(),"token",huy,"3","0"});
+        h.xuLy(p,new String[]{Protocol.ANH_HUY,java.util.UUID.randomUUID().toString(),"token",huy});
+        chanLenh(() -> h.xuLy(p,new String[]{Protocol.LUU_HO_SO,java.util.UUID.randomUUID().toString(),"token","Ảnh thử","",huy}));
+        can(java.util.Arrays.equals(png,Files.readAllBytes(d.resolve("avatars/anh_test.png"))),"Huy lam mat anh cu");
+        Files.createDirectory(d.resolve("users.csv.tmp"));
+        chanLenh(() -> h.xuLy(p,new String[]{Protocol.LUU_HO_SO,java.util.UUID.randomUUID().toString(),"token","Đổi bị lỗi","","DELETE"}));
+        can(q.tatCa().stream().anyMatch(n -> n.tenDangNhap.equals("anh_test") && n.tenHienThi.equals("Ảnh thử")),"Loi luu profile da doi RAM");
+        can(java.util.Arrays.equals(png,Files.readAllBytes(d.resolve("avatars/anh_test.png"))),"Loi luu profile khong rollback avatar");
+        Files.delete(d.resolve("users.csv.tmp"));
     }
     // Anh nhieu mau co du nhieu manh de thuc su thu ACK/gui lai.
     private static byte[] anhMau() throws Exception {

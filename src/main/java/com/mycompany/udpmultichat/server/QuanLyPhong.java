@@ -20,6 +20,11 @@ import java.util.function.Supplier;
 /** Vai tro: CRUD, quyen chu phong, dat cho vao phong va lich su; duoc ServerCore goi tuan tu. Ai goi: ServerCore. Goi: KhoLuuTru, BaoMat, Goi, Phong. */
 public final class QuanLyPhong {
     private final KhoLuuTru kho;
+    private java.util.function.BiConsumer<Phien,String> truocGui=(p,id) -> { },truocVao=(p,id) -> { };
+    // QuanLyPhong khong phu thuoc UI va khong can biet cach luu moderation.
+    void kiemDuyet(java.util.function.BiConsumer<Phien,String> gui,java.util.function.BiConsumer<Phien,String> vao) { truocGui=gui; truocVao=vao; }
+    // Snapshot tat ca phong chi duoc goi sau khi xac thuc admin hoac tu Server.
+    List<Phong> tatCa() { return phong.keySet().stream().map(this::lay).toList(); }
     private final Supplier<List<Phien>> cacPhien;
     private final Map<String, NoiBo> phong = new LinkedHashMap<>();
     private final QuanLyTinNhan tinNhan;
@@ -162,6 +167,7 @@ public final class QuanLyPhong {
         Phong r=phong.containsKey(khoa)?lay(khoa):phong.values().stream()
                 .map(n -> n.phong).filter(n -> n.maPhong.equals(ma)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mã phòng"));
+        truocVao.accept(p,r.id);
         if (p.phong.contains(r.id)) { return lay(r.id); }
         if (laThanhVien(p.nguoi.id,r.id)) {
             p.choVao.put(r.id,System.nanoTime()+10_000_000_000L); return lay(r.id);
@@ -182,6 +188,7 @@ public final class QuanLyPhong {
 
     // Xac nhan vao.
     public void xacNhanVao(Phien p,String id) throws IOException {
+        truocVao.accept(p,id);
         if (p.phong.contains(id)) { return; }
         Long hetHan=p.choVao.remove(id);
         if (hetHan==null || hetHan<System.nanoTime()) { throw new IllegalArgumentException("Đặt chỗ đã hết hạn; hãy vào lại phòng"); }
@@ -216,11 +223,17 @@ public final class QuanLyPhong {
     // Ghi thanh vien.
     private void ghiThanhVien(String user,String id,boolean them) throws IOException {
         String khoa=id+"."+user, cu=thanhVien.getProperty(khoa);
-        if (them) { thanhVien.setProperty(khoa,"1"); } else { thanhVien.remove(khoa); }
+        if (them) { thanhVien.setProperty(khoa,cu==null?Instant.now().toString():cu); } else { thanhVien.remove(khoa); }
         try { kho.ghiThanhVien(thanhVien); }
         catch (IOException e) { if (cu==null) { thanhVien.remove(khoa); } else { thanhVien.setProperty(khoa,cu); } throw e; }
     }
 
+    // Goi tu kick/ban/xoa user, khong ap dung rang buoc roi chu dong.
+    void goThanhVien(String room,String user) throws IOException { ghiThanhVien(user,room,false); }
+    // Ngay vao duoc luu lan dau; du lieu cu dung ngay tao phong lam du phong.
+    String ngayVao(String room,String user) { String n=thanhVien.getProperty(room+"."+user,""); return n.equals("1")?lay(room).ngayTao:n; }
+    // Admin co the gan chu la tai khoan offline; tu cach thanh vien duoc ghi ben vung.
+    void ganChu(Phien actor,String room,String user) throws IOException { ghiThanhVien(user,room,true); chuyenChu(actor,room,user); }
     // Don dat cho.
     public void donDatCho() {
         long nay=System.nanoTime();
@@ -254,7 +267,7 @@ public final class QuanLyPhong {
     }
     // Diem chung cho tin va tep; M5 bo sung mute/ban tai day de khong bo sot quyen.
     public void kiemTraGui(Phien p,String id) {
-        kiemTraThanhVien(p,id);
+        kiemTraThanhVien(p,id); truocGui.accept(p,id);
         if (!lay(id).dangMo) { throw new IllegalArgumentException("Phòng đang đóng, chưa thể gửi tin hoặc tệp."); }
     }
     // Lay lich su 50 tin hoac lo dong bo tiep theo.

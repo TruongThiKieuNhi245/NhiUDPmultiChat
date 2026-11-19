@@ -108,8 +108,10 @@ public final class TruyenTep implements AutoCloseable {
             if (p.daGui.get(i) && (i<dau || (bits&(1L<<(i-dau)))!=0)) { p.daNhan.set(i); }
         }
         // SACK da nhan it nhat ba manh sau lo hong: gui lai som, khong doi timeout.
-        int cuoi=p.daNhan.length()-1; 
-        for (int i=p.dau;i<cuoi-2;i++) { if (!p.daNhan.get(i)) { p.thieu.set(i); } }
+        int cuoi=p.daNhan.length()-1,soAck=p.daNhan.cardinality();
+        for (int i=p.dau;i<cuoi-2;i++) {
+            if (!p.daNhan.get(i) && soAck-p.ackLucGui[i]>=3) { p.thieu.set(i); }
+        }
         while (p.dau<p.tong && p.daNhan.get(p.dau)) { p.dau++; }
         p.xong=Math.min(p.size,(long)p.daNhan.cardinality()*MANH); baoTienDo(p);
         if (p.dau==p.tong && !p.ketQua.isDone()) { try { p.kenh.close(); p.ketQua.complete(p.duong); } catch (IOException | RuntimeException e) { loi(p,"Lỗi truyền tệp: "+e); } }
@@ -135,7 +137,8 @@ public final class TruyenTep implements AutoCloseable {
             if (p.lan[i]>guiLai) { throw new IOException("Không nhận đủ mảnh tệp sau nhiều lần gửi lại. Hãy thử lại."); }
             int n=(int)Math.min(MANH,p.size-(long)i*MANH); ByteBuffer dem=ByteBuffer.allocate(n); long offset=(long)i*MANH;
             while (dem.hasRemaining()) { int doc=p.kenh.read(dem,offset); if (doc<0) { throw new IOException("Tệp nguồn đã thay đổi."); } offset+=doc; }
-            p.thieu.clear(i); p.daGui.set(i); p.lan[i]++; p.lucGui[i]=luc; phat(goi(DATA,p.id,i,dem.array()),p.ban); daGui++;
+            p.thieu.clear(i); p.ackLucGui[i]=p.daNhan.cardinality();
+            p.daGui.set(i); p.lan[i]++; p.lucGui[i]=luc; phat(goi(DATA,p.id,i,dem.array()),p.ban); daGui++;
         }
     }
     // Tien do toi da 10 lan/giay, luon bao 100%.
@@ -175,14 +178,14 @@ public final class TruyenTep implements AutoCloseable {
     /** Trang thai gioi han bo nho theo so manh; du lieu nam tren dia. */
     private static final class Phien {
         final UUID id; final InetSocketAddress ban; final Path duong; final long size,crc; final boolean gui;
-        final int tong; final BitSet daNhan=new BitSet(),daGui=new BitSet(),thieu=new BitSet(); final int[] lan; final long[] lucGui;
+        final int tong; final BitSet daNhan=new BitSet(),daGui=new BitSet(),thieu=new BitSet(); final int[] lan,ackLucGui; final long[] lucGui;
         final FileChannel kenh; final LongConsumer tienDo; final CompletableFuture<Path> ketQua=new CompletableFuture<>();
         int dau; long xong,bao,cuoi=System.nanoTime();
         // Chi ben nhan duoc phep tao tep moi; khong bao gio ghi de tep dich.
         Phien(UUID id,InetSocketAddress ban,Path duong,long size,long crc,boolean gui,LongConsumer tienDo) throws IOException {
             if (size<1 || size>100*1024*1024L) { throw new IOException("Kích thước tệp không hợp lệ."); }
             this.id=id; this.ban=ban; this.duong=duong; this.size=size; this.crc=crc; this.gui=gui; this.tienDo=tienDo;
-            tong=(int)((size+MANH-1)/MANH); lan=new int[tong]; lucGui=new long[tong];
+            tong=(int)((size+MANH-1)/MANH); lan=new int[tong]; ackLucGui=new int[tong]; lucGui=new long[tong];
             kenh=gui?FileChannel.open(duong,StandardOpenOption.READ):FileChannel.open(duong,StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE);
         }
     }

@@ -12,6 +12,35 @@ import static com.mycompany.udpmultichat.SelfTest.*;
 final class TepMangSelfTest {
     // Khong khoi tao lop test.
     private TepMangSelfTest() { }
+    // ACK cu lap lai nhieu lan chi la cung mot bang chung, khong phai ba manh moi.
+    static void ackCuLap() throws Exception {
+        Path dir=Files.createTempDirectory(Path.of(".selftest"),"tep-ack-cu-");
+        Path goc=dir.resolve("goc.bin"); Files.write(goc,new byte[32001]); UUID id=UUID.randomUUID();
+        try (TruyenTep gui=new TruyenTep(0,0,1,8); DatagramSocket ban=new DatagramSocket()) {
+            ban.setSoTimeout(3000);
+            var f=gui.gui(id,new InetSocketAddress(InetAddress.getLoopbackAddress(),ban.getLocalPort()),goc,32001,TruyenTep.crc(goc),n -> { });
+            boolean du=false;
+            while (!du) {
+                DatagramPacket p=new DatagramPacket(new byte[1100],1100); ban.receive(p);
+                du=ByteBuffer.wrap(p.getData()).getInt(17)==31;
+            }
+            // Gia lap mat manh 0; ben nhan lien tuc phat lai dung mot SACK 31 manh.
+            for (int i=0;i<12;i++) { ack(ban,gui.cong(),id,0,0xfffffffeL); Thread.sleep(25); }
+            can(!f.isCompletedExceptionally(),"SACK cu lap da dot het retry8");
+            ack(ban,gui.cong(),id,32,0);
+            du=false;
+            while (!du) {
+                DatagramPacket p=new DatagramPacket(new byte[1100],1100); ban.receive(p);
+                du=ByteBuffer.wrap(p.getData()).getInt(17)==32;
+            }
+            ack(ban,gui.cong(),id,33,0); can(f.get(3,TimeUnit.SECONDS).equals(goc),"Khong ket thuc sau ACK cuoi");
+        }
+    }
+    // Tao ACK bitmap dung wire format de chu dong lap/dao ma khong doi engine loss.
+    private static void ack(DatagramSocket s,int port,UUID id,int dau,long bits) throws Exception {
+        byte[] g=ByteBuffer.allocate(TruyenTep.HEADER+8).put((byte)2).putLong(id.getMostSignificantBits()).putLong(id.getLeastSignificantBits()).putInt(dau).putShort((short)8).putLong(bits).array();
+        s.send(new DatagramPacket(g,g.length,InetAddress.getLoopbackAddress(),port));
+    }
     // ===== LOI MANG CO KIEM SOAT =====
     @SuppressWarnings("try") // Can dong som de kiem tra mat ket noi, sau do try van don tai nguyen.
     static void chay() throws Exception {

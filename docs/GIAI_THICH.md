@@ -1,4 +1,22 @@
+> **Phạm vi tài liệu lịch sử:** bảng dưới giải thích các mốc đã nghiệm thu đến M4. Source hiện có M5 đang dở; xem [BAN_GIAO_AGENT.md](BAN_GIAO_AGENT.md) cho baseline và phần cần hoàn thiện. Các đoạn “M5 chưa triển khai” phía dưới là ghi chép tại thời điểm M4, không phải trạng thái source hiện tại.
+
 # Giải thích đến M4 — Socket UDP và Multicast
+
+## Phần hiện tại: hoàn thiện M5 ngày 18/11/2026
+
+Đối chiếu yêu cầu → chức năng → file/hàm → test của M5 tại [BAO_CAO_RA_SOAT.md](BAO_CAO_RA_SOAT.md). Tài liệu đó ghi định nghĩa thống kê, giới hạn snapshot/audit/ZIP, kết quả thực tế và năm bước thử tay; không thay nội dung lịch sử M1–M4 bên dưới.
+
+Avatar bổ sung retry nghiệp vụ có giới hạn trong `client/YeuCauAnh`; `ClientCore.yeuCauAnh` giữ requestId/token, `server/QuanLyHoSo` replay phản hồi thay vì tạo lại BEGIN/SAVE. `ReliableUdp` điều khiển vẫn retry3. `YeuCauClient` tách quản lý response/timeout khỏi Core; đóng phiên xong mới công bố danh tính null để reset không hủy request của lần login kế.
+
+Cửa sổ tệp vẫn32, retry8 cấu hình. `TruyenTep.nhanAck/guiCuaSo` ghi nhận số mảnh đã ACK tại lần gửi gần nhất: cùng một bitmap cũ không đủ chứng cứ gửi lại nhanh lần nữa. Chỉ sau ít nhất3 mảnh mới được ACK mới kích hoạt fast retransmit; RTO/gửi lại có giới hạn vẫn hoạt động khi không có chứng cứ mới. Ca raw UDP `TepMangSelfTest.ackCuLap` FAIL trên class M4 trong fixture riêng và PASS trên bản sửa, không checkout/reset source.
+
+`QuanTriServer` xác thực admin/owner, cache action có giới hạn, snapshot và job báo cáo; `KiemDuyet` lưu mute/ban, chống spam; `ChupThongKe` chụp nhất quán; `XuatBaoCao` xuất staging → thư mục cuối; Client nhận ZIP bằng engine UDP M4 rồi `QuanTriClient.giaiNen` kiểm whitelist/duplicate/size/containment. Không có đường truyền TCP/HTTP/WebSocket mới. Audit không ghi token hoặc mật khẩu tạm.
+
+UI quản trị dùng `QuanTriFrame`, `BangQuanTri`, `FormQuanTri`, `TongQuanPanel`, `KiemDuyetUI`; mọi lệnh nền đi qua `QuanTriClient`, Swing cập nhật EDT. UiPreview44–60 dùng chính component này; assertions mới kiểm lọc đúng cột, login số vẫn sort chuỗi, số thống kê không tràn Long, header hiện trong preview và chiều cao form tăng khi hiện lỗi. Mô tả xác nhận xóa không cắt nội dung. **Ảnh/assertion không thay thao tác chuột/phím hay xác nhận của người dùng.**
+
+Kiểm chứng cuối18/11: full SelfTest75 PASS/0 FAIL, exit0; AdminSelfTest riêng16 PASS/0 FAIL, exit0; compile sạch và UiPreview60 PNG/exit0. Lượt full liên tục từ07:13:27 đến07:19:17; tệp5MiB loss20% seed20261113 gửi63,104s/tải64,527s, so byte/CRC đúng. Đây là phép đo cùng máy, không phải hai máy LAN. Xem log và các lượt FAIL được giữ tại báo cáo rà soát.
+
+Bổ sung `ui/QuanTriTuongTacSelfTest`/`SwingThu` trong src/test:5 nhóm PASS riêng với QuanTriFrame thật, Server và3 ClientCore UDP. Handler được gọi trên EDT bằng doClick/default-button/binding Esc; JFileChooser nhận approveSelection để đi qua luồng export UI thật. Đã sửa `BangQuanTri.duLieu` giữ selection theo id qua refresh và thêm menu gỡ mute toàn hệ thống trong `QuanTriFrame.user`. Bài này không phát chuột/phím hệ điều hành, không đọc clipboard hoặc mở viewer ngoài; không cộng5 nhóm này vào75 PASS của suite mạng.
 
 ## Luồng chạy và đối chiếu chương 6
 

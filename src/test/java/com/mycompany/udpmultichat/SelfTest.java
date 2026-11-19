@@ -51,6 +51,7 @@ public final class SelfTest {
         TinNhanSelfTest.chayTatCa();
         chay("36 PNG Noto Emoji doc duoc, ma la an toan",SelfTest::testStickerPng);
         TepSelfTest.chayTatCa();
+        AdminSelfTest.chayTatCa();
         ketLuan();
     }
     // Danh muc Server va tai nguyen Client phai khop nhau.
@@ -65,7 +66,7 @@ public final class SelfTest {
     }
     // Bao loi exit code ca khi chay rieng nhom M3a.
     static void ketLuan() {
-        System.out.println("KET QUA den M4: " + pass + " PASS, " + fail + " FAIL");
+        System.out.println("KET QUA den M5: " + pass + " PASS, " + fail + " FAIL");
         if (fail > 0) { throw new IllegalStateException("Co muc kiem thu FAIL; xem log o tren"); }
     }
 
@@ -132,7 +133,7 @@ public final class SelfTest {
         // Tao thu muc rieng, cac Client chua dang nhap.
         PhienThu() throws Exception {
             data=Files.createTempDirectory(Path.of(".selftest"),"m1-");
-            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=19000\n",StandardCharsets.UTF_8);
+            Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nspam.burst=10000\nspam.minute=10000\nmulticast.portBase=19000\n",StandardCharsets.UTF_8);
             System.out.println("Data kiem thu: "+data.toAbsolutePath());
             server=new ServerCore(data,new ServerCore.Listener() {
                 // Nhan log qua Listener, chuyen ve luong phu hop.

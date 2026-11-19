@@ -58,7 +58,7 @@ public final class TinNhanSelfTest {
         String maGuiLai;
         // Khoi tao data tam, port multicast khac nhom cu.
         BoTest() throws Exception {
-            data=Files.createTempDirectory(Path.of(".selftest"),"m3b-"); Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=31000\n");
+            data=Files.createTempDirectory(Path.of(".selftest"),"m3b-"); Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nspam.burst=10000\nspam.minute=10000\nmulticast.portBase=31000\n");
             server=new ServerCore(data,new ServerCore.Listener() {
                 // Log Server test de truy vet loi.
                 public void onLog(String s) { System.out.println("  M3b: "+s); }

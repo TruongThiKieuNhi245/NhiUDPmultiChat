@@ -30,14 +30,14 @@ public final class QuanLyTinNhan {
     // Ghi thanh cong moi them RAM, retry cung user/room/ma khong tao msgId moi.
     public TinNhan them(Phien p,String id,String nd,String ma,String loai) throws IOException {
         if (!ma.isEmpty() && !ma.matches("[A-Za-z0-9_-]{22}")) { throw new IllegalArgumentException("Mã tin nhắn không hợp lệ."); }
-        if (!loai.equals("T") && !loai.equals("S") && !loai.equals("F")) { throw new IllegalArgumentException("Loại tin không hợp lệ."); }
+        if (!loai.equals("T") && !loai.equals("S") && !loai.equals("F") && !loai.equals("Y")) { throw new IllegalArgumentException("Loại tin không hợp lệ."); }
         if (loai.equals("S") && !Protocol.stickerHopLe(nd)) { throw new IllegalArgumentException("Sticker không hỗ trợ."); }
         TinNhan cu=daGui.get(id).get(p.nguoi.id+":"+ma);
         if (!ma.isEmpty() && cu!=null) {
             if (!cu.thuHoi && (!cu.noiDung.equals(nd) || !cu.loai.equals(loai))) { throw new IllegalArgumentException("Mã tin đã dùng cho nội dung khác."); }
             return cu;
         }
-        TinNhan t=new TinNhan(moc(id)+1,id,p.nguoi.id,p.nguoi.tenHienThi,nd,System.currentTimeMillis(),ma,loai);
+        TinNhan t=new TinNhan(moc(id)+1,id,p.nguoi.id,loai.equals("Y")?"Quản trị viên":p.nguoi.tenHienThi,nd,System.currentTimeMillis(),ma,loai);
         Goi.kiemTraTin(t); kho.ghiTin(t); lichSu.get(id).add(t);
         if (!ma.isEmpty()) { daGui.get(id).put(p.nguoi.id+":"+ma,t); } return t;
     }
@@ -57,6 +57,21 @@ public final class QuanLyTinNhan {
         Set<String> ids=new HashSet<>();
         for (var ds:lichSu.values()) { for (var t:ds) { if (t.loai.equals("F")) { ids.add(TepTin.doc(t.roomId,t.userId,t.noiDung,t.thoiGian).id()); } } }
         return ids;
+    }
+    // Snapshot bat bien cua moi phong, caller dang giu khoa ServerCore.
+    public List<TinNhan> tatCa() { return lichSu.values().stream().flatMap(List::stream).toList(); }
+    // Xoa lich su bang tombstone de msgId khong quay lui, Client dang online khong bi ket RESYNC.
+    public void xoaLichSu(String room) throws IOException {
+        List<TinNhan> moi=lichSu.get(room).stream().map(TinNhan::daThuHoi).toList(); kho.ghiLaiTin(room,moi);
+        lichSu.put(room,new ArrayList<>(moi)); daGui.get(room).replaceAll((k,t) -> t.daThuHoi());
+    }
+    // Giu tin va ma Client, chi thay nhan nguoi da xoa tren dia va RAM.
+    public void nguoiDaXoa(String user) throws IOException {
+        for (String room:lichSu.keySet()) {
+            List<TinNhan> moi=lichSu.get(room).stream().map(t -> t.userId.equals(user)?new TinNhan(t.msgId,t.roomId,t.userId,"Người dùng đã xóa",t.noiDung,t.thoiGian,t.maClient,t.loai):t).toList();
+            kho.ghiLaiTin(room,moi); lichSu.put(room,new ArrayList<>(moi));
+            daGui.get(room).replaceAll((k,t) -> t.userId.equals(user)?new TinNhan(t.msgId,t.roomId,t.userId,"Người dùng đã xóa",t.noiDung,t.thoiGian,t.maClient,t.loai):t);
+        }
     }
     // ===== THU HOI CO QUYEN VA LUU BEN VUNG =====
     public TinNhan thuHoi(Phien p,Phong r,long msgId) throws IOException {

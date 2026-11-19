@@ -1,4 +1,34 @@
-# Ảnh UiPreview — M2.7
+# Ảnh tham chiếu UiPreview — M4 và bản M5 chờ duyệt
+
+Ảnh lưu trong thư mục này gồm 43 PNG tham chiếu đến M4. Lượt rà soát 17/11/2026 chạy source M5 ở CWD riêng, xuất 56 PNG tại `.selftest/ui-preview/docs/screenshots/`; chưa ghi đè ảnh tham chiếu và chưa coi M5 được nghiệm thu. Xem [bản bàn giao](../BAN_GIAO_AGENT.md).
+
+Ngày18/11 đã thêm ảnh44–60 từ lượt preview mới ở `.selftest/m5-ui-preview/`; giữ nguyên01–43. Toàn bộ60 ảnh component mới vẫn được xuất trong fixture; chỉ17 ảnh M5 được đưa vào đây để duyệt. Không có kết quả tương tác chuột/phím thật trong lượt này do helper điều khiển cửa sổ không khởi tạo được. Chạy lại ngày19/11/2026 sinh60 PNG từ source hiện tại tại `.selftest/m5-preview-current/docs/screenshots/`, không ghi đè ảnh tham chiếu. Đã xem trực quan các ảnh45,47,52,57,60; các assertion UI đều PASS. Ảnh mới để đối chiếu: [45](../../.selftest/m5-preview-current/docs/screenshots/45-quan-tri-nguoi-dung.png), [47](../../.selftest/m5-preview-current/docs/screenshots/47-quan-tri-nhat-ky.png), [52](../../.selftest/m5-preview-current/docs/screenshots/52-xac-nhan-xoa.png), [57](../../.selftest/m5-preview-current/docs/screenshots/57-them-user-co-loi.png), [60](../../.selftest/m5-preview-current/docs/screenshots/60-quan-tri-loi-thu-lai.png). Ảnh component không thay thao tác chuột/phím hệ điều hành hoặc việc người dùng duyệt bộ ảnh44–60; hai bước này vẫn là cổng trước khi chốt M5.
+
+## M5 — ảnh component thật chờ duyệt
+
+| Ảnh | Nội dung |
+|---|---|
+| [44](44-quan-tri-tong-quan.png) | Tổng quan,9 thẻ và2 biểu đồ |
+| [45](45-quan-tri-nguoi-dung.png) | User: header/cột/ngày/status, tìm/lọc/sort |
+| [46](46-quan-tri-phong.png) | Phòng: số người gồm offline, tệp/bytes và ngày |
+| [47](47-quan-tri-nhat-ky.png) | Nhật ký, tìm và lọc loại hành động |
+| [48](48-quan-tri-bao-cao.png) | Báo cáo, nút mở bị khóa khi chưa có kết quả |
+| [49](49-them-nguoi-dung.png) | Tạo user với mật khẩu tạm |
+| [50](50-sua-nguoi-dung.png) | Sửa tên/giới thiệu/vai trò |
+| [51](51-mat-khau-tam.png) | Hiển thị/copy mật khẩu tạm một lần |
+| [52](52-xac-nhan-xoa.png) | Xác nhận gõ login trước xóa |
+| [53](53-menu-kiem-duyet.png) | Menu kick/mute/ban/transfer |
+| [54](54-o-soan-bi-mute.png) | Khóa soạn tin và thời hạn mute |
+| [55](55-toast-kick.png) | Thông báo kick |
+| [56](56-thong-bao-quan-tri.png) | Broadcast trong chat và toast |
+| [57](57-them-user-co-loi.png) | Nhiều lỗi inline, input không nén, vai trò có dấu |
+| [58](58-quan-tri-dang-tai.png) | Đang tải, giữ dữ liệu cũ |
+| [59](59-quan-tri-rong.png) | Bảng rỗng có thông báo và header |
+| [60](60-quan-tri-loi-thu-lai.png) | Lỗi tải, hướng dẫn nút Làm mới để thử lại |
+
+[HTML báo cáo mẫu tự chứa](bao-cao-m5/tong_hop.html) và4 CSV cùng thư mục dùng dữ liệu giả nhất quán:4 user,3 phòng,9 membership,40 tin,2 tệp/6MiB. Không chứa dữ liệu thật. Xem [năm bước thử tay và kết quả kiểm thử](../BAO_CAO_RA_SOAT.md#năm-bước-thử-tay-trước-khi-chốt-m5).
+
+Assertions kiểm bộ lọc Online/Admin không nhận nhầm tên/giới thiệu, lọc audit không nhận nhầm chi tiết, sort login số theo chuỗi và số thống kê vượt Long, có JTableHeader trong JScrollPane, giữ selection theo id khi refresh. Bảng rộng có cuộn ngang/tooltip; ngày hiển thị dd/MM/yyyy HH:mm. Bài handler Swing riêng đạt5/0, gồm gỡ mute toàn hệ thống và export qua JFileChooser; vẫn không phải thao tác chuột/phím hệ điều hành. Người dùng cần duyệt ảnh và thao tác thật theo prompt trước khi ghi nhận UI hoàn tất, trừ khi có chỉ dẫn mới thay điều kiện này.
 
 Chạy từ project:
 

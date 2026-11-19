@@ -57,6 +57,9 @@ final class HangTin extends JPanel {
     }
     // Sticker khong bong nen; thu hoi khong giu noi dung trong component hay tooltip.
     private JComponent noiDung() {
+        if (tin.loai.equals("Y")) {
+            JLabel l=Theme.nhan("Quản trị viên: "+tin.noiDung,false); l.setForeground(Theme.THONG_TIN); l.setOpaque(true); l.setBackground(Theme.NEN_TIN); l.setBorder(Theme.le(Theme.S12)); return l;
+        }
         if (tin.thuHoi) {
             JLabel l=Theme.nhan("Tin nhắn đã được thu hồi",false); l.setFont(Theme.FONT.deriveFont(Font.ITALIC)); l.setForeground(Theme.PHU); return l;
         }

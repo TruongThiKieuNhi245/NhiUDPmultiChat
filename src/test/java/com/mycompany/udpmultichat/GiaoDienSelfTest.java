@@ -55,7 +55,7 @@ final class GiaoDienSelfTest {
     // Kiem tra ngat/ket noi lai va du lieu duoc gui bu.
     private static void testKetNoiLai() throws Exception {
         Path data=Files.createTempDirectory(Path.of(".selftest"),"m25-reconnect-");
-        Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nmulticast.portBase=23000\n",StandardCharsets.UTF_8);
+        Files.writeString(data.resolve("config.properties"),"admin.password=adminTest123\nspam.burst=10000\nspam.minute=10000\nmulticast.portBase=23000\n",StandardCharsets.UTF_8);
         BanNghe nghe=new BanNghe(),ngheB=new BanNghe(); AtomicBoolean boMulticast=new AtomicBoolean();
         ServerCore server=new ServerCore(data,new ServerCore.Listener() {
             // Nhan log qua Listener, chuyen ve luong phu hop.
