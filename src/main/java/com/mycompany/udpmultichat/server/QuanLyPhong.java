@@ -31,10 +31,12 @@ public final class QuanLyPhong {
     private final SecureRandom ngauNhien = new SecureRandom();
     private final int congGoc;
     private final java.util.Properties thanhVien;
+    private final java.util.Properties bietDanh;
 
     // Khoi tao lop va noi cac thanh phan can thiet.
     public QuanLyPhong(KhoLuuTru kho, Supplier<List<Phien>> cacPhien) throws IOException {
-        this.kho=kho; tinNhan=new QuanLyTinNhan(kho); this.cacPhien=cacPhien; thanhVien=kho.docThanhVien();
+        this.kho=kho; tinNhan=new QuanLyTinNhan(kho); this.cacPhien=cacPhien;
+        thanhVien=kho.docThanhVien(); bietDanh=kho.docBietDanh();
         try {
             congGoc=Integer.parseInt(kho.cauHinh("multicast.portBase"));
             if (congGoc<1024 || congGoc>65000) { throw new IllegalArgumentException(); }
@@ -158,6 +160,9 @@ public final class QuanLyPhong {
         Phong cu=lay(id); kiemTraQuyen(p,cu);
         if (Protocol.SANH_ID.equals(id)) { throw new IllegalArgumentException("Không được xóa Sảnh chung"); }
         luuThayDoi(id,null); tinNhan.xoa(id);
+        // Xoa biet danh phong
+        bietDanh.stringPropertyNames().stream().filter(k -> k.startsWith(id+".")).toList().forEach(bietDanh::remove);
+        try { kho.ghiBietDanh(bietDanh); } catch (IOException ignored) {}
         // Giu file log cu de khong mat du lieu; id phong moi khong tai su dung.
     }
 
@@ -229,7 +234,55 @@ public final class QuanLyPhong {
     }
 
     // Goi tu kick/ban/xoa user, khong ap dung rang buoc roi chu dong.
-    void goThanhVien(String room,String user) throws IOException { ghiThanhVien(user,room,false); }
+    void goThanhVien(String room,String user) throws IOException {
+        ghiThanhVien(user,room,false);
+        bietDanh.remove(room+"."+user);
+        try { kho.ghiBietDanh(bietDanh); } catch (IOException ignored) {}
+    }
+    // Them thanh vien truc tiep tu chap nhan loi moi.
+    public void themThanhVienTrucTiep(String user,String room) throws IOException {
+        ghiThanhVien(user,room,true);
+    }
+    // Lay biet danh thanh vien theo phong.
+    public String layBietDanh(String roomId,String userId) {
+        return bietDanh.getProperty(roomId+"."+userId,"");
+    }
+    // Dat hoac xoa biet danh thanh vien trong phong (M3c.2).
+    public String datBietDanh(Phien actor,String roomId,String targetUserId,String nickname,
+                              QuanLyNguoiDung quanLyNguoiDung) throws IOException {
+        Phong r=lay(roomId);
+        kiemTraThanhVien(actor,roomId);
+        if (!laThanhVien(targetUserId,roomId)) {
+            throw new IllegalArgumentException("Người dùng chưa phải là thành viên trong phòng này.");
+        }
+        NguoiDung target=quanLyNguoiDung.timTheoId(targetUserId);
+        if (target==null) { throw new IllegalArgumentException("Không tìm thấy người dùng."); }
+
+        boolean laChinhMinh=actor.nguoi.id.equals(targetUserId);
+        boolean laChu=r.chuId.equals(actor.nguoi.id);
+        boolean laAdmin=actor.nguoi.vaiTro==VaiTro.ADMIN;
+
+        if (!laChinhMinh && !laChu && !laAdmin) {
+            throw new IllegalArgumentException("Chỉ chủ phòng hoặc quản trị viên mới được đặt biệt danh cho thành viên khác.");
+        }
+        if (!laChinhMinh && !laAdmin && target.vaiTro==VaiTro.ADMIN) {
+            throw new IllegalArgumentException("Chủ phòng không được đổi biệt danh của quản trị viên.");
+        }
+
+        String khoa=roomId+"."+targetUserId;
+        String nickMoi=(nickname==null)?"":nickname.strip();
+        if (nickMoi.isEmpty()) {
+            bietDanh.remove(khoa);
+        } else {
+            int doDai=nickMoi.codePointCount(0,nickMoi.length());
+            if (doDai<2 || doDai>30 || nickMoi.contains("\n") || nickMoi.contains("\r")) {
+                throw new IllegalArgumentException("Biệt danh cần từ 2–30 ký tự, không xuống dòng.");
+            }
+            bietDanh.setProperty(khoa,nickMoi);
+        }
+        kho.ghiBietDanh(bietDanh);
+        return nickMoi;
+    }
     // Ngay vao duoc luu lan dau; du lieu cu dung ngay tao phong lam du phong.
     String ngayVao(String room,String user) { String n=thanhVien.getProperty(room+"."+user,""); return n.equals("1")?lay(room).ngayTao:n; }
     // Admin co the gan chu la tai khoan offline; tu cach thanh vien duoc ghi ben vung.

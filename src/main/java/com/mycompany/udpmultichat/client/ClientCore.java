@@ -10,8 +10,10 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -263,7 +265,8 @@ public final class ClientCore implements AutoCloseable {
             case Protocol.DA_THU_HOI: if (p.length==3 && daVao.containsKey(p[1])) { troChuyen.thuHoiMoi(p[1],Long.parseLong(p[2])); } break;
             case Protocol.HO_SO_MOI: if (p.length==1+NguoiDung.SO_TRUONG && toi!=null) { nhanHoSo(NguoiDung.tuTruong(p,1)); } break;
             case Protocol.DANH_SACH_PHONG: nhanDanhSach(p); break;
-            case Protocol.ONLINE: if (p.length==10) { nhanThanhVien(p); } break;
+            case Protocol.ONLINE: if (p.length>=10) { nhanThanhVien(p); } break;
+            case Protocol.SU_KIEN_LOI_MOI: if (p.length>=5) { listener.onLoiMoi(p[1],p[2],p[3],p[4]); } break;
             case Protocol.DA_ROI_PHONG: if (p.length==3 && !thuLai) { dongKenh(p[1],p[2]); } break;
             case Protocol.MUC_DONG_BO:
                 if (p.length==10 && cacDongBo.containsKey(p[1])) {
@@ -306,7 +309,8 @@ public final class ClientCore implements AutoCloseable {
         if (ban<bang.ban || so<1 || so>1000 || viTri<0 || viTri>=so) { return; }
         if (ban>bang.ban) { bang.ten.clear(); bang.ban=ban; }
         hoSo.gap(p[5]);
-        bang.ten.put(viTri,new Phong.ThanhVien(p[5],p[6],p[7],p[8],Boolean.parseBoolean(p[9])));
+        String nick=(p.length>=11)?p[10]:"";
+        bang.ten.put(viTri,new Phong.ThanhVien(p[5],p[6],p[7],p[8],Boolean.parseBoolean(p[9]),nick));
         if (bang.ten.size()==so) { listener.onThanhVienChiTiet(p[1],List.copyOf(bang.ten.values())); }
     }
     // ===== HEARTBEAT VA DONG =====
@@ -390,6 +394,67 @@ public final class ClientCore implements AutoCloseable {
         cacYeuCau.xoa(); cacThanhVien.clear(); hoSo.xoa(); troChuyen.xoa(); tep.xoa(); quanTri.xoa();
         // null chi duoc cong bo khi phien cu da don xong; login moi khong bi close cu huy Future.
         synchronized (this) { toi=null; dangDong=false; }
+    }
+    // ===== M3c.2: BIET DANH, LOI MOI VA TAT THONG BAO =====
+    private final Set<String> phongTatThongBao = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    public boolean daTatThongBao(String roomId) { return phongTatThongBao.contains(roomId); }
+    public void batTatThongBao(String roomId, boolean tat) {
+        if (tat) { phongTatThongBao.add(roomId); } else { phongTatThongBao.remove(roomId); }
+    }
+
+    public CompletableFuture<String> datBietDanh(String roomId, String targetUserId, String bietDanh) {
+        return yeuCau(Protocol.BIET_DANH, token, roomId, targetUserId, bietDanh != null ? bietDanh : "")
+            .thenApply(g -> g.length >= 4 ? g[3] : "");
+    }
+
+    public record NguoiDungTimKiem(String id, String tenDangNhap, String tenHienThi, boolean online) {}
+
+    public CompletableFuture<List<NguoiDungTimKiem>> timNguoiDung(String tuKhoa) {
+        return yeuCau(Protocol.TIM_NGUOI_DUNG, token, tuKhoa != null ? tuKhoa : "")
+            .thenApply(g -> {
+                List<NguoiDungTimKiem> ds = new ArrayList<>();
+                if (g.length < 4) { return ds; }
+                try {
+                    int so = Integer.parseInt(g[3]);
+                    int idx = 4;
+                    for (int i = 0; i < so && idx + 3 < g.length; i++) {
+                        ds.add(new NguoiDungTimKiem(g[idx], g[idx+1], g[idx+2], Boolean.parseBoolean(g[idx+3])));
+                        idx += 4;
+                    }
+                } catch (NumberFormatException ignored) {}
+                return ds;
+            });
+    }
+
+    public record LoiMoiPhong(String inviteId, String roomId, String tenPhong, String nguoiMoiId, String tenNguoiMoi, long thoiGianTao) {}
+
+    public CompletableFuture<Void> moiVaoPhong(String roomId, String targetUserId) {
+        return yeuCau(Protocol.MOI_VAO_PHONG, token, roomId, targetUserId).thenAccept(g -> {});
+    }
+
+    public CompletableFuture<String> traLoiLoiMoi(String inviteId, boolean dongY) {
+        return yeuCau(Protocol.TRA_LOI_LOI_MOI, token, inviteId, Boolean.toString(dongY))
+            .thenApply(g -> g.length >= 4 ? g[3] : "");
+    }
+
+    public CompletableFuture<List<LoiMoiPhong>> layDanhSachLoiMoi() {
+        return yeuCau(Protocol.DS_LOI_MOI, token).thenApply(g -> {
+            List<LoiMoiPhong> ds = new ArrayList<>();
+            if (g.length < 4) { return ds; }
+            try {
+                int so = Integer.parseInt(g[3]);
+                int idx = 4;
+                for (int i = 0; i < so && idx + 5 < g.length; i++) {
+                    ds.add(new LoiMoiPhong(g[idx], g[idx+1], g[idx+2], g[idx+3], g[idx+4], Long.parseLong(g[idx+5])));
+                    idx += 6;
+                }
+            } catch (NumberFormatException ignored) {}
+            return ds;
+        });
+    }
+
+    public CompletableFuture<Void> huyLoiMoi(String inviteId) {
+        return yeuCau(Protocol.HUY_LOI_MOI, token, inviteId).thenAccept(g -> {});
     }
     /** Bo dem ghep danh sach thanh vien rieng tung phong. */
     private static final class BangTen {

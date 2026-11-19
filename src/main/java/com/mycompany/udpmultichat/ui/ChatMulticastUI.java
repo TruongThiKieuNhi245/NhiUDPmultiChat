@@ -68,7 +68,23 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         soan.datTep(tepUI::menu); tepUI.datKeoTha(noiDungPhong);
         thanhVienPanel.datKiemDuyet((l,n) -> { Phong p=phongChon(); if (p!=null) { KiemDuyetUI.thaoTac(this,client,p.id,n.id(),n.ten(),l,this::loi); } });
         thanhVienPanel.datAnh(client.hoSo()::anh);
+        thanhVienPanel.datHanhDongMoi(() -> {
+            Phong p=phongChon();
+            if (p!=null) { new MoiThanhVienDialog(this,client,p.id,p.ten,thanhVien.getOrDefault(p.id,List.of())).setVisible(true); }
+        });
+        thanhVienPanel.datHanhDongBietDanh((nick,n) -> {
+            Phong p=phongChon();
+            if (p!=null) {
+                client.datBietDanh(p.id,n.id(),nick).thenAccept(moi -> trenEdt(() -> {
+                    toast(ThongBao.Muc.THANH_CONG,moi.isEmpty()?"Đã xóa biệt danh của @"+n.tenDangNhap():"Đã đặt biệt danh thành «"+moi+"»");
+                })).exceptionally(ex -> {
+                    trenEdt(() -> loi(ClientCore.loiDeHieu(ex)));
+                    return null;
+                });
+            }
+        });
         phongPanel=new DanhSachPhongPanel(() -> toi,khung::containsKey,id -> chuaDoc.getOrDefault(id,0),p -> vaoPhong(p.id,""),this::hanhDong);
+        phongPanel.datKiemTraTatThongBao(client::daTatThongBao);
         setIconImage(Theme.iconUngDung()); setTitle("UDP Chat"); setSize(1240,800); setMinimumSize(new Dimension(960,600)); setLocationByPlatform(true); setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         JPanel trai=new JPanel(new BorderLayout()); trai.setPreferredSize(new Dimension(280,0)); trai.setBackground(Theme.NEN);
         trai.add(phongPanel,BorderLayout.CENTER); trai.add(theTaiKhoan(),BorderLayout.SOUTH);
@@ -175,6 +191,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         JMenuItem hoSo=new JMenuItem("Hồ sơ của tôi"),doi=new JMenuItem("Đổi mật khẩu");
         hoSo.addActionListener(e -> { if (toi!=null) { new HoSoDialog(client,toi,false,false).hien(this,n -> toast(ThongBao.Muc.THANH_CONG,"Đã lưu hồ sơ.")); } });
         doi.addActionListener(e -> moMatKhau(false)); m.add(hoSo); m.add(doi);
+        JMenuItem loiMoi=new JMenuItem("Lời mời tham gia phòng...");
+        loiMoi.addActionListener(e -> new LoiMoiPhongDialog(this,client,this::vaoPhongDaMoi).setVisible(true));
+        m.add(loiMoi);
         JMenuItem gioiThieu=new JMenuItem("Giới thiệu"); gioiThieu.addActionListener(e -> javax.swing.JOptionPane.showMessageDialog(this,
             "UDP Chat\nSticker: Noto Emoji 2D — Google và cộng tác viên\nGiấy phép ảnh: Apache License 2.0\nhttps://github.com/googlefonts/noto-emoji\nGiấy phép kèm trong resources/stickers/LICENSE.","Giới thiệu",javax.swing.JOptionPane.INFORMATION_MESSAGE));
         m.add(gioiThieu); m.addSeparator();
@@ -246,6 +265,12 @@ public final class ChatMulticastUI extends JFrame implements Listener {
                         } catch (Exception ex) { toast.hien(ThongBao.Muc.LOI,"Lỗi xuất lịch sử."); }
                     });
                 }
+            } break;
+            case "bat_tat_thong_bao": {
+                boolean hienTai = client.daTatThongBao(p.id);
+                client.batTatThongBao(p.id, !hienTai);
+                phongPanel.capNhat(danhSach);
+                toast(ThongBao.Muc.THONG_TIN, !hienTai ? "Đã tắt thông báo phòng «" + p.ten + "»." : "Đã bật lại thông báo phòng «" + p.ten + "».");
             } break;
             default: break;
         }
@@ -339,10 +364,19 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }); }
     // Tao khung o nen, khong tao tab hien thi.
     @Override public void onVaoPhong(Phong p) { trenEdt(() -> {
-        if (!khung.containsKey(p.id)) { KhungChatPanel k=new KhungChatPanel(p); k.datHoSo(client.hoSo()::anh,client.hoSo()::lay); k.datAnhTep(client.tep()::anh); k.datHanhDong(() -> phongPanel.quanLy(k.phong()),this::hanhDongTin); khung.put(p.id,k); noiDungPhong.add(k,p.id); }
+        if (!khung.containsKey(p.id)) {
+            KhungChatPanel k=new KhungChatPanel(p);
+            k.datHoSo(client.hoSo()::anh,client.hoSo()::lay);
+            k.datAnhTep(client.tep()::anh);
+            k.datHanhDong(() -> phongPanel.quanLy(k.phong()),this::hanhDongTin);
+            k.datBietDanh((rId,uId) -> thanhVien.getOrDefault(rId,List.of()).stream()
+                .filter(tv -> tv.id().equals(uId)).map(Phong.ThanhVien::bietDanh).findFirst().orElse(""));
+            khung.put(p.id,k); noiDungPhong.add(k,p.id);
+        }
         if (phongDangXem.isEmpty()) { chonPhong(p.id); }
         phongPanel.capNhat(danhSach);
     }); }
+    private void vaoPhongDaMoi(String roomId) { vaoPhong(roomId,""); }
     // Roi phong dong rieng khung do va chuyen ve Sanh neu con.
     @Override public void onRoiPhong(String id,String lyDo) { trenEdt(() -> {
         KhungChatPanel k=khung.remove(id); if (k!=null) { noiDungPhong.remove(k); }
@@ -370,13 +404,26 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     // laToi do Core so ID bat bien tu tai khoan xac thuc, khong so ten hien thi.
     @Override public void onTinNhan(TinNhan t,boolean laToi,boolean lichSu) { trenEdt(() -> {
         KhungChatPanel k=khung.get(t.roomId); if (k==null) { return; } if (client.nguoiDung()!=null) { client.hoSo().gap(t.userId); } TinNhan hien=k.locTin(t); k.themTin(hien,laToi);
-        if (!lichSu && !laToi && !phongDangXem.equals(t.roomId)) { chuaDoc.merge(t.roomId,1,Integer::sum); }
+        if (!lichSu && !laToi && !phongDangXem.equals(t.roomId)) {
+            if (!client.daTatThongBao(t.roomId)) { chuaDoc.merge(t.roomId,1,Integer::sum); }
+        }
         if (hien.loai.equals("F") && client.sanSang()) { client.tep().napAnh(com.mycompany.udpmultichat.common.TepTin.doc(t.roomId,t.userId,t.noiDung,t.thoiGian)); }
         phongPanel.tinCuoi(hien);
     }); }
     @Override public void onThanhVienChiTiet(String id,List<Phong.ThanhVien> ds) { trenEdt(() -> {
-        thanhVien.put(id,List.copyOf(ds)); if (phongDangXem.equals(id)) { capNhatPhongDangXem(); }
+        thanhVien.put(id,List.copyOf(ds));
+        KhungChatPanel k=khung.get(id); if (k!=null) { k.veLaiTatCa(); }
+        if (phongDangXem.equals(id)) { capNhatPhongDangXem(); }
     }); }
+    @Override public void onLoiMoi(String inviteId,String roomId,String tenPhong,String nguoiMoi) {
+        trenEdt(() -> {
+            toast.hien(ThongBao.Muc.THONG_TIN,
+                "Lời mời: @"+nguoiMoi+" mời bạn vào phòng «"+tenPhong+"»",
+                "Xem",
+                () -> new LoiMoiPhongDialog(this,client,this::vaoPhongDaMoi).setVisible(true)
+            );
+        });
+    }
     @Override public void onHeThong(String id,String text) { trenEdt(() -> { if (khung.containsKey(id)) { khung.get(id).heThong(text); } }); }
     @Override public void onHeThong(String text) { trenEdt(() -> toast.hien(ThongBao.Muc.THONG_TIN,text)); }
     @Override public void onDanhSachOnline(List<String> ds) { }

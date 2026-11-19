@@ -105,6 +105,23 @@ public final class QuanLyNguoiDung {
     // Tat ca.
     public synchronized List<NguoiDung> tatCa() { return taiKhoan.values().stream().map(t -> t.nguoi).toList(); }
 
+    // Tim nguoi dung theo id.
+    public synchronized NguoiDung timTheoId(String id) {
+        return taiKhoan.values().stream().map(t -> t.nguoi).filter(u -> u.id.equals(id)).findFirst().orElse(null);
+    }
+
+    // Tim kiem nguoi dung theo tu khoa de moi vao phong.
+    public synchronized List<NguoiDung> timKiem(String tuKhoa) {
+        String k = (tuKhoa == null) ? "" : tuKhoa.strip().toLowerCase(java.util.Locale.ROOT);
+        return taiKhoan.values().stream()
+            .map(t -> t.nguoi)
+            .filter(u -> !biKhoa(u.id))
+            .filter(u -> k.isEmpty() || u.tenDangNhap.toLowerCase(java.util.Locale.ROOT).contains(k)
+                    || u.tenHienThi.toLowerCase(java.util.Locale.ROOT).contains(k))
+            .limit(20)
+            .toList();
+    }
+
     // ===== HO SO VA DOI MAT KHAU =====
     // Server chan moi lenh nghiep vu khi admin con dung mat khau mac dinh.
     public synchronized void kiemTraBatBuoc(Phien p,String lenh) {
@@ -270,7 +287,7 @@ public final class QuanLyNguoiDung {
     /** Phien chi ton tai trong RAM, duoc xoa khi dang xuat hoac het heartbeat. */
     public static final class Phien {
         final String token;
-        NguoiDung nguoi;
+        public NguoiDung nguoi;
         final InetSocketAddress diaChi;
         long pingCuoi = System.nanoTime();
         boolean sanSang;

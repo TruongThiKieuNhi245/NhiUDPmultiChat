@@ -13,8 +13,13 @@
   + *Tìm kiếm tin nhắn trong phòng (`Ctrl + F`):* Thanh tìm kiếm nhanh trên đầu khung chat, nút kính lúp trên header, đếm số lượng kết quả `x/y`, nút Lên/Xuống chuyển vị trí và cuộn viewport tới tin khớp.
   + *Xuất lịch sử chat (.txt):* Menu phòng có mục "Xuất lịch sử chat (.txt)" lưu đầy đủ tin nhắn, sticker, tệp, tin trích dẫn, thu hồi ra file UTF-8 chuẩn kèm nút mở nhanh trên Toast thông báo.
   + *Kiểm thử tự động:* `M3cChatSelfTest` PASS 100%, `AdminSelfTest` 16 PASS / 0 FAIL, `UiPreview` 10/10 PASS.
+- **M3c.2 (Quản lý Thành viên, Biệt danh nhóm & Tắt thông báo phòng):** Đã hoàn thành và kiểm chứng 100%:
+  + *Biệt danh nhóm:* Đổi biệt danh riêng theo phòng `(roomId, userId) -> nickname` qua menu chuột phải trong `ThanhVienPanel`. Hiển thị biệt danh kèm `(Tên thật)`, ưu tiên hiển thị trên bong bóng tin nhắn chat. Không thay đổi tên hiển thị toàn cục hay audit log.
+  + *Mời thành viên:* Nút `+` trên thanh tiêu đề `ThanhVienPanel` mở `MoiThanhVienDialog` tìm kiếm user, loại trừ thành viên hiện có, kiểm tra phòng mở/sĩ số, gửi lời mời có thời hạn 7 ngày. Hộp thoại `LoiMoiPhongDialog` quản lý duyệt "Chấp nhận" / "Từ chối".
+  + *Tắt thông báo phòng:* Menu "Tắt thông báo phòng" / "Bật thông báo phòng" trên `DanhSachPhongPanel`, hiển thị biểu tượng `🔕` cạnh tên phòng và không tính số tin chưa đọc (badge unread) cho phòng bị tắt.
+  + *Kiểm thử tự động:* `M3cThanhVienSelfTest` 3/3 PASS, `AdminSelfTest` 16/16 PASS, `SelfTest` 75/75 PASS, `UiPreview` 10/10 PASS (60 ảnh PNG).
 
-Ngày rà soát: 17/11/2026. Hướng duy nhất: **desktop Java 21 + Swing/FlatLaf, UDP multicast trực tiếp, portable và hai máy LAN**. Không chuyển web. Prompt chuẩn: [PROMPT_NANG_CAP_VA_TRIEN_KHAI.md](PROMPT_NANG_CAP_VA_TRIEN_KHAI.md).
+Ngày rà soát: 17/11/2026 - Cập nhật 20/11/2026. Hướng duy nhất: **desktop Java 21 + Swing/FlatLaf, UDP multicast trực tiếp, portable và hai máy LAN**. Không chuyển web. Prompt chuẩn: [PROMPT_NANG_CAP_VA_TRIEN_KHAI.md](PROMPT_NANG_CAP_VA_TRIEN_KHAI.md).
 
 **Tái xác nhận 19/11/2026 (lượt 2):** compile exit0; SelfTest75/0 PASS; AdminSelfTest riêng16/0 PASS; UiPreview60 PNG exit0 — không phát sinh hồi quy. Tệp5MiB loss20% seed20261113 upload65,772s/download64,713s byte/CRC đúng. Commit `M5 xong` đã thực hiện sau lượt kiểm tra này. Chưa làm M6/M3c/M7. Hai máy vật lý/portable/HiDPI chờ M7.
 

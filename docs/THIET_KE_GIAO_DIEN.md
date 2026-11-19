@@ -88,6 +88,25 @@ Toàn bộ biểu tượng trong ứng dụng được vẽ trực tiếp bằng
 5. **Xuất lịch sử chat (.txt):**
    - Menu phòng có mục "Xuất lịch sử chat (.txt)" lưu toàn bộ tin nhắn ra file UTF-8 chuẩn kèm tiêu đề, mã phòng, thời gian và thông tin trích dẫn/thu hồi.
    - Hiển thị Toast thông báo thành công kèm nút "Mở" tệp trực tiếp.
+
+---
+
+## 1.6. Quản lý Thành viên, Biệt danh nhóm & Thông báo phòng (M3c.2)
+
+1. **Biệt danh riêng theo phòng (Room Nickname):**
+   - Thành viên có thể tự đổi biệt danh của mình trong từng phòng, hoặc Chủ phòng/Admin có thể đặt/đổi biệt danh cho các thành viên khác.
+   - Thao tác: Nhấp chuột phải vào tên thành viên trong cột danh sách thành viên (`ThanhVienPanel`) → chọn "Đặt biệt danh..." hoặc "Đổi biệt danh...". Để trống để xóa biệt danh trở về tên thật.
+   - Hiển thị: Danh sách thành viên hiển thị Biệt danh in đậm kèm `(Tên thật)` màu xám phụ bên cạnh. Trên bong bóng tin nhắn chat, tên tác giả cũng được tự động ưu tiên hiển thị theo biệt danh của phòng đó.
+   - Phạm vi: Biệt danh chỉ có hiệu lực cục bộ trong từng phòng `(roomId, userId) -> nickname`, không làm thay đổi tên hiển thị toàn cục của tài khoản và không ảnh hưởng đến audit log.
+2. **Mời thành viên vào phòng (`MoiThanhVienDialog` & `LoiMoiPhongDialog`):**
+   - Nút `+` tròn tinh tế trên thanh tiêu đề danh sách thành viên cho phép Chủ phòng / Quản trị viên mở hộp thoại mời người dùng.
+   - Tìm kiếm tức thì theo tên đăng nhập hoặc tên hiển thị. Tự động loại trừ những người đã là thành viên trong phòng.
+   - Kiểm tra kiểm soát: Kiểm tra phòng đang mở, chưa vượt quá sĩ số tối đa, không gửi trùng lời mời đang chờ duyệt. Lời mời tự động hết hạn sau 7 ngày.
+   - Người được mời nhận thông báo qua menu cá nhân (Avatar → "Lời mời tham gia phòng..."), có thể xem danh sách lời mời đang chờ và bấm "Chấp nhận" để tự động gia nhập hoặc "Từ chối".
+3. **Tắt / Bật thông báo phòng (Mute Room Notifications):**
+   - Menu chuột phải vào bất kỳ phòng nào trong danh sách phòng (`DanhSachPhongPanel`) có mục "Tắt thông báo phòng" / "Bật thông báo phòng".
+   - Khi phòng bị tắt thông báo: Tên phòng hiển thị biểu tượng chuông gạch chéo `🔕` tinh tế bên cạnh, và hệ thống tự động không tăng số tin chưa đọc (badge unread đỏ), giúp người dùng không bị làm phiền bởi các phòng có lưu lượng chat lớn.
+
 - `lock`: Biểu tượng ổ khóa — phòng riêng tư có mật khẩu.
 - `down` / `up`: Biểu tượng mũi tên mở rộng / thu gọn.
 

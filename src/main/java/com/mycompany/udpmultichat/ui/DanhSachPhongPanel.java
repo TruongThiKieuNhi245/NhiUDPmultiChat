@@ -50,6 +50,8 @@ final class DanhSachPhongPanel extends JPanel {
     private final Function<String,Integer> chuaDoc;
     private final Consumer<Phong> vao;
     private final BiConsumer<String,Phong> hanhDong;
+    private java.util.function.Predicate<String> daTatThongBao = id -> false;
+    void datKiemTraTatThongBao(java.util.function.Predicate<String> p) { this.daTatThongBao = p; }
     private final Map<String,TinNhan> tinCuoi=new LinkedHashMap<>();
     private final Map<String,JPanel> cacHang=new LinkedHashMap<>();
     private List<Phong> danhSach=List.of();
@@ -154,7 +156,8 @@ final class DanhSachPhongPanel extends JPanel {
         h.setBackground(p.id.equals(dangChon)?Theme.CHON:Theme.NEN); cacHang.put(p.id,h);
         TinNhan tin=tinCuoi.get(p.id); JPanel text=new JPanel(new GridLayout(2,1,0,Theme.S4)); text.setOpaque(false);
         JPanel tren=new JPanel(new BorderLayout(Theme.S4,0)); tren.setOpaque(false);
-        JLabel ten=Theme.nhan(p.ten,true),gio=Theme.nhan(tin==null?"":GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false);
+        String tenText = p.ten + (daTatThongBao.test(p.id) ? " 🔕" : "");
+        JLabel ten=Theme.nhan(tenText,true),gio=Theme.nhan(tin==null?"":GIO.format(Instant.ofEpochMilli(tin.thoiGian)),false);
         ten.setIcon(p.congKhai?null:Theme.icon("lock")); gio.setFont(Theme.NHO); gio.setForeground(Theme.PHU); tren.add(ten); tren.add(gio,BorderLayout.EAST);
         JLabel nd=Theme.nhan(tin==null?(p.dangMo?p.moTa:"Phòng đang đóng"):xemTruoc(tin),false); nd.setForeground(Theme.PHU); nd.setFont(Theme.NHO);
         text.add(tren); text.add(nd); h.add(text); h.add(nutPhong(p,thamGia),BorderLayout.EAST);
@@ -221,6 +224,8 @@ final class DanhSachPhongPanel extends JPanel {
         JPopupMenu m=new JPopupMenu(); them(m,"Thông tin phòng","thongtin",p);
         JMenuItem copy=new JMenuItem("Sao chép mã phòng"); copy.addActionListener(e -> saoChep(p.maPhong)); m.add(copy);
         them(m,"Tìm kiếm (Ctrl+F)","tim",p); them(m,"Xuất lịch sử chat (.txt)","xuat_lichsu",p);
+        boolean tat=daTatThongBao.test(p.id);
+        them(m,tat?"Bật thông báo phòng":"Tắt thông báo phòng","bat_tat_thong_bao",p);
         if (Protocol.SANH_ID.equals(p.id)) { return m; }
         if (quanLy(p)) {
             m.addSeparator(); them(m,"Sửa phòng","sua",p); them(m,p.dangMo?"Đóng phòng":"Mở phòng","trangthai",p);

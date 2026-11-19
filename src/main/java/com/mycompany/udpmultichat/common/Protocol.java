@@ -53,6 +53,11 @@ public final class Protocol {
     // ===== QUAN TRI VA KIEM DUYET =====
     public static final String AD_SNAPSHOT="AD_SNAPSHOT",AD_READ="AD_READ",AD_ACTION="AD_ACTION",AD_EXPORT="AD_EXPORT",AD_JOB="AD_JOB";
     public static final String MOD="MOD",MOD_LIST="MOD_LIST",MUTE_STATE="MUTE_STATE",AD_CHANGED="AD_CHANGED",FORCE_OUT="FORCE_OUT",ANNOUNCE="ANNOUNCE",USER_DELETED="USER_DELETED";
+    // ===== M3c: BIET DANH VA LOI MOI THANH VIEN =====
+    public static final String BIET_DANH="ROOM_NICKNAME", TIM_NGUOI_DUNG="USER_SEARCH";
+    public static final String MOI_VAO_PHONG="ROOM_INVITE", TRA_LOI_LOI_MOI="ROOM_INVITE_RESP";
+    public static final String DS_LOI_MOI="ROOM_INVITE_LIST", HUY_LOI_MOI="ROOM_INVITE_CANCEL";
+    public static final String SU_KIEN_LOI_MOI="INVITE_EVENT";
     // Khoi tao lop va noi cac thanh phan can thiet.
     private Protocol() { }
 }

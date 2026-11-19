@@ -43,6 +43,7 @@ public final class ServerCore implements AutoCloseable {
     QuanLyTep tep;
     final LenhPhongServer lenhPhong=new LenhPhongServer(this);
     QuanTriServer quanTri;
+    QuanLyLoiMoi loiMoi;
     private double matTep; private long seedTep;
     private MulticastSocket multicast;
     private ScheduledExecutorService dongHo;
@@ -69,6 +70,7 @@ public final class ServerCore implements AutoCloseable {
                 baoThongKe(); return tin;
             },matTep,seedTep);
             quanTri=new QuanTriServer(this,kho,thuMuc);
+            loiMoi=new QuanLyLoiMoi(kho);
             multicast=new MulticastSocket();
             multicast.setNetworkInterface(card); multicast.setTimeToLive(1);
             DatagramSocket socket=new DatagramSocket(null);
@@ -265,7 +267,8 @@ public final class ServerCore implements AutoCloseable {
             for (int i=0;i<ds.size();i++) {
                 var n=ds.get(i); String vai=n.vaiTro==VaiTro.ADMIN?"ADMIN":(r.chuId.equals(n.id)?"CHU_PHONG":"THANH_VIEN");
                 boolean bat=online.stream().anyMatch(p -> p.nguoi.id.equals(n.id));
-                lo.add(Goi.ghep(Protocol.ONLINE,id,ban,Integer.toString(ds.size()),Integer.toString(i),n.id,n.tenDangNhap,n.tenHienThi,vai,Boolean.toString(bat)));
+                String nick=phong.layBietDanh(id,n.id);
+                lo.add(Goi.ghep(Protocol.ONLINE,id,ban,Integer.toString(ds.size()),Integer.toString(i),n.id,n.tenDangNhap,n.tenHienThi,vai,Boolean.toString(bat),nick));
             }
             guiLo(dich,lo);
         }
@@ -279,6 +282,7 @@ public final class ServerCore implements AutoCloseable {
     private synchronized void quetPhien() {
         if (!dangChay) { return; }
         phong.donDatCho(); hoSo.donDep();
+        if (loiMoi!=null) { loiMoi.donDepHetHan(); }
         try { quanTri.quet(); } catch (IOException e) { listener.onLog("Lỗi dọn kiểm duyệt: "+e.getMessage()); }
         for (Phien p : nguoiDung.xoaHetHan()) {
             guiSuKien(p,Goi.ghep(Protocol.HET_PHIEN,"Không có heartbeat quá 15 giây. Hãy đăng nhập lại."));

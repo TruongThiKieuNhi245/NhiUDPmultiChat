@@ -58,4 +58,6 @@ public interface Listener {
     default void onVaoPhong(Phong phong) { }
     // On roi phong.
     default void onRoiPhong(String roomId,String lyDo) { }
+    // Nhan su kien loi moi tham gia phong (M3c.2).
+    default void onLoiMoi(String inviteId,String roomId,String tenPhong,String nguoiMoi) { }
 }

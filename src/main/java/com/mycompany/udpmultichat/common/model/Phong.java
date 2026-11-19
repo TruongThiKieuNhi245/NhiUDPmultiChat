@@ -3,10 +3,18 @@ package com.mycompany.udpmultichat.common.model;
 /** Vai tro: Ban sao phong cong khai; khong chua salt hay hash mat khau phong. Ai goi: ClientCore, QuanLyPhong, ui. Goi: khong goi lop khac. */
 public final class Phong {
     // ===== VAI TRO VA CAC THAO TAC =====
-    /** Thanh vien cua phong, tach biet voi trang thai online. */
-    public record ThanhVien(String id,String tenDangNhap,String ten,String vaiTro,boolean online) {
+    /** Thanh vien cua phong, co biet danh rieng theo nhom va trang thai online. */
+    public record ThanhVien(String id,String tenDangNhap,String ten,String vaiTro,boolean online,String bietDanh) {
+        // Constructor 5 tham so de tuong thich nguon cu.
+        public ThanhVien(String id,String tenDangNhap,String ten,String vaiTro,boolean online) {
+            this(id,tenDangNhap,ten,vaiTro,online,"");
+        }
         // Nhan dien tai khoan, khong so sanh ten hien thi co the trung nhau.
         public boolean laToi(String taiKhoan) { return !taiKhoan.isBlank() && tenDangNhap.equalsIgnoreCase(taiKhoan); }
+        // Uu tien biet danh trong phong, fallback ve ten hien thi goc.
+        public String tenHienThi() { return (bietDanh!=null && !bietDanh.isBlank())?bietDanh:ten; }
+        // Kiem tra thanh vien co biet danh rieng trong phong khong.
+        public boolean coBietDanh() { return bietDanh!=null && !bietDanh.isBlank(); }
     }
     public static final int SO_TRUONG = 13;
     public final String id, ten, moTa, maPhong, chuId, nhom, ngayTao;

@@ -248,6 +248,32 @@ public final class KhoLuuTru {
         StringWriter ghi=new StringWriter(); p.store(ghi,"Thanh vien phong - UTF-8");
         ghiAnToan(thuMuc.resolve("members.properties"),ghi.toString());
     }
+    // Doc biet danh theo phong: roomId.userId=bietDanh.
+    public synchronized Properties docBietDanh() throws IOException {
+        Properties p=new Properties(); Path tep=thuMuc.resolve("nicknames.properties");
+        if (Files.exists(tep)) {
+            try (Reader doc=Files.newBufferedReader(tep,StandardCharsets.UTF_8)) { p.load(doc); }
+        }
+        return p;
+    }
+    // Ghi biet danh theo phong.
+    public synchronized void ghiBietDanh(Properties p) throws IOException {
+        StringWriter ghi=new StringWriter(); p.store(ghi,"Biet danh thanh vien theo phong - UTF-8");
+        ghiAnToan(thuMuc.resolve("nicknames.properties"),ghi.toString());
+    }
+    // Doc danh sach loi moi phong: inviteId=roomId|nguoiMoiId|nguoiDuocMoiId|thoiGianTao.
+    public synchronized Properties docLoiMoi() throws IOException {
+        Properties p=new Properties(); Path tep=thuMuc.resolve("invites.properties");
+        if (Files.exists(tep)) {
+            try (Reader doc=Files.newBufferedReader(tep,StandardCharsets.UTF_8)) { p.load(doc); }
+        }
+        return p;
+    }
+    // Ghi danh sach loi moi phong.
+    public synchronized void ghiLoiMoi(Properties p) throws IOException {
+        StringWriter ghi=new StringWriter(); p.store(ghi,"Loi moi phong - UTF-8");
+        ghiAnToan(thuMuc.resolve("invites.properties"),ghi.toString());
+    }
 
     // Csv.
     private static String csv(String giaTri) { return "\"" + giaTri.replace("\"", "\"\"") + "\""; }

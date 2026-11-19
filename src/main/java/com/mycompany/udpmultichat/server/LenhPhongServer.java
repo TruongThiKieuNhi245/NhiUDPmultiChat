@@ -34,6 +34,18 @@ final class LenhPhongServer {
                 duTruong(p,4); s.phong.kiemTraThanhVien(phien,p[3]); s.phong.roiChuDong(phien,p[3]);
                 roiPhong(phien,p[3],"Bạn đã rời phòng.");
                 s.traLoi(phien.diaChi,p[1],true,"Đã rời phòng"); break;
+            case Protocol.BIET_DANH:
+                xuLyBietDanh(phien,p); return;
+            case Protocol.TIM_NGUOI_DUNG:
+                xuLyTimNguoiDung(phien,p); return;
+            case Protocol.MOI_VAO_PHONG:
+                xuLyMoiVaoPhong(phien,p); return;
+            case Protocol.TRA_LOI_LOI_MOI:
+                xuLyTraLoiLoiMoi(phien,p); return;
+            case Protocol.DS_LOI_MOI:
+                xuLyDanhSachLoiMoi(phien,p); return;
+            case Protocol.HUY_LOI_MOI:
+                xuLyHuyLoiMoi(phien,p); return;
             default: suaTaoPhong(phien,p);
         }
         s.capNhatPhong();
@@ -86,6 +98,7 @@ final class LenhPhongServer {
     void xoaPhong(Phien chu,String id) throws IOException {
         String ten=s.phong.lay(id).ten;
         s.phong.xoa(chu,id); s.tep.xoaPhong(id);
+        if (s.loiMoi!=null) { s.loiMoi.xoaTheoPhong(id); }
         for (Phien p : s.nguoiDung.danhSach()) {
             if (p.phong.contains(id)) {
                 s.phong.roi(p,id); s.guiSuKien(p,Goi.ghep(Protocol.DA_ROI_PHONG,id,"Phòng «"+ten+"» đã bị xóa."));
@@ -93,6 +106,70 @@ final class LenhPhongServer {
             p.choVao.remove(id);
         }
         s.listener.onLog(chu.nguoi.tenHienThi+" xóa phòng "+ten);
+    }
+    // ===== M3c.2: BIET DANH VA LOI MOI =====
+    private void xuLyBietDanh(Phien phien,String[] p) throws IOException {
+        if (p.length<5) { throw new IllegalArgumentException("Thiếu tham số đổi biệt danh."); }
+        String roomId=p[3], targetUserId=p[4], nickname=p.length>=6?p[5]:"";
+        String nickMoi=s.phong.datBietDanh(phien,roomId,targetUserId,nickname,s.nguoiDung);
+        var target=s.nguoiDung.timTheoId(targetUserId);
+        String tenTarget=target!=null?target.tenHienThi:targetUserId;
+        if (nickMoi.isEmpty()) {
+            s.thongBaoPhong(roomId,phien.nguoi.tenHienThi+" đã xóa biệt danh của "+tenTarget+".");
+        } else {
+            s.thongBaoPhong(roomId,phien.nguoi.tenHienThi+" đã đặt biệt danh cho "+tenTarget+" là «"+nickMoi+"».");
+        }
+        s.capNhatThanhVien(roomId);
+        s.traLoi(phien.diaChi,p[1],true,nickMoi);
+    }
+    private void xuLyTimNguoiDung(Phien phien,String[] p) {
+        String tuKhoa=p.length>=4?p[3]:"";
+        var ds=s.nguoiDung.timKiem(tuKhoa);
+        java.util.List<String> tra=new java.util.ArrayList<>();
+        tra.add(Integer.toString(ds.size()));
+        for (var u:ds) {
+            boolean on=s.nguoiDung.danhSach().stream().anyMatch(sess -> sess.nguoi.id.equals(u.id));
+            tra.add(u.id); tra.add(u.tenDangNhap); tra.add(u.tenHienThi); tra.add(Boolean.toString(on));
+        }
+        s.traLoi(phien.diaChi,p[1],true,tra.toArray(String[]::new));
+    }
+    private void xuLyMoiVaoPhong(Phien phien,String[] p) throws IOException {
+        duTruong(p,5);
+        String roomId=p[3], targetUserId=p[4];
+        var bg=s.loiMoi.guiLoiMoi(phien,roomId,targetUserId,s.phong,s.nguoiDung);
+        s.nguoiDung.danhSach().stream()
+            .filter(sess -> sess.nguoi.id.equals(targetUserId))
+            .forEach(sess -> s.guiSuKien(sess,Goi.ghep(Protocol.SU_KIEN_LOI_MOI,bg.id(),bg.roomId(),s.phong.lay(bg.roomId()).ten,phien.nguoi.tenHienThi)));
+        s.traLoi(phien.diaChi,p[1],true,"Đã gửi lời mời tham gia phòng.");
+    }
+    private void xuLyTraLoiLoiMoi(Phien phien,String[] p) throws IOException {
+        duTruong(p,5);
+        String inviteId=p[3];
+        boolean dongY=Boolean.parseBoolean(p[4]);
+        var bg=s.loiMoi.traLoiLoiMoi(phien,inviteId,dongY,s.phong);
+        if (dongY) {
+            s.thongBaoPhong(bg.roomId(),phien.nguoi.tenHienThi+" đã tham gia phòng qua lời mời.");
+            s.capNhatThanhVien(bg.roomId());
+            s.capNhatPhong();
+            s.traLoi(phien.diaChi,p[1],true,bg.roomId(),s.phong.lay(bg.roomId()).ten);
+        } else {
+            s.traLoi(phien.diaChi,p[1],true,"Đã từ chối lời mời.");
+        }
+    }
+    private void xuLyDanhSachLoiMoi(Phien phien,String[] p) {
+        var ds=s.loiMoi.danhSachLoiMoiCho(phien.nguoi.id,s.phong,s.nguoiDung);
+        java.util.List<String> tra=new java.util.ArrayList<>();
+        tra.add(Integer.toString(ds.size()));
+        for (var lm:ds) {
+            tra.add(lm.inviteId()); tra.add(lm.roomId()); tra.add(lm.tenPhong());
+            tra.add(lm.nguoiMoiId()); tra.add(lm.tenNguoiMoi()); tra.add(Long.toString(lm.thoiGianTao()));
+        }
+        s.traLoi(phien.diaChi,p[1],true,tra.toArray(String[]::new));
+    }
+    private void xuLyHuyLoiMoi(Phien phien,String[] p) throws IOException {
+        duTruong(p,4);
+        s.loiMoi.huyLoiMoi(phien,p[3],s.phong);
+        s.traLoi(phien.diaChi,p[1],true,"Đã hủy lời mời.");
     }
     // Kiem tra so truong truoc khi truy cap mang.
     private static void duTruong(String[] g,int n) { if (g.length!=n) { throw new IllegalArgumentException("Gói phòng không hợp lệ."); } }

@@ -37,10 +37,15 @@ final class KhungChatPanel extends JPanel {
     private int viTriTim=-1;
     private final JPanel thanhTim=taoThanhTim();
 
+    private java.util.function.BiFunction<String,String,String> traBietDanh=(r,u) -> "";
+    void datBietDanh(java.util.function.BiFunction<String,String,String> tra) { this.traBietDanh=tra; }
     void datHoSo(java.util.function.Function<String,java.awt.image.BufferedImage> anh,java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo) { this.anh=anh; this.hoSo=hoSo; }
     void datHanhDong(java.util.function.BooleanSupplier quanLy,java.util.function.BiConsumer<String,TinNhan> hanhDong) { this.quanLy=quanLy; this.hanhDong=hanhDong; }
     void hoSoMoi(com.mycompany.udpmultichat.common.model.NguoiDung n) {
         for (var c:ds.getComponents()) { if (c instanceof HangTin h && h.tin().userId.equals(n.id)) { h.veLai(); } }
+    }
+    void veLaiTatCa() {
+        for (var c:ds.getComponents()) { if (c instanceof HangTin h) { h.veLai(); } }
     }
 
     KhungChatPanel(Phong phong) {
@@ -77,6 +82,8 @@ final class KhungChatPanel extends JPanel {
 
     private HangTin taoHang(TinNhan t,boolean toi) {
         return new HangTin(t,toi,() -> anh.apply(t.userId),() -> {
+            String bd=traBietDanh.apply(phong.id,t.userId);
+            if (bd!=null && !bd.isBlank()) { return bd; }
             var n=hoSo.apply(t.userId); return n==null?t.ten:n.tenHienThi;
         },quanLy,lenh -> {
             if (lenh.startsWith("Cuộn:")) {
