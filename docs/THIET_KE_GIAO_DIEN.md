@@ -13,6 +13,11 @@ Toàn bộ các thành phần giao diện của ứng dụng sử dụng chung m
 | Loại Token | Tên hằng số | Mã Hex / RGB | Mô tả & Ứng dụng |
 |---|---|---|---|
 | **Màu chủ đạo (Primary)** | `CHINH` | `#4F6BED` | Màu thương hiệu chính, nút Gửi, nút Tạo phòng, viền ô nhập khi focus |
+| **Gradient Bắt đầu (Indigo)** | `GRADIENT_START` | `#4F6BED` | Điểm bắt đầu dải chuyển sắc cho nút chính, thẻ gradient, chỉ báo phòng |
+| **Gradient Kết thúc (Blue)** | `GRADIENT_END` | `#2563EB` | Điểm kết thúc dải chuyển sắc hiện đại |
+| **Gradient Hover** | `GRADIENT_HOVER_START/END` | `#5B75F0` / `#1D4ED8` | Trạng thái rê chuột trên nút gradient |
+| **Gradient Active** | `GRADIENT_ACTIVE_START/END` | `#3F5BDD` / `#1E40AF` | Trạng thái nhấn chuột trên nút gradient |
+| **Gradient Cảnh báo/Tin mới** | `GRADIENT_DO_START/END` | `#EF4444` / `#DC2626` | Pill badge unread gradient nổi bật, chỉ báo tin nhắn mới |
 | **Chữ chính** | `CHU` | `#202635` | Nội dung văn bản chính, tên phòng, tiêu đề |
 | **Chữ phụ** | `PHU` | `#596273` | Thời gian, vai trò, mô tả phòng, placeholder |
 | **Nền ứng dụng** | `NEN` | `#F5F6FA` | Nền tổng thể, sidebar phòng, panel đăng nhập |

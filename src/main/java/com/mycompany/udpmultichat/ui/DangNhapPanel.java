@@ -26,7 +26,7 @@ final class DangNhapPanel extends JPanel {
     private final JPanel form=new JPanel(),hangLai=new JPanel(new BorderLayout(0,4)),server=new JPanel(new BorderLayout(0,4));
     private final JButton gui=Theme.nut("Đăng nhập",true),caiDat=Theme.nut("Cài đặt máy chủ",false),thu=Theme.nut("Kiểm tra kết nối",false);
     private final JLabel cho=Theme.nhan("Đang kết nối…",false);
-    private final JPanel the=Theme.the();
+    private final JPanel the=Theme.theGradient();
     private int goc;
     private final javax.swing.Timer vongQuay=new javax.swing.Timer(80,e -> { goc=(goc+30)%360; cho.repaint(); });
     private final Consumer<ThongTin> khiGui;

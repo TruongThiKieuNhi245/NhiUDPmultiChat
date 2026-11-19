@@ -65,9 +65,21 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
         JButton xoa=Theme.nut("Xóa log",false); xoa.addActionListener(e -> log.setText(""));
         nut.add(copy); nut.add(batDau); nut.add(dung); nut.add(xoa); dung.setEnabled(false); copy.setEnabled(false); thanh.add(nut,BorderLayout.EAST);
         JPanel duoi=new JPanel(new BorderLayout(Theme.S8,0)); duoi.add(trangThai,BorderLayout.CENTER);
-        JPanel bao=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); JButton xuat=Theme.nut("Xuất báo cáo",true),folder=Theme.nut("Mở thư mục",false),html=Theme.nut("Mở HTML",false); bao.add(xuat); bao.add(folder); bao.add(html); duoi.add(bao,BorderLayout.EAST); thanh.add(duoi,BorderLayout.SOUTH);
+        JPanel bao=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); JButton xuat=Theme.nut("Xuất báo cáo",true),folder=Theme.nut("Mở thư mục",false),html=Theme.nut("Mở HTML",false);
+        folder.setEnabled(false); html.setEnabled(false);
+        bao.add(xuat); bao.add(folder); bao.add(html); duoi.add(bao,BorderLayout.EAST); thanh.add(duoi,BorderLayout.SOUTH);
         xuat.addActionListener(e -> { xuat.setEnabled(false); viecNen.execute(() -> {
-            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); } else { baoCao=p; trangThai.setText("Đã xuất báo cáo: "+tenNgan(p)); trangThai.setToolTipText(p.toAbsolutePath().toString()); onLog("Đã xuất báo cáo: "+tenNgan(p)); toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất báo cáo.","Mở thư mục",() -> moBaoCao(false)); } })); }
+            try { server.xuatBaoCao().whenComplete((p,loi) -> SwingUtilities.invokeLater(() -> {
+                xuat.setEnabled(true);
+                if (loi!=null) { onLog("Lỗi xuất báo cáo: "+loi.getMessage()); }
+                else {
+                    baoCao=p; folder.setEnabled(true); html.setEnabled(true);
+                    folder.setToolTipText(p.toAbsolutePath().toString());
+                    html.setToolTipText(p.resolve("tong_hop.html").toAbsolutePath().toString());
+                    onLog("Đã xuất báo cáo: "+tenNgan(p));
+                    toast.hien(com.mycompany.udpmultichat.ui.components.ThongBao.Muc.THANH_CONG,"Đã xuất: "+tenNgan(p),"Mở",() -> moBaoCao(false));
+                }
+            })); }
             catch (java.io.IOException loi) { SwingUtilities.invokeLater(() -> { xuat.setEnabled(true); onLog("Lỗi: "+loi.getMessage()); }); }
         }); });
         folder.addActionListener(e -> moBaoCao(false)); html.addActionListener(e -> moBaoCao(true)); return thanh;
@@ -76,13 +88,17 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
     private void moBaoCao(boolean html) { if (baoCao!=null) { viecNen.execute(() -> { try { java.awt.Desktop.getDesktop().open((html?baoCao.resolve("tong_hop.html"):baoCao).toFile()); } catch (java.io.IOException e) { onLog("Lỗi mở báo cáo."); } }); } }
     // Chi hien ten thu muc cuoi, khong hien duong dan day du tren UI.
     private static String tenNgan(Path p) { return p==null?"":p.getFileName().toString(); }
-    // Sau the co cung kich thuoc va trinh bay so ro rang.
+    // Sau the co dai gradient diem nhan mep tren va chu so noi bat.
     private JPanel theThongKe() {
-        JPanel hang=new JPanel(new GridLayout(2,3,Theme.S12,0));
+        JPanel hang=new JPanel(new GridLayout(2,3,Theme.S12,Theme.S12));
+        hang.setOpaque(false);
         String[] ten={"Tài khoản","Đang online","Phòng","Tin nhắn","Phiên đang hoạt động","Tệp đang truyền"};
         for (int i=0;i<ten.length;i++) {
-            JPanel the=new JPanel(new BorderLayout(0,Theme.S8)); the.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(Theme.VIEN),Theme.le(Theme.S16)));
-            the.add(Theme.nhan(ten[i],false),BorderLayout.NORTH); soLieu[i].setFont(Theme.DAM.deriveFont(26f)); the.add(soLieu[i]); hang.add(the);
+            JPanel the=Theme.theGradient(); the.setLayout(new BorderLayout(0,Theme.S8)); the.setBorder(Theme.le(Theme.S16));
+            JLabel lbl=Theme.nhan(ten[i],false); lbl.setForeground(Theme.PHU);
+            the.add(lbl,BorderLayout.NORTH);
+            soLieu[i].setFont(Theme.DAM.deriveFont(26f)); soLieu[i].setForeground(Theme.CHINH);
+            the.add(soLieu[i],BorderLayout.CENTER); hang.add(the);
         }
         return hang;
     }
@@ -102,7 +118,13 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
             catch (Exception e) { onLog("Lỗi: Không khởi động được: "+e.getMessage()); }
             SwingUtilities.invokeLater(() -> {
                 batDau.setEnabled(!server.dangChay()); dung.setEnabled(server.dangChay());
-                trangThai.setText(server.dangChay()?"Đang chạy · UDP "+Protocol.CONG_SERVER:"Đã dừng");
+                if (server.dangChay()) {
+                    trangThai.setText("● ĐANG CHẠY · UDP "+Protocol.CONG_SERVER);
+                    trangThai.setForeground(Theme.THANH_CONG);
+                } else {
+                    trangThai.setText("● ĐÃ DỪNG");
+                    trangThai.setForeground(Theme.PHU);
+                }
             });
         });
     }

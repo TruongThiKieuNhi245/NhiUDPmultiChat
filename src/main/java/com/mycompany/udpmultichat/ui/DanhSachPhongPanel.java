@@ -135,9 +135,21 @@ final class DanhSachPhongPanel extends JPanel {
         t.setAlignmentX(LEFT_ALIGNMENT); t.setMaximumSize(new Dimension(Integer.MAX_VALUE,36)); ds.add(t);
         for (Phong p:phong) { ds.add(hang(p,thamGia)); }
     }
-    // Dong phong hai hang, nut tham gia hoac menu la nut Swing that.
+    // Dong phong hai hang co dai gradient bao hieu phong dang chon.
     private JPanel hang(Phong p,boolean thamGia) {
-        JPanel h=new JPanel(new BorderLayout(Theme.S4,0)); h.setBorder(Theme.le(Theme.S8)); h.setName("phong-"+p.id);
+        JPanel h=new JPanel(new BorderLayout(Theme.S4,0)) {
+            @Override protected void paintComponent(java.awt.Graphics g) {
+                super.paintComponent(g);
+                if (p.id.equals(dangChon)) {
+                    java.awt.Graphics2D g2=(java.awt.Graphics2D)g.create();
+                    g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setPaint(new java.awt.GradientPaint(0,0,Theme.GRADIENT_START,0,getHeight(),Theme.GRADIENT_END));
+                    g2.fillRoundRect(2,10,4,getHeight()-20,4,4);
+                    g2.dispose();
+                }
+            }
+        };
+        h.setBorder(Theme.le(Theme.S8)); h.setName("phong-"+p.id);
         h.setAlignmentX(LEFT_ALIGNMENT); h.setMaximumSize(new Dimension(Integer.MAX_VALUE,76)); h.setPreferredSize(new Dimension(250,76));
         h.setBackground(p.id.equals(dangChon)?Theme.CHON:Theme.NEN); cacHang.put(p.id,h);
         TinNhan tin=tinCuoi.get(p.id); JPanel text=new JPanel(new GridLayout(2,1,0,Theme.S4)); text.setOpaque(false);
@@ -150,7 +162,7 @@ final class DanhSachPhongPanel extends JPanel {
         ganClick(h,() -> { if (choPhep) { vao.accept(p); } }); h.setComponentPopupMenu(menu(p));
         if (h.getClientProperty("menuPhong") instanceof JButton b) { ganHover(h,h,b,p.id); } return h;
     }
-    // Badge chi o thanh ben; phong chua tham gia co nut rieng.
+    // Badge gradient bao tin chua doc; phong chua tham gia co nut rieng.
     private JPanel nutPhong(Phong p,boolean thamGia) {
         JPanel ben=new JPanel(new BorderLayout()); ben.setOpaque(false);
         if (!thamGia) {
@@ -160,7 +172,22 @@ final class DanhSachPhongPanel extends JPanel {
         }
         JButton menu=Theme.nutNhe("","more"); menu.setEnabled(choPhep); menu.setVisible(p.id.equals(dangChon));
         menu.addActionListener(e -> menu(p).show(menu,0,menu.getHeight())); ben.add(menu,BorderLayout.NORTH);
-        int so=chuaDoc.apply(p.id); JLabel badge=Theme.nhan(so>0?String.valueOf(so):"",true); badge.setName("badge-"+p.id); badge.setForeground(Theme.CHINH); ben.add(badge,BorderLayout.SOUTH);
+        int so=chuaDoc.apply(p.id);
+        JLabel badge=new JLabel(so>0?String.valueOf(so):"") {
+            @Override protected void paintComponent(java.awt.Graphics g) {
+                if (!getText().isEmpty()) {
+                    java.awt.Graphics2D g2=(java.awt.Graphics2D)g.create();
+                    g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setPaint(new java.awt.GradientPaint(0,0,Theme.GRADIENT_DO_START,getWidth(),getHeight(),Theme.GRADIENT_DO_END));
+                    g2.fillRoundRect(0,0,getWidth(),getHeight(),getHeight(),getHeight());
+                    g2.dispose();
+                }
+                super.paintComponent(g);
+            }
+        };
+        badge.setName("badge-"+p.id); badge.setFont(Theme.NHO.deriveFont(java.awt.Font.BOLD,11f));
+        badge.setForeground(Theme.THE); badge.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        badge.setBorder(new javax.swing.border.EmptyBorder(2,6,2,6)); ben.add(badge,BorderLayout.SOUTH);
         JPanel hang=cacHang.get(p.id); hang.putClientProperty("menuPhong",menu); hang.putClientProperty("badge",badge);
         return ben;
     }

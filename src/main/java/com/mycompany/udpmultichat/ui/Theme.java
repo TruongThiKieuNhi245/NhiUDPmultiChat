@@ -23,6 +23,11 @@ public final class Theme {
     public static final Color NEN_XANH=new Color(0xEDF8F0),NEN_DO=new Color(0xFFF0F1),NEN_VANG=new Color(0xFFF6DC),NEN_TIN=new Color(0xEDF4FF);
     public static final Color OFFLINE=new Color(0x777F8D),AVATAR=new Color(0x4261B9);
     public static final Color NEN_KHOA=new Color(0xECEEF2);
+    public static final Color GRADIENT_START=new Color(0x4F,0x6B,0xED),GRADIENT_END=new Color(0x25,0x63,0xEB);
+    public static final Color GRADIENT_HOVER_START=new Color(0x43,0x58,0xD0),GRADIENT_HOVER_END=new Color(0x1D,0x4E,0xD8);
+    public static final Color GRADIENT_ACTIVE_START=new Color(0x38,0x48,0xB0),GRADIENT_ACTIVE_END=new Color(0x1A,0x3F,0xB0);
+    public static final Color GRADIENT_DO_START=new Color(0xEF,0x44,0x44),GRADIENT_DO_END=new Color(0xDC,0x26,0x26);
+    public static final Color VIEN_CHON=new Color(0xC7,0xD2,0xFE);
     public static final Font FONT=new Font("Segoe UI",Font.PLAIN,14),DAM=FONT.deriveFont(Font.BOLD),NHO=FONT.deriveFont(12f);
     public static final Font DON_CACH=new Font(tenFontLog(),Font.PLAIN,13);
     public static final int NUT_GUI=36,TOAST_CAO=48,TOAST_RONG=360,O_NHAP_CAO=32;
@@ -52,21 +57,60 @@ public final class Theme {
         UIManager.put("List.selectionBackground",CHON); UIManager.put("List.selectionForeground",CHU);
         UIManager.put("ScrollBar.width",10); UIManager.put("TabbedPane.tabSelectionHeight",2);
     }
-    // Nut.
+    // Nut bam: nut chinh co gradient chuyen sac hien dai, nut phu co vien nhe.
     public static JButton nut(String ten,boolean chinh) {
-        JButton b=new JButton(ten); b.setFont(DAM);
-        if (chinh) { b.setBackground(CHINH); b.setForeground(THE); }
+        if (!chinh) {
+            JButton b=new JButton(ten); b.setFont(DAM); return b;
+        }
+        @SuppressWarnings("serial")
+        JButton b=new JButton(ten) {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2=(Graphics2D)g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                int w=getWidth(),h=getHeight();
+                boolean nhan=getModel().isPressed(),hover=getModel().isRollover();
+                Color c1=nhan?GRADIENT_ACTIVE_START:hover?GRADIENT_HOVER_START:GRADIENT_START;
+                Color c2=nhan?GRADIENT_ACTIVE_END:hover?GRADIENT_HOVER_END:GRADIENT_END;
+                if (!isEnabled()) { c1=new Color(0xC7,0xCE,0xDC); c2=new Color(0xAE,0xB6,0xC8); }
+                g2.setPaint(new java.awt.GradientPaint(0,0,c1,w,h,c2));
+                g2.fillRoundRect(0,0,w,h,BO*2,BO*2);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        b.setFont(DAM); b.setContentAreaFilled(false); b.setBorderPainted(false);
+        b.setFocusPainted(false); b.setForeground(THE);
+        b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         return b;
     }
     // Nut nhe chi hien nen khi hover, dung cho toolbar va icon.
     public static JButton nutNhe(String ten,String icon) {
-        JButton b=nut(ten,false); b.putClientProperty("JButton.buttonType","toolBarButton");
+        JButton b=new JButton(ten); b.setFont(DAM); b.putClientProperty("JButton.buttonType","toolBarButton");
         if (!icon.isEmpty()) { b.setIcon(Theme.icon(icon)); } return b;
     }
-    // Nut gui vuong kich thuoc co dinh, LAF bo tron thanh hinh tron.
+    // Nut gui hinh tron voi gradient hien dai va icon trang.
+    @SuppressWarnings("serial")
     public static JButton nutGui() {
-        JButton b=nut("",true); b.setIcon(icon("send")); b.setToolTipText("Gửi tin nhắn");
-        b.putClientProperty("JButton.buttonType","roundRect"); b.setPreferredSize(new java.awt.Dimension(NUT_GUI,NUT_GUI)); return b;
+        JButton b=new JButton() {
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2=(Graphics2D)g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                int w=getWidth(),h=getHeight();
+                boolean nhan=getModel().isPressed(),hover=getModel().isRollover();
+                Color c1=nhan?GRADIENT_ACTIVE_START:hover?GRADIENT_HOVER_START:GRADIENT_START;
+                Color c2=nhan?GRADIENT_ACTIVE_END:hover?GRADIENT_HOVER_END:GRADIENT_END;
+                if (!isEnabled()) { c1=new Color(0xC7,0xCE,0xDC); c2=new Color(0xAE,0xB6,0xC8); }
+                g2.setPaint(new java.awt.GradientPaint(0,0,c1,w,h,c2));
+                g2.fillOval(0,0,w,h);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        b.setIcon(icon("send")); b.setToolTipText("Gửi tin nhắn");
+        b.setContentAreaFilled(false); b.setBorderPainted(false); b.setFocusPainted(false);
+        b.setForeground(THE); b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        b.setPreferredSize(new java.awt.Dimension(NUT_GUI,NUT_GUI));
+        return b;
     }
     // Loi form chi chiem cho khi co noi dung.
     public static void datLoi(JLabel l,String text) {
@@ -104,6 +148,13 @@ public final class Theme {
         Graphics2D g2=(Graphics2D)g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setColor(mau); g2.fillRoundRect(0,0,w,h,bo*2,bo*2); g2.dispose();
+    }
+    // Bo tron gradient chuyen sac.
+    public static void boTronGradient(Graphics g,int w,int h,Color c1,Color c2,int bo) {
+        Graphics2D g2=(Graphics2D)g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setPaint(new java.awt.GradientPaint(0,0,c1,w,h,c2));
+        g2.fillRoundRect(0,0,w,h,bo*2,bo*2); g2.dispose();
     }
     // Icon ve bang Java2D de khong thanh o vuong khi font Windows thieu glyph.
     public static javax.swing.Icon icon(String loai) {
@@ -163,6 +214,22 @@ public final class Theme {
             { setOpaque(false); }
             // Ve thanh phan bang token chung cua Theme.
             @Override protected void paintComponent(Graphics g) { boTron(g,getWidth(),getHeight(),THE,BO); }
+        };
+    }
+    // The hien dai voi dai mau gradient diem nhan o mep tren.
+    @SuppressWarnings("serial")
+    public static JPanel theGradient() {
+        return new JPanel() {
+            { setOpaque(false); }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2=(Graphics2D)g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(THE); g2.fillRoundRect(0,0,getWidth(),getHeight(),BO*2,BO*2);
+                g2.setPaint(new java.awt.GradientPaint(0,0,GRADIENT_START,getWidth(),0,GRADIENT_END));
+                g2.fillRoundRect(0,0,getWidth(),3,BO*2,BO*2);
+                g2.setColor(VIEN); g2.drawRoundRect(0,0,getWidth()-1,getHeight()-1,BO*2,BO*2);
+                g2.dispose();
+            }
         };
     }
     // Icon ung dung ve trong code, khong can tep anh hoac thu vien moi.

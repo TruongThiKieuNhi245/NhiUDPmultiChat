@@ -1,6 +1,11 @@
 # Bản bàn giao và rà soát workspace cho Agent
 
-**Tiếp quản 18/11/2026:** phần M5 hiện đã được sửa tiếp. Xem [BAO_CAO_RA_SOAT.md](BAO_CAO_RA_SOAT.md) cho source/test/giới hạn mới, giữ các số ngày17/11 bên dưới làm baseline lịch sử. Full SelfTest75 PASS/0 FAIL; AdminSelfTest riêng16 PASS/0 FAIL; UiPreview60 PNG. Đã có bản sửa avatar và ca SACK cũ lặp chứng minh FAIL trước/PASS sau. Chưa commit “M5 xong”: đang chờ duyệt ảnh/thao tác theo mục5 của prompt; chưa làm M6/M3c/M7. Không bỏ log FAIL trong `.selftest/`.
+**Tiếp quản 18/11/2026 - 19/11/2026:**
+- **M5 & Báo cáo Quản trị:** Hoàn tất 100%, SelfTest 75 PASS / 0 FAIL, AdminSelfTest 16 PASS / 0 FAIL, UiPreview 10/10 PASS (60 ảnh PNG).
+- **Chuẩn hóa Báo cáo:** Loại bỏ hoàn toàn nhãn địa điểm/timezone lạ (như `[Asia/Bangkok]`), định dạng thời điểm xuất theo chuẩn `dd/MM/yyyy HH:mm:ss`. Sửa nhãn "Thời điểm xuất báo cáo" (không dùng chữ "chụp dữ liệu"). Bỏ tiêu đề trang in bị lặp 2 lần ở đầu file PDF (`header = null` trong `BaoCaoPreviewDialog`). Bố cục báo cáo executive layout chuyên nghiệp, KPI cards, table CSS gradient header xanh tím, hỗ trợ in ấn `@media print`.
+- **Linh hoạt Xuất Báo cáo:** Hỗ trợ xuất / xem trước riêng cho từng tab Người dùng, Phòng, Nhật ký (`xuatBangDon`) và cho phép chọn linh hoạt 2 trong 3 nhóm hoặc toàn bộ trong tab Báo cáo (`BaoCaoPanel` & `XuatBaoCao.htmlTuyChon`).
+- **Nâng cấp Giao diện Gradient & Tiện ích:** Tích hợp bộ design tokens gradient (`GRADIENT_START = #4F6BED`, `GRADIENT_END = #2563EB`, hover/active variants, `GRADIENT_DO_START / END` cho badge cảnh báo), thẻ hiện đại `Theme.theGradient()`, nút bấm gradient chuyển sắc, nút tròn gửi tin gradient. Cải tiến `ServerMain` chống tràn layout khi hiển thị đường dẫn, giữ vững nhãn trạng thái máy chủ `● ĐANG CHẠY` / `● ĐÃ DỪNG`. Nâng cấp biểu đồ và thẻ thống kê trong `TongQuanPanel`.
+- **Thanh thao tác tin nhắn (Hover Quick Action Bar):** Đã tinh chỉnh trong `HangTin` ẩn mặc định, chỉ hiện thanh capsule bo tròn tinh tế khi hover với các icon nhẹ (Sao chép, Thu hồi, More), loại bỏ hoàn toàn các liên kết chữ thô cạnh bong bóng chat.
 
 Ngày rà soát: 17/11/2026. Hướng duy nhất: **desktop Java 21 + Swing/FlatLaf, UDP multicast trực tiếp, portable và hai máy LAN**. Không chuyển web. Prompt chuẩn: [PROMPT_NANG_CAP_VA_TRIEN_KHAI.md](PROMPT_NANG_CAP_VA_TRIEN_KHAI.md).
 

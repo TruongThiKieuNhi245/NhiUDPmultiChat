@@ -61,11 +61,11 @@ public final class BaoCaoPreviewDialog extends JDialog {
         setContentPane(goc);
     }
 
-    // In hoac luu PDF bang hop thoai in he dieu hanh.
+    // In hoac luu PDF bang hop thoai in he dieu hanh (khong header trung lap voi HTML).
     private void inAn() {
         try {
-            MessageFormat header=new MessageFormat("Báo cáo UDP Chat");
-            MessageFormat footer=new MessageFormat("Trang {0}");
+            MessageFormat header=null;
+            MessageFormat footer=new MessageFormat("- Trang {0} -");
             boolean ok=pane.print(header,footer,true,null,null,true);
             if (ok) {
                 JOptionPane.showMessageDialog(this,"Đã gửi lệnh in / xuất PDF thành công.","In báo cáo",JOptionPane.INFORMATION_MESSAGE);

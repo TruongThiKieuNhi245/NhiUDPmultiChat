@@ -20,26 +20,34 @@ final class TongQuanPanel extends JPanel {
     // Snapshot chi tinh tren Server, UI khong tu dem lai file hay user.
     void capNhat(AnhChupQuanTri a) {
         cards.removeAll();
-        for (var r:a.lay("STATS")) { JPanel p=Theme.the(); p.setLayout(new BorderLayout(0,Theme.S8)); p.setBorder(Theme.le(Theme.S12)); p.add(Theme.nhan(r.get(0),false),BorderLayout.NORTH); JLabel n=Theme.nhan(r.get(0).equals("Dung lượng tệp")?TepTin.dungLuong(Long.parseLong(r.get(1))):r.get(1),true); n.setFont(Theme.DAM.deriveFont(24f)); p.add(n); cards.add(p); }
+        for (var r:a.lay("STATS")) {
+            JPanel p=Theme.theGradient(); p.setLayout(new BorderLayout(0,Theme.S8)); p.setBorder(Theme.le(Theme.S12));
+            JLabel l=Theme.nhan(r.get(0),false); l.setForeground(Theme.PHU); p.add(l,BorderLayout.NORTH);
+            JLabel n=Theme.nhan(r.get(0).equals("Dung lượng tệp")?TepTin.dungLuong(Long.parseLong(r.get(1))):r.get(1),true);
+            n.setFont(Theme.DAM.deriveFont(24f)); n.setForeground(Theme.CHINH); p.add(n); cards.add(p);
+        }
         Map<String,Long> p=new LinkedHashMap<>(); a.lay("ROOMS").stream().sorted(Comparator.comparingLong((java.util.List<String> r) -> Long.parseLong(r.get(6))).reversed()).limit(8).forEach(r -> p.put(r.get(2)+" · "+r.get(1),Long.parseLong(r.get(6)))); phong.dat(p);
         Map<String,Long> ds=new LinkedHashMap<>(); LocalDate now=Instant.ofEpochMilli(a.luc()).atZone(ZoneId.systemDefault()).toLocalDate(); for (int i=6;i>=0;i--) { ds.put(now.minusDays(i).toString(),0L); }
         for (var r:a.lay("DAYS")) { if (ds.containsKey(r.get(0))) { ds.merge(r.get(0),Long.parseLong(r.get(2)),Long::sum); } } ngay.dat(ds); revalidate(); repaint();
     }
-    /** Bieu do don gian co nhan truc va gia tri; khong can thu vien ngoai. */
+    /** Bieu do don gian co nhan truc va gia tri; dung gradient token Theme. */
     private static final class Cot extends JPanel {
         private final String ten; private Map<String,Long> ds=Map.of();
-        // Kich thuoc toi thieu cho bay/tam cot, co gian theo cua so.
-        Cot(String ten) { this.ten=ten; setPreferredSize(new Dimension(430,280)); setBackground(Theme.THE); }
-        // Du lieu da tong hop, so luong nho co dinh.
+        Cot(String ten) { this.ten=ten; setPreferredSize(new Dimension(430,280)); setBackground(Theme.THE); setBorder(BorderFactory.createLineBorder(Theme.VIEN,1,true)); }
         void dat(Map<String,Long> d) { ds=new LinkedHashMap<>(d); repaint(); }
-        // Ve text va hinh chu nhat bang mau/font trong Theme.
         @Override protected void paintComponent(Graphics g) {
-            super.paintComponent(g); Graphics2D d=(Graphics2D)g.create(); d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON); d.setFont(Theme.DAM); d.setColor(Theme.CHU); d.drawString(ten,16,24);
-            long max=Math.max(1,ds.values().stream().mapToLong(Long::longValue).max().orElse(1)); int step=(getWidth()-32)/Math.max(1,ds.size()),i=0,base=getHeight()-48,h=Math.max(40,getHeight()-100);
+            super.paintComponent(g); Graphics2D d=(Graphics2D)g.create(); d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+            d.setFont(Theme.DAM); d.setColor(Theme.CHU); d.drawString(ten,16,24);
+            long max=Math.max(1,ds.values().stream().mapToLong(Long::longValue).max().orElse(1));
+            int step=(getWidth()-32)/Math.max(1,ds.size()),i=0,base=getHeight()-48,h=Math.max(40,getHeight()-100);
             d.setFont(Theme.NHO);
             for (var e:ds.entrySet()) {
-                int x=16+i++*step,cao=(int)(h*e.getValue()/max); d.setColor(Theme.CHINH); d.fillRoundRect(x,base-cao,Math.max(10,step-12),cao,4,4);
-                d.setColor(Theme.CHU); d.drawString(""+e.getValue(),x,base-cao-6); String n=e.getKey(); while (n.length()>1 && d.getFontMetrics().stringWidth(n)>step-4) { n=n.substring(0,n.length()-1); } d.drawString(n,x,base+20);
+                int x=16+i++*step,cao=(int)(h*e.getValue()/max),cotW=Math.max(10,step-12);
+                d.setPaint(new java.awt.GradientPaint(x,base-cao,Theme.GRADIENT_START,x,base,Theme.GRADIENT_END));
+                d.fillRoundRect(x,base-cao,cotW,cao,6,6);
+                d.setColor(Theme.CHU); d.drawString(""+e.getValue(),x+Math.max(0,(cotW-d.getFontMetrics().stringWidth(""+e.getValue()))/2),base-cao-6);
+                String n=e.getKey(); while (n.length()>1 && d.getFontMetrics().stringWidth(n)>step-4) { n=n.substring(0,n.length()-1); }
+                d.setColor(Theme.PHU); d.drawString(n,x,base+20);
             } d.dispose();
         }
     }

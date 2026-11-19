@@ -64,9 +64,9 @@ final class BaoCaoPanel extends JPanel {
     }
 
     private JPanel taoTheNhom() {
-        JPanel the = Theme.the();
+        JPanel the = Theme.theGradient();
         the.setLayout(new BorderLayout(0, Theme.S8));
-        the.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Theme.VIEN), Theme.le(Theme.S16)));
+        the.setBorder(Theme.le(Theme.S16));
         the.add(Theme.nhan("1. Chọn nhóm dữ liệu", true), BorderLayout.NORTH);
         JPanel ds = new JPanel(new GridLayout(4, 1, 0, Theme.S8));
         ds.setOpaque(false);
@@ -90,9 +90,9 @@ final class BaoCaoPanel extends JPanel {
     }
 
     private JPanel taoTheDinhDang() {
-        JPanel the = Theme.the();
+        JPanel the = Theme.theGradient();
         the.setLayout(new BorderLayout(0, Theme.S8));
-        the.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(Theme.VIEN), Theme.le(Theme.S16)));
+        the.setBorder(Theme.le(Theme.S16));
         the.add(Theme.nhan("2. Định dạng & Kết quả", true), BorderLayout.NORTH);
         JPanel ds = new JPanel(new GridLayout(2, 1, 0, Theme.S8));
         ds.setOpaque(false);
