@@ -220,6 +220,7 @@ final class DanhSachPhongPanel extends JPanel {
     JPopupMenu menu(Phong p) {
         JPopupMenu m=new JPopupMenu(); them(m,"Thông tin phòng","thongtin",p);
         JMenuItem copy=new JMenuItem("Sao chép mã phòng"); copy.addActionListener(e -> saoChep(p.maPhong)); m.add(copy);
+        them(m,"Tìm kiếm (Ctrl+F)","tim",p); them(m,"Xuất lịch sử chat (.txt)","xuat_lichsu",p);
         if (Protocol.SANH_ID.equals(p.id)) { return m; }
         if (quanLy(p)) {
             m.addSeparator(); them(m,"Sửa phòng","sua",p); them(m,p.dangMo?"Đóng phòng":"Mở phòng","trangthai",p);

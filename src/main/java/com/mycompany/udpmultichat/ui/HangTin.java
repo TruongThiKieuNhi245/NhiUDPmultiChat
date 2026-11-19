@@ -20,11 +20,13 @@ final class HangTin extends JPanel {
     private final Consumer<String> hanhDong;
     private final BooleanSupplier quanLy;
     private String trangThai="",lyDo="";
-    private boolean hienDaGui=true;
+    private boolean hienDaGui=true, gop=false;
     private com.mycompany.udpmultichat.common.TepTienDo tepTienDo;
     private Supplier<BufferedImage> anhTep=() -> null;
     // Tien do va thumbnail chi la snapshot, khong truy cap dia/mang.
     void datTep(com.mycompany.udpmultichat.common.TepTienDo td,Supplier<BufferedImage> anh) { tepTienDo=td; anhTep=anh; veLai(); }
+    void datGop(boolean gop) { if (this.gop!=gop) { this.gop=gop; veLai(); } }
+    boolean laGop() { return gop; }
     private final JPanel the=new JPanel(new BorderLayout(0,Theme.S4));
     private final JPanel barHanhDong=taoBarHanhDong();
 
@@ -60,8 +62,16 @@ final class HangTin extends JPanel {
     // Ve lai giu JPanel ngoai de khong doi vi tri trong khung chat.
     void veLai() {
         removeAll(); the.removeAll();
+        ((FlowLayout)getLayout()).setVgap(gop ? 2 : Theme.S8);
         if (!toi) {
-            JPanel tren=new JPanel(new BorderLayout()); tren.setOpaque(false); tren.add(new ThanhPhan.Avatar(ten.get(),null,anh),BorderLayout.NORTH); add(tren);
+            JPanel tren=new JPanel(new BorderLayout()); tren.setOpaque(false);
+            if (gop) {
+                JPanel cach=new JPanel(); cach.setOpaque(false); cach.setPreferredSize(new Dimension(32,1));
+                tren.add(cach,BorderLayout.NORTH);
+            } else {
+                tren.add(new ThanhPhan.Avatar(ten.get(),null,anh),BorderLayout.NORTH);
+            }
+            add(tren);
         }
         JComponent nd=noiDung(); the.add(nd);
         JPanel duoi=new JPanel(new BorderLayout(Theme.S8,0)); duoi.setOpaque(false);
@@ -70,14 +80,17 @@ final class HangTin extends JPanel {
         the.add(duoi,BorderLayout.SOUTH);
         napBarHanhDong();
         if (toi) { add(barHanhDong); add(the); } else { add(the); add(barHanhDong); }
-        if (!toi && getComponentCount()>2) { getComponent(0).setPreferredSize(new Dimension(40,the.getPreferredSize().height)); }
+        if (!toi && getComponentCount()>2) { getComponent(0).setPreferredSize(new Dimension(32,the.getPreferredSize().height)); }
         ganMenu(this); ganHover(this);
         revalidate(); repaint();
     }
-    // Nap cac nut vao thanh hover: sao chep, thu hoi va menu tuy chon.
+    // Nap cac nut vao thanh hover: tra loi, sao chep, thu hoi va menu tuy chon.
     private void napBarHanhDong() {
         barHanhDong.removeAll(); barHanhDong.setVisible(false);
         if (tin.thuHoi || tin.loai.equals("Y")) { barHanhDong.putClientProperty("co",false); return; }
+        JButton rep=Theme.nutNhe("","reply"); rep.setToolTipText("Trả lời");
+        rep.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        rep.addActionListener(e -> hanhDong.accept("Trả lời")); barHanhDong.add(rep);
         if (!tin.loai.equals("F") && !tin.loai.equals("S")) {
             JButton cp=Theme.nutNhe("","copy"); cp.setToolTipText("Sao chép");
             cp.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -131,7 +144,29 @@ final class HangTin extends JPanel {
             if (StickerKho.anh(tin.noiDung)!=null) { h.setText(""); h.setIcon(StickerKho.icon(tin.noiDung,112)); }
             h.setToolTipText(StickerKho.ten(tin.noiDung)); p.add(h); return p;
         }
-        return new ThanhPhan.BongTin(ten.get(),tin.noiDung,"",toi);
+        var trichDan=TrichDanUtil.phanTich(tin.noiDung);
+        String ndThat=TrichDanUtil.layNoiDungThat(tin.noiDung), tenHien=gop?"":ten.get();
+        if (trichDan!=null) {
+            JPanel boc=new JPanel(new BorderLayout(0,4)); boc.setOpaque(false);
+            JPanel quote=new JPanel(new BorderLayout(Theme.S4,0)) {
+                @Override protected void paintComponent(Graphics g) {
+                    Theme.boTron(g,getWidth(),getHeight(),new Color(0,0,0,16),4); super.paintComponent(g);
+                }
+            };
+            quote.setOpaque(false);
+            quote.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0,3,0,0,Theme.CHINH),Theme.le(Theme.S4)));
+            quote.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            quote.setToolTipText("Bấm để chuyển đến tin nhắn gốc");
+            JLabel qTen=Theme.nhan(trichDan.ten(),true); qTen.setFont(Theme.NHO.deriveFont(Font.BOLD)); qTen.setForeground(Theme.CHINH);
+            JLabel qNd=Theme.nhan(trichDan.noiDung(),false); qNd.setFont(Theme.NHO.deriveFont(Font.ITALIC)); qNd.setForeground(Theme.PHU);
+            quote.add(qTen,BorderLayout.NORTH); quote.add(qNd,BorderLayout.CENTER);
+            quote.addMouseListener(new java.awt.event.MouseAdapter() { public void mouseClicked(java.awt.event.MouseEvent e) { hanhDong.accept("Cuộn:"+trichDan.msgId()); } });
+            boc.add(quote,BorderLayout.NORTH);
+            boc.add(new ThanhPhan.BongTin(tenHien,ndThat,"",toi),BorderLayout.CENTER);
+            return boc;
+        }
+        return new ThanhPhan.BongTin(tenHien,tin.noiDung,"",toi);
     }
     // Loi co Gui lai/Xoa; nut khong lam doi ma tin.
     private JPanel trangThaiGui() {
@@ -156,7 +191,10 @@ final class HangTin extends JPanel {
     JPopupMenu menu() {
         JPopupMenu m=new JPopupMenu(); m.setBorder(javax.swing.BorderFactory.createCompoundBorder(m.getBorder(),Theme.le(Theme.S4)));
         if (!tin.thuHoi) {
-            JMenuItem copy=new JMenuItem("Sao chép"); copy.addActionListener(e -> DanhSachPhongPanel.saoChep(tin.loai.equals("S")?StickerKho.ten(tin.noiDung):tin.noiDung)); m.add(copy);
+            JMenuItem rep=new JMenuItem("Trả lời"); rep.addActionListener(e -> hanhDong.accept("Trả lời")); m.add(rep);
+            JMenuItem copy=new JMenuItem("Sao chép");
+            copy.addActionListener(e -> DanhSachPhongPanel.saoChep(tin.loai.equals("S")?StickerKho.ten(tin.noiDung):TrichDanUtil.layNoiDungThat(tin.noiDung)));
+            m.add(copy);
             if (tin.msgId>0 && (quanLy.getAsBoolean() || (toi && System.currentTimeMillis()-tin.thoiGian<=Protocol.THU_HOI_MS))) {
                 m.addSeparator(); JMenuItem thu=new JMenuItem("Thu hồi"); thu.setForeground(Theme.LOI); thu.addActionListener(e -> hanhDong.accept("Thu hồi")); m.add(thu);
             }

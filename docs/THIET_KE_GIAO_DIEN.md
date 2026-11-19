@@ -63,6 +63,31 @@ Toàn bộ biểu tượng trong ứng dụng được vẽ trực tiếp bằng
 - `smile`: Biểu tượng mặt cười — chọn Emoji & Sticker.
 - `plus`: Biểu tượng dấu cộng `+` — đính kèm tệp tin.
 - `send`: Biểu tượng mũi tên gửi tin.
+- `reply`: Biểu tượng mũi tên cong sang trái — trả lời/trích dẫn tin nhắn.
+
+---
+
+## 1.5. Trải nghiệm Chat nâng cao (M3c.1)
+
+1. **Gộp tin nhắn liên tiếp (Message Grouping):**
+   - Khi cùng một người gửi nhiều tin nhắn liên tiếp trong khoảng thời gian $\le 5$ phút:
+     - Tin đầu tiên hiển thị đầy đủ Avatar, Tên người gửi, Nội dung, Thời gian.
+     - Các tin tiếp theo tự động ẩn Avatar và Tên, thay bằng khoảng đệm thụt lề 32px để bong bóng tin nhắn thẳng hàng.
+     - Khoảng cách dọc giữa các tin trong cùng cụm giảm xuống còn 2px, tạo trải nghiệm liền mạch hiện đại.
+2. **Vạch phân cách ngày (Date Separator):**
+   - Nằm chính giữa khung chat khi tin nhắn chuyển sang ngày mới.
+   - Hiển thị dạng pill nhỏ bo tròn 10px, nền `Theme.CHON`, chữ đậm `Theme.PHU` ("Hôm nay", "Hôm qua", "dd/MM/yyyy").
+3. **Trích dẫn & Trả lời tin nhắn (Quote & Reply):**
+   - Thanh thao tác nhanh (hover) và menu chuột phải có nút "Trả lời" (icon `reply`).
+   - Ô soạn thảo (`SoanTinPanel`) xuất hiện thanh Reply bar xem trước tin trích dẫn kèm nút `✕` hủy bỏ.
+   - Tin nhắn hiển thị kèm khối hộp Quote box viền trái 3px `Theme.CHINH`, nền mờ nhẹ; click chuột vào khối trích dẫn sẽ tự động cuộn đến tin gốc và nháy viền nổi bật.
+4. **Tìm kiếm tin nhắn trong phòng (`Ctrl + F`):**
+   - Mở bằng phím tắt `Ctrl + F` hoặc nút kính lúp `🔍` trên thanh tiêu đề phòng.
+   - Thanh tìm kiếm trượt xuống trên đỉnh khung chat, đếm số kết quả `x/y`, nút `▲`/`▼` điều hướng và tự động cuộn tới vị trí tin nhắn khớp.
+   - Nhấn phím `Escape` hoặc nút `✕` để đóng nhanh thanh tìm kiếm.
+5. **Xuất lịch sử chat (.txt):**
+   - Menu phòng có mục "Xuất lịch sử chat (.txt)" lưu toàn bộ tin nhắn ra file UTF-8 chuẩn kèm tiêu đề, mã phòng, thời gian và thông tin trích dẫn/thu hồi.
+   - Hiển thị Toast thông báo thành công kèm nút "Mở" tệp trực tiếp.
 - `lock`: Biểu tượng ổ khóa — phòng riêng tư có mật khẩu.
 - `down` / `up`: Biểu tượng mũi tên mở rộng / thu gọn.
 

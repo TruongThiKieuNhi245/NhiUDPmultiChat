@@ -6,6 +6,13 @@
 - **Linh hoạt Xuất Báo cáo:** Hỗ trợ xuất / xem trước riêng cho từng tab Người dùng, Phòng, Nhật ký (`xuatBangDon`) và cho phép chọn linh hoạt 2 trong 3 nhóm hoặc toàn bộ trong tab Báo cáo (`BaoCaoPanel` & `XuatBaoCao.htmlTuyChon`).
 - **Nâng cấp Giao diện Gradient & Tiện ích:** Tích hợp bộ design tokens gradient (`GRADIENT_START = #4F6BED`, `GRADIENT_END = #2563EB`, hover/active variants, `GRADIENT_DO_START / END` cho badge cảnh báo), thẻ hiện đại `Theme.theGradient()`, nút bấm gradient chuyển sắc, nút tròn gửi tin gradient. Cải tiến `ServerMain` chống tràn layout khi hiển thị đường dẫn, giữ vững nhãn trạng thái máy chủ `● ĐANG CHẠY` / `● ĐÃ DỪNG`. Nâng cấp biểu đồ và thẻ thống kê trong `TongQuanPanel`.
 - **Thanh thao tác tin nhắn (Hover Quick Action Bar):** Đã tinh chỉnh trong `HangTin` ẩn mặc định, chỉ hiện thanh capsule bo tròn tinh tế khi hover với các icon nhẹ (Sao chép, Thu hồi, More), loại bỏ hoàn toàn các liên kết chữ thô cạnh bong bóng chat.
+- **M3c.1 (Trải nghiệm Chat nâng cao):** Đã hoàn thành và kiểm chứng 100%:
+  + *Gộp tin nhắn liên tiếp:* Cùng người gửi trong 5 phút tự động ẩn avatar/tên lặp lại, giữ lề thụt 32px thẳng hàng, thu gọn khoảng cách dọc 2px.
+  + *Phân cách ngày:* Pill nhỏ bo tròn căn giữa khung chat ("Hôm nay", "Hôm qua", "dd/MM/yyyy").
+  + *Trích dẫn / Trả lời tin nhắn (Quote / Reply):* Nút "Trả lời" (icon `reply`) trên thanh hover và menu; thanh xem trước trích dẫn Reply bar trên ô soạn thảo có nút hủy `✕`; khối hộp trích dẫn Quote box viền trái 3px `Theme.CHINH`, click chuột tự động cuộn tới tin gốc và nháy sáng nhận diện.
+  + *Tìm kiếm tin nhắn trong phòng (`Ctrl + F`):* Thanh tìm kiếm nhanh trên đầu khung chat, nút kính lúp trên header, đếm số lượng kết quả `x/y`, nút Lên/Xuống chuyển vị trí và cuộn viewport tới tin khớp.
+  + *Xuất lịch sử chat (.txt):* Menu phòng có mục "Xuất lịch sử chat (.txt)" lưu đầy đủ tin nhắn, sticker, tệp, tin trích dẫn, thu hồi ra file UTF-8 chuẩn kèm nút mở nhanh trên Toast thông báo.
+  + *Kiểm thử tự động:* `M3cChatSelfTest` PASS 100%, `AdminSelfTest` 16 PASS / 0 FAIL, `UiPreview` 10/10 PASS.
 
 Ngày rà soát: 17/11/2026. Hướng duy nhất: **desktop Java 21 + Swing/FlatLaf, UDP multicast trực tiếp, portable và hai máy LAN**. Không chuyển web. Prompt chuẩn: [PROMPT_NANG_CAP_VA_TRIEN_KHAI.md](PROMPT_NANG_CAP_VA_TRIEN_KHAI.md).
 

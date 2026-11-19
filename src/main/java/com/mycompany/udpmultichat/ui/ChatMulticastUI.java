@@ -51,7 +51,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private final ThongBao toast=new ThongBao(getLayeredPane());
     private final TepGiaoDien tepUI=new TepGiaoDien(this,client,this::phongChon,toast);
     private final JLabel tenPhong=Theme.nhan("Chọn phòng để trò chuyện",true),chiTiet=Theme.nhan(" ",false),ketNoi=Theme.nhan(" ",false);
-    private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã",""),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more");
+    private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã",""),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more"),timNut=Theme.nutNhe("🔍","");
     private final JLabel tenTaiKhoan=Theme.nhan("",true),vaiTaiKhoan=Theme.nhan("",false),anhTaiKhoan=Theme.nhan("",false);
     private QuanTriFrame admin;
     private final java.util.Map<String,Long> mute=new java.util.HashMap<>();
@@ -83,6 +83,8 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         toast.datVung(noiDungPhong);
         copy.addActionListener(e -> { Phong p=phongChon(); if (p!=null) { DanhSachPhongPanel.saoChep(p.maPhong); toast(ThongBao.Muc.THANH_CONG,"Đã sao chép mã phòng."); } });
         thanhVienNut.addActionListener(e -> { thanhVienPanel.setVisible(!thanhVienPanel.isVisible()); chat.revalidate(); });
+        timNut.setToolTipText("Tìm kiếm tin nhắn (Ctrl+F)");
+        timNut.addActionListener(e -> { KhungChatPanel k=khung.get(phongDangXem); if (k!=null) k.batTimKiem(); });
         menuPhong.setIcon(Theme.icon("more"));
         menuPhong.addActionListener(e -> { Phong p=phongChon(); if (p!=null) { phongPanel.menu(p).show(menuPhong,0,menuPhong.getHeight()); } });
         addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) { dongCuaSo(); } }); capNhat();
@@ -93,10 +95,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         dangGo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0,Theme.S16,0,Theme.S16)); dangGo.setVisible(false);
         p.add(dangGo,BorderLayout.NORTH); p.add(soan); camChat.setFont(Theme.NHO); camChat.setForeground(Theme.CANH_BAO); camChat.setBorder(javax.swing.BorderFactory.createEmptyBorder(0,Theme.S16,Theme.S8,Theme.S16)); camChat.setVisible(false); p.add(camChat,BorderLayout.SOUTH); return p;
     }
-    // Loai nguoi ngung go sau bon giay, khong duoc ghi vao lich su.
-    private void capNhatDangGo() {
-        capNhatDangGo(System.nanoTime());
-    }
+    private void capNhatDangGo() { capNhatDangGo(System.nanoTime()); }
     // Dong ho truyen vao giup UiPreview kiem tra het han ma khong ngu EDT.
     void capNhatDangGo(long luc) {
         nguoiGo.values().forEach(ds -> ds.values().removeIf(n -> luc-n.luc()>Protocol.TYPING_HIEN_MS*1000000L));
@@ -108,10 +107,11 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private void guiSticker(String ma) {
         Phong p=phongChon(); if (p!=null && online) { chay(() -> client.troChuyen().gui(p.id,ma,"S"),v -> { },this::loi); }
     }
-    // Chuot phai tin de thu hoi, gui lai dung ma hoac xoa hang loi cuc bo.
+    // Chuot phai tin de tra loi, thu hoi, gui lai dung ma hoac xoa hang loi cuc bo.
     private void hanhDongTin(String lenh,TinNhan t) {
-        if (t.loai.equals("F") && !lenh.equals("Thu hồi")) { tepUI.hanhDong(lenh,t); return; }
+        if (t.loai.equals("F") && !lenh.equals("Thu hồi") && !lenh.equals("Trả lời")) { tepUI.hanhDong(lenh,t); return; }
         switch (lenh) {
+            case "Trả lời": soan.datTrichDan(t); break;
             case "Thu hồi": chay(() -> client.troChuyen().thuHoi(t.roomId,t.msgId),v -> { },this::loi); break;
             case "Gửi lại": chay(() -> client.troChuyen().guiLai(t.roomId,t.maClient),v -> { },this::loi); break;
             case "Xóa": client.troChuyen().xoaTinLoi(t.roomId,t.maClient); break;
@@ -123,7 +123,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         JPanel dau=new JPanel(new BorderLayout(Theme.S8,0)); dau.setBorder(Theme.le(Theme.S16));
         tenPhong.setFont(Theme.DAM.deriveFont(18f)); chiTiet.setFont(Theme.NHO); chiTiet.setForeground(Theme.PHU);
         JPanel ten=new JPanel(new GridLayout(2,1,0,Theme.S4)); ten.add(tenPhong); ten.add(chiTiet); dau.add(ten,BorderLayout.CENTER);
-        JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); nut.add(copy); nut.add(thanhVienNut); nut.add(menuPhong);
+        JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); nut.add(timNut); nut.add(copy); nut.add(thanhVienNut); nut.add(menuPhong);
         dau.add(nut,BorderLayout.EAST); return dau;
     }
     // The tai khoan co le, hai dong va mui ten de nhan biet menu.
@@ -235,6 +235,18 @@ public final class ChatMulticastUI extends JFrame implements Listener {
                 } break;
             case "chuyen": chuyenChu(p); break;
             case "thongtin": HopThoai.thongTin(p,thanhVien.getOrDefault(p.id,List.of())).hien(this,h -> h.dong()); break;
+            case "tim": { KhungChatPanel k=khung.get(p.id); if (k!=null) k.batTimKiem(); } break;
+            case "xuat_lichsu": {
+                KhungChatPanel k=khung.get(p.id);
+                if (k!=null) {
+                    nen.execute(() -> {
+                        try {
+                            var fileTxt=XuatLichSuUtil.xuat(this,p,k.danhSachTin());
+                            if (fileTxt!=null) { toast.hien(ThongBao.Muc.THANH_CONG,"Đã xuất lịch sử chat.","Mở",() -> XuatLichSuUtil.mo(fileTxt)); }
+                        } catch (Exception ex) { toast.hien(ThongBao.Muc.LOI,"Lỗi xuất lịch sử."); }
+                    });
+                }
+            } break;
             default: break;
         }
     }
@@ -262,12 +274,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
             f.whenComplete((v,e) -> trenEdt(() -> { if (!dong) { if (e==null) { xong.accept(v); } else { loi.accept(ClientCore.loiDeHieu(e)); } } }));
         });
     }
-    // Loi.
-    private void loi(String text) { toast(ThongBao.Muc.LOI,text); }
-    // Toast.
+    private void loi(String text) { toast.hien(ThongBao.Muc.LOI,text); }
     void toast(ThongBao.Muc muc,String text) { toast.hien(muc,text); }
     // ===== PHONG DANG XEM VA TRANG THAI =====
-    // Cac khung van o nen trong CardLayout, giu nguyen vi tri cuon.
     private Phong phongChon() { KhungChatPanel k=khung.get(phongDangXem); return k==null?null:k.phong(); }
     // Chi sidebar chuyen phong; badge phong duoc mo ve 0.
     private void chonPhong(String id) {
@@ -365,21 +374,14 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         if (hien.loai.equals("F") && client.sanSang()) { client.tep().napAnh(com.mycompany.udpmultichat.common.TepTin.doc(t.roomId,t.userId,t.noiDung,t.thoiGian)); }
         phongPanel.tinCuoi(hien);
     }); }
-    // Moi snapshot deu ve lai nhan Ban theo ten dang nhap hien tai.
     @Override public void onThanhVienChiTiet(String id,List<Phong.ThanhVien> ds) { trenEdt(() -> {
         thanhVien.put(id,List.copyOf(ds)); if (phongDangXem.equals(id)) { capNhatPhongDangXem(); }
     }); }
-    // Nhan thong bao he thong qua Listener.
     @Override public void onHeThong(String id,String text) { trenEdt(() -> { if (khung.containsKey(id)) { khung.get(id).heThong(text); } }); }
-    // Nhan thong bao he thong qua Listener.
-    @Override public void onHeThong(String text) { trenEdt(() -> toast(ThongBao.Muc.THONG_TIN,text)); }
-    // Nhan danh sach online theo Listener.
+    @Override public void onHeThong(String text) { trenEdt(() -> toast.hien(ThongBao.Muc.THONG_TIN,text)); }
     @Override public void onDanhSachOnline(List<String> ds) { }
-    // Nhan loi de hien thi hoac ghi nhan.
     @Override public void onLoi(String text) { trenEdt(() -> loi(text)); }
-    // Nhan trang thai phien da ngat.
     @Override public void onMatKetNoi(String text) { trenEdt(() -> veDangNhap(text)); }
-    // On ket noi.
     @Override public void onKetNoi(boolean sanSang,String text) { trenEdt(() -> {
         online=sanSang; ketNoi.setText(text); ketNoi.setBackground(sanSang?Theme.NEN_XANH:Theme.NEN_VANG); ketNoi.setForeground(sanSang?Theme.THANH_CONG:Theme.CANH_BAO); ketNoi.setVisible(true);
         if (anDai!=null) { anDai.stop(); }

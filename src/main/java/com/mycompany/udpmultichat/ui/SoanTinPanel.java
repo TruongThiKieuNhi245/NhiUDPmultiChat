@@ -47,6 +47,9 @@ final class SoanTinPanel extends JPanel {
     };
     private boolean choPhep,dangGui;
     private String loiGui="";
+    private com.mycompany.udpmultichat.common.model.TinNhan dangTrichDan;
+    private final JLabel lblTrichDan=Theme.nhan("",false);
+    private final JPanel thanhTrichDan=taoThanhTrichDan();
 
     // ===== DUNG O SOAN =====
     // Cac nut nam o SOUTH cua cot rieng nen khong cao theo textarea.
@@ -58,12 +61,39 @@ final class SoanTinPanel extends JPanel {
         vien.add(cuon,BorderLayout.CENTER);
         JPanel congCu=new JPanel(new BorderLayout()); congCu.setOpaque(false); congCu.add(nutDinhKem(),BorderLayout.WEST);
         congCu.add(gui,BorderLayout.EAST); vien.add(congCu,BorderLayout.SOUTH);
+        add(thanhTrichDan,BorderLayout.NORTH);
         add(vien,BorderLayout.CENTER); JPanel duoi=new JPanel(new BorderLayout()); duoi.setOpaque(false);
         dem.setFont(Theme.NHO); duoi.add(dem,BorderLayout.NORTH);
         loi.setMargin(new Insets(0,0,0,0)); loi.setBorder(null); loi.setFont(Theme.NHO); loi.setForeground(Theme.LOI); loi.setOpaque(false); loi.setEditable(false); loi.setLineWrap(true); loi.setWrapStyleWord(true);
         duoi.add(loi,BorderLayout.CENTER); add(duoi,BorderLayout.SOUTH);
         theoDoiNhap(); ganPhim(khiGui); capNhat();
     }
+    // Thanh xem truoc tin duoc tra loi ngay phia tren o nhap.
+    private JPanel taoThanhTrichDan() {
+        JPanel p=new JPanel(new BorderLayout(Theme.S8,0)) {
+            @Override protected void paintComponent(Graphics g) {
+                Theme.boTron(g,getWidth(),getHeight(),Theme.NEN,6); super.paintComponent(g);
+            }
+        };
+        p.setOpaque(false); p.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createMatteBorder(0,3,0,0,Theme.CHINH),Theme.le(Theme.S4)));
+        lblTrichDan.setFont(Theme.NHO); lblTrichDan.setIcon(Theme.icon("reply"));
+        JButton huy=new JButton("✕"); huy.setFont(Theme.NHO); huy.setMargin(new Insets(0,4,0,4));
+        huy.setContentAreaFilled(false); huy.setBorderPainted(false); huy.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        huy.addActionListener(e -> boTrichDan());
+        p.add(lblTrichDan,BorderLayout.CENTER); p.add(huy,BorderLayout.EAST); p.setVisible(false);
+        return p;
+    }
+    // Gan tin de tra loi.
+    void datTrichDan(com.mycompany.udpmultichat.common.model.TinNhan tin) {
+        dangTrichDan=tin;
+        String nd=tin.loai.equals("S")?"[Sticker]":tin.loai.equals("F")?"[Tệp tin]":TrichDanUtil.layNoiDungThat(tin.noiDung);
+        if (nd.length()>50) { nd=nd.substring(0,50)+"…"; }
+        lblTrichDan.setText("Trả lời "+tin.ten+": "+nd); thanhTrichDan.setVisible(true);
+        revalidate(); repaint(); o.requestFocusInWindow();
+    }
+    // Huy tra loi.
+    void boTrichDan() { dangTrichDan=null; thanhTrichDan.setVisible(false); revalidate(); repaint(); }
     // Nut emoji va dinh kem nhe, can day; chua co chuc nang thi an.
     private JPanel nutDinhKem() {
         JPanel nut=new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT,0,0)); nut.setOpaque(false);
@@ -92,7 +122,16 @@ final class SoanTinPanel extends JPanel {
     }
     // Enter gui, Shift+Enter xuong dong, nut trong thi khong gui.
     private void ganPhim(Consumer<String> khiGui) {
-        Runnable guiTin=() -> { if (gui.isEnabled()) { khiGui.accept(o.getText()); } };
+        Runnable guiTin=() -> {
+            if (gui.isEnabled()) {
+                String text=o.getText();
+                if (dangTrichDan!=null) {
+                    text=TrichDanUtil.dongGoi(dangTrichDan.msgId,dangTrichDan.ten,dangTrichDan.noiDung,text);
+                    boTrichDan();
+                }
+                khiGui.accept(text);
+            }
+        };
         gui.addActionListener(e -> guiTin.run()); o.getInputMap().put(KeyStroke.getKeyStroke("ENTER"),"gui");
         o.getActionMap().put("gui",new AbstractAction() { public void actionPerformed(ActionEvent e) { guiTin.run(); } });
         o.getInputMap().put(KeyStroke.getKeyStroke("shift ENTER"),"insert-break");
