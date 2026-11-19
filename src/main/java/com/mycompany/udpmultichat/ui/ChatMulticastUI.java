@@ -60,6 +60,19 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã","copy"),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more"),timNut=Theme.nutNhe("","search"),nenNut=Theme.nutNhe("","palette");
     private final JLabel tenTaiKhoan=Theme.nhan("",true),vaiTaiKhoan=Theme.nhan("",false),anhTaiKhoan=Theme.nhan("",false);
     private QuanTriFrame admin;
+    private int soLoiMoi = 0;
+    private final JLabel badgeLoiMoi = new JLabel("") {
+        @Override protected void paintComponent(java.awt.Graphics g) {
+            if (!getText().isEmpty()) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setPaint(new java.awt.GradientPaint(0, 0, Theme.GRADIENT_DO_START, getWidth(), getHeight(), Theme.GRADIENT_DO_END));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), getHeight(), getHeight());
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
+    };
     private final java.util.Map<String,Long> mute=new java.util.HashMap<>();
     private final JLabel camChat=Theme.nhan("",false);
     private NguoiDung toi;
@@ -91,6 +104,18 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         });
         phongPanel=new DanhSachPhongPanel(() -> toi,khung::containsKey,id -> chuaDoc.getOrDefault(id,0),p -> vaoPhong(p.id,""),this::hanhDong);
         phongPanel.datKiemTraTatThongBao(client::daTatThongBao);
+        badgeLoiMoi.setFont(Theme.NHO.deriveFont(java.awt.Font.BOLD, 10.5f));
+        badgeLoiMoi.setForeground(Theme.THE);
+        badgeLoiMoi.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        badgeLoiMoi.setBorder(new javax.swing.border.EmptyBorder(1, 6, 1, 6));
+        badgeLoiMoi.setVisible(false);
+        badgeLoiMoi.setToolTipText("Lời mời vào phòng đang chờ (bấm để xem)");
+        badgeLoiMoi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        badgeLoiMoi.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                moLoiMoiPhongDialog();
+            }
+        });
         setIconImage(Theme.iconUngDung()); setTitle("UDP Chat"); setSize(1240,800); setMinimumSize(new Dimension(960,600)); setLocationByPlatform(true); setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         JPanel trai=new JPanel(new BorderLayout()); trai.setPreferredSize(new Dimension(280,0)); trai.setBackground(Theme.NEN);
         trai.add(phongPanel,BorderLayout.CENTER); trai.add(theTaiKhoan(),BorderLayout.SOUTH);
@@ -160,8 +185,10 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         vaiTaiKhoan.setFont(Theme.NHO); vaiTaiKhoan.setForeground(Theme.PHU);
         JPanel chu=new JPanel(new GridLayout(2,1)); chu.setOpaque(false); chu.add(tenTaiKhoan); chu.add(vaiTaiKhoan);
         JPanel the=new JPanel(new BorderLayout(Theme.S8,0)); the.setOpaque(false); the.add(anhTaiKhoan,BorderLayout.WEST); the.add(chu);
-        avatar.setText(""); avatar.add(the); avatar.add(muiTen,BorderLayout.EAST);
-        for (var c:new java.awt.Component[]{the,chu,anhTaiKhoan,tenTaiKhoan,vaiTaiKhoan}) {
+        JPanel phai=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); phai.setOpaque(false);
+        phai.add(badgeLoiMoi); phai.add(muiTen);
+        avatar.setText(""); avatar.add(the,BorderLayout.CENTER); avatar.add(phai,BorderLayout.EAST);
+        for (var c:new java.awt.Component[]{the,chu,anhTaiKhoan,tenTaiKhoan,vaiTaiKhoan,phai,muiTen}) {
             c.addMouseListener(new java.awt.event.MouseAdapter() { public void mouseClicked(java.awt.event.MouseEvent e) { avatar.doClick(); } });
         }
         boc.add(avatar); return boc;
@@ -172,7 +199,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         if (n!=null) {
             anhTaiKhoan.setIcon(Theme.avatar(n.tenHienThi,client.hoSo().anh(n.id),32)); tenTaiKhoan.setText(n.tenHienThi);
             vaiTaiKhoan.setText(n.vaiTro==VaiTro.ADMIN?"Quản trị viên":"Thành viên");
-            setTitle("UDP Chat — "+n.tenHienThi);
+            capNhatTieuDe();
         }
         phongPanel.capNhat(danhSach); capNhatPhongDangXem();
     }
@@ -185,9 +212,47 @@ public final class ChatMulticastUI extends JFrame implements Listener {
             chay(() -> client.dangNhap(t.ip(),Protocol.CONG_SERVER,t.ten(),t.matKhau()),n -> {
                 ganNguoiDung(n); online=true; dangNhap.ban(false); dangNhap.xoaMatKhau(); cards.show(goc,"chat");
                 toast.datVung(noiDungPhong); chonPhong(Protocol.SANH_ID); capNhat();
+                capNhatSoLoiMoi();
                 if (n.buocDoiMatKhau) { moMatKhau(true); }
             },e -> dangNhap.loiServer(e));
         }
+    }
+    // Dong bo so luong loi moi tham gia phong tu server de hien thi dau hieu thong bao.
+    private void capNhatSoLoiMoi() {
+        if (client == null || !online || toi == null) {
+            datHienThiLoiMoi(0);
+            return;
+        }
+        client.layDanhSachLoiMoi().thenAccept(ds -> {
+            trenEdt(() -> datHienThiLoiMoi(ds != null ? ds.size() : 0));
+        }).exceptionally(ex -> null);
+    }
+    // Cap nhat badge, banner sidebar va tieu de cua so ung dung.
+    private void datHienThiLoiMoi(int so) {
+        soLoiMoi = Math.max(0, so);
+        if (soLoiMoi > 0) {
+            badgeLoiMoi.setText(String.valueOf(soLoiMoi));
+            badgeLoiMoi.setVisible(true);
+        } else {
+            badgeLoiMoi.setText("");
+            badgeLoiMoi.setVisible(false);
+        }
+        phongPanel.datSoLoiMoi(soLoiMoi);
+        capNhatTieuDe();
+    }
+    // Tieu de cua so co tien to thong bao khi co loi moi moi.
+    private void capNhatTieuDe() {
+        if (toi != null) {
+            String tienTo = soLoiMoi > 0 ? "(" + soLoiMoi + " lời mời) " : "";
+            setTitle(tienTo + "UDP Chat — " + toi.tenHienThi);
+        } else {
+            setTitle("UDP Chat");
+        }
+    }
+    // Mo hop thoai danh sach loi moi phong va dong bo lai badge sau khi thao tac.
+    private void moLoiMoiPhongDialog() {
+        new LoiMoiPhongDialog(this, client, this::vaoPhongDaMoi, this::capNhatSoLoiMoi).setVisible(true);
+        capNhatSoLoiMoi();
     }
     // Thu server.
     private void thuServer(String ip) {
@@ -200,8 +265,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         JMenuItem hoSo=new JMenuItem("Hồ sơ của tôi"),doi=new JMenuItem("Đổi mật khẩu");
         hoSo.addActionListener(e -> { if (toi!=null) { new HoSoDialog(client,toi,false,false).hien(this,n -> toast(ThongBao.Muc.THANH_CONG,"Đã lưu hồ sơ.")); } });
         doi.addActionListener(e -> moMatKhau(false)); m.add(hoSo); m.add(doi);
-        JMenuItem loiMoi=new JMenuItem("Lời mời tham gia phòng...");
-        loiMoi.addActionListener(e -> new LoiMoiPhongDialog(this,client,this::vaoPhongDaMoi).setVisible(true));
+        JMenuItem loiMoi=new JMenuItem(soLoiMoi > 0 ? "Lời mời tham gia phòng (" + soLoiMoi + " mới)" : "Lời mời tham gia phòng...");
+        if (soLoiMoi > 0) { loiMoi.setIcon(Theme.icon("mail")); }
+        loiMoi.addActionListener(e -> moLoiMoiPhongDialog());
         m.add(loiMoi);
         JMenuItem gioiThieu=new JMenuItem("Giới thiệu"); gioiThieu.addActionListener(e -> javax.swing.JOptionPane.showMessageDialog(this,
             "UDP Chat\nSticker: Noto Emoji 2D — Google và cộng tác viên\nGiấy phép ảnh: Apache License 2.0\nhttps://github.com/googlefonts/noto-emoji\nGiấy phép kèm trong resources/stickers/LICENSE.","Giới thiệu",javax.swing.JOptionPane.INFORMATION_MESSAGE));
@@ -223,6 +289,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     // Ve dang nhap.
     private void veDangNhap(String lyDo) {
         if (admin!=null) { admin.dispose(); admin=null; }
+        soLoiMoi = 0; datHienThiLoiMoi(0);
         toi=null; noiDungPhong.removeAll(); phongDangXem=""; khung.clear(); mute.clear(); tepUI.xoa(); nguoiGo.clear(); thanhVien.clear(); chuaDoc.clear(); danhSach=List.of(); phongPanel.xoa();
         cards.show(goc,"login"); toast.datVung(null); dangNhap.ban(false); setTitle("UDP Chat"); ketNoi.setVisible(false); capNhat(); toast(ThongBao.Muc.THONG_TIN,lyDo);
     }
@@ -282,6 +349,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
                 toast(ThongBao.Muc.THONG_TIN, !hienTai ? "Đã tắt thông báo phòng «" + p.ten + "»." : "Đã bật lại thông báo phòng «" + p.ten + "».");
             } break;
             case "doimaunen": moMenuDoiMauNen(menuPhong); break;
+            case "loimoi": moLoiMoiPhongDialog(); break;
             default: break;
         }
     }
@@ -473,10 +541,12 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     }); }
     @Override public void onLoiMoi(String inviteId,String roomId,String tenPhong,String nguoiMoi) {
         trenEdt(() -> {
+            try { java.awt.Toolkit.getDefaultToolkit().beep(); } catch (Exception ignored) {}
+            capNhatSoLoiMoi();
             toast.hien(ThongBao.Muc.THONG_TIN,
                 "Lời mời: @"+nguoiMoi+" mời bạn vào phòng «"+tenPhong+"»",
-                "Xem",
-                () -> new LoiMoiPhongDialog(this,client,this::vaoPhongDaMoi).setVisible(true)
+                "Xem ngay",
+                this::moLoiMoiPhongDialog
             );
         });
     }

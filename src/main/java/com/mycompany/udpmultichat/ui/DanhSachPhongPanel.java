@@ -59,6 +59,21 @@ final class DanhSachPhongPanel extends JPanel {
     private String dangChon="";
     private boolean choPhep;
     private static final DateTimeFormatter GIO=DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.systemDefault());
+    private final JPanel pnlBannerLoiMoi = new JPanel(new BorderLayout(Theme.S8, 0)) {
+        @Override protected void paintComponent(java.awt.Graphics g) {
+            super.paintComponent(g);
+            java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+            g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(new java.awt.Color(254, 243, 199));
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+            g2.setColor(new java.awt.Color(245, 158, 11));
+            g2.setStroke(new java.awt.BasicStroke(1.2f));
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+            g2.dispose();
+        }
+    };
+    private final JLabel lblBannerLoiMoi = new JLabel();
+    private final JLabel lblXemLoiMoi = new JLabel("Xem");
 
     // ===== DUNG SIDEBAR =====
     // Danh sach chi goi callback; ClientCore duoc goi tai cua so chinh.
@@ -70,7 +85,31 @@ final class DanhSachPhongPanel extends JPanel {
         JLabel ten=Theme.nhan("UDP Chat",true); ten.setFont(Theme.DAM.deriveFont(20f)); dau.add(ten,BorderLayout.NORTH);
         tao.setMargin(new java.awt.Insets(6,8,6,8)); ma.setMargin(new java.awt.Insets(6,8,6,8));
         loc.putClientProperty("JTextField.placeholderText","Lọc phòng…"); dau.add(loc,BorderLayout.CENTER);
-        JPanel nut=new JPanel(new GridLayout(1,2,Theme.S8,0)); nut.setOpaque(false); nut.add(tao); nut.add(ma); dau.add(nut,BorderLayout.SOUTH); add(dau,BorderLayout.NORTH);
+        JPanel nut=new JPanel(new GridLayout(1,2,Theme.S8,0)); nut.setOpaque(false); nut.add(tao); nut.add(ma);
+        pnlBannerLoiMoi.setOpaque(false);
+        pnlBannerLoiMoi.setBorder(new javax.swing.border.EmptyBorder(6, 10, 6, 10));
+        pnlBannerLoiMoi.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        lblBannerLoiMoi.setFont(Theme.NHO.deriveFont(java.awt.Font.BOLD));
+        lblBannerLoiMoi.setForeground(new java.awt.Color(146, 64, 14));
+        lblBannerLoiMoi.setIcon(Theme.icon("mail"));
+        lblXemLoiMoi.setFont(Theme.NHO.deriveFont(java.awt.Font.BOLD));
+        lblXemLoiMoi.setForeground(Theme.CHINH);
+        pnlBannerLoiMoi.add(lblBannerLoiMoi, BorderLayout.CENTER);
+        pnlBannerLoiMoi.add(lblXemLoiMoi, BorderLayout.EAST);
+        pnlBannerLoiMoi.setVisible(false);
+        pnlBannerLoiMoi.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                hanhDong.accept("loimoi", null);
+            }
+        });
+        JPanel cumDuoi = new JPanel();
+        cumDuoi.setLayout(new BoxLayout(cumDuoi, BoxLayout.Y_AXIS));
+        cumDuoi.setOpaque(false);
+        cumDuoi.add(nut);
+        cumDuoi.add(javax.swing.Box.createVerticalStrut(Theme.S8));
+        cumDuoi.add(pnlBannerLoiMoi);
+        dau.add(cumDuoi, BorderLayout.SOUTH);
+        add(dau,BorderLayout.NORTH);
         ds.setLayout(new BoxLayout(ds,BoxLayout.Y_AXIS)); ds.setBackground(Theme.NEN); cuon.setBorder(null);
         cuon.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); add(cuon,BorderLayout.CENTER);
         tao.addActionListener(e -> hanhDong.accept("tao",null)); ma.addActionListener(e -> hanhDong.accept("ma",null));
@@ -108,7 +147,18 @@ final class DanhSachPhongPanel extends JPanel {
         return ten+": "+nd;
     }
     // Don danh sach sau dang xuat.
-    void xoa() { tinCuoi.clear(); danhSach=List.of(); dangChon=""; loc(); }
+    void xoa() { tinCuoi.clear(); danhSach=List.of(); dangChon=""; datSoLoiMoi(0); loc(); }
+    // Hien thi hoac an banner thong bao co loi moi phong dang cho.
+    void datSoLoiMoi(int so) {
+        if (so > 0) {
+            lblBannerLoiMoi.setText("Bạn có " + so + " lời mời vào phòng");
+            pnlBannerLoiMoi.setVisible(true);
+        } else {
+            pnlBannerLoiMoi.setVisible(false);
+        }
+        revalidate();
+        repaint();
+    }
     // Chon phong tu sidebar, khong tao them tab.
     void chon(String id) {
         dangChon=id;

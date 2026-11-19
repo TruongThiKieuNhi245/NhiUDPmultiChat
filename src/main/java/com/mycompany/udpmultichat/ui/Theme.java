@@ -275,6 +275,18 @@ public final class Theme {
                 a.fillOval(5,5,2,2); a.fillOval(9,4,2,2); a.fillOval(12,7,2,2);
                 break;
             }
+            case "mail": {
+                a.drawRoundRect(2,4,14,10,2,2);
+                a.drawPolyline(new int[]{2,9,16},new int[]{5,10,5},3);
+                break;
+            }
+            case "bell": {
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(6,8); p.quadTo(6,4,9,4); p.quadTo(12,4,12,8);
+                p.lineTo(14,12); p.lineTo(4,12); p.closePath();
+                a.draw(p); a.drawArc(8,12,2,2,0,180);
+                break;
+            }
             default: a.drawOval(2,2,14,14); a.drawLine(9,7,9,12); a.fillOval(8,4,2,2); break;
         }
     }

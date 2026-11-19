@@ -21,13 +21,19 @@ public final class LoiMoiPhongDialog extends JDialog {
 
     private final ClientCore core;
     private final Consumer<String> khiChapNhanVaoPhong;
+    private final Runnable khiCapNhat;
     private final JPanel pnlDanhSach = new JPanel();
     private final JLabel lblTrangThai = Theme.nhan("", false);
 
     public LoiMoiPhongDialog(Window cha, ClientCore core, Consumer<String> khiChapNhanVaoPhong) {
+        this(cha, core, khiChapNhanVaoPhong, null);
+    }
+
+    public LoiMoiPhongDialog(Window cha, ClientCore core, Consumer<String> khiChapNhanVaoPhong, Runnable khiCapNhat) {
         super(cha, "Lời mời tham gia phòng", ModalityType.APPLICATION_MODAL);
         this.core = core;
         this.khiChapNhanVaoPhong = khiChapNhanVaoPhong;
+        this.khiCapNhat = khiCapNhat;
 
         khoiTaoGiaoDien();
         setSize(480, 420);
@@ -104,6 +110,7 @@ public final class LoiMoiPhongDialog extends JDialog {
             }
             pnlDanhSach.revalidate();
             pnlDanhSach.repaint();
+            if (khiCapNhat != null) { khiCapNhat.run(); }
         })).exceptionally(ex -> {
             SwingUtilities.invokeLater(() -> lblTrangThai.setText("Lỗi: " + ClientCore.loiDeHieu(ex)));
             return null;
