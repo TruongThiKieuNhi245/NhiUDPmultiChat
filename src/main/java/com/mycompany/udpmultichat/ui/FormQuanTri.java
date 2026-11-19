@@ -39,8 +39,8 @@ final class FormQuanTri extends JPanel {
     FormQuanTri text(String key,String nhan,String value) { JTextField f=new JTextField(value); them(key,nhan,f); return this; }
     // Mat khau co nut Hien cung kieu cac form da co.
     FormQuanTri matKhau(String key,String nhan) {
-        JPasswordField f=new JPasswordField(); JPanel hang=new JPanel(new BorderLayout(Theme.S8,0)); JButton b=Theme.nut("Hiện",false); char echo=f.getEchoChar();
-        b.addActionListener(e -> { boolean an=f.getEchoChar()!=0; f.setEchoChar(an?(char)0:echo); b.setText(an?"Ẩn":"Hiện"); }); hang.add(f); hang.add(b,BorderLayout.EAST); them(key,nhan,hang); o.put(key,f); return this;
+        JPasswordField f=new JPasswordField(); JPanel hang=new JPanel(new BorderLayout(Theme.S4,0));
+        hang.add(f,BorderLayout.CENTER); hang.add(Theme.nutMatKhau(f),BorderLayout.EAST); them(key,nhan,hang); o.put(key,f); return this;
     }
     // Combo quyen/loai/co thoi han.
     FormQuanTri chon(String key,String nhan,String value,String... ds) {

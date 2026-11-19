@@ -78,8 +78,9 @@ final class SoanTinPanel extends JPanel {
         p.setOpaque(false); p.setBorder(javax.swing.BorderFactory.createCompoundBorder(
             javax.swing.BorderFactory.createMatteBorder(0,3,0,0,Theme.CHINH),Theme.le(Theme.S4)));
         lblTrichDan.setFont(Theme.NHO); lblTrichDan.setIcon(Theme.icon("reply"));
-        JButton huy=new JButton("✕"); huy.setFont(Theme.NHO); huy.setMargin(new Insets(0,4,0,4));
-        huy.setContentAreaFilled(false); huy.setBorderPainted(false); huy.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        JButton huy=Theme.nutNhe("","close");
+        huy.setToolTipText("Hủy trả lời");
+        huy.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         huy.addActionListener(e -> boTrichDan());
         p.add(lblTrichDan,BorderLayout.CENTER); p.add(huy,BorderLayout.EAST); p.setVisible(false);
         return p;

@@ -28,6 +28,28 @@ public final class Theme {
     public static final Color GRADIENT_ACTIVE_START=new Color(0x38,0x48,0xB0),GRADIENT_ACTIVE_END=new Color(0x1A,0x3F,0xB0);
     public static final Color GRADIENT_DO_START=new Color(0xEF,0x44,0x44),GRADIENT_DO_END=new Color(0xDC,0x26,0x26);
     public static final Color VIEN_CHON=new Color(0xC7,0xD2,0xFE);
+
+    // Mau nen Pastel nhe nhang, khong dam khong choi cho phong chat
+    public static final Color PASTEL_MAC_DINH = new Color(0xF8, 0xFA, 0xFC);
+    public static final Color PASTEL_MAY = new Color(0xF0, 0xF7, 0xFF);
+    public static final Color PASTEL_BAC_HA = new Color(0xF0, 0xFD, 0xF4);
+    public static final Color PASTEL_OAI_HUONG = new Color(0xF5, 0xF3, 0xFF);
+    public static final Color PASTEL_DAO = new Color(0xFF, 0xF7, 0xED);
+    public static final Color PASTEL_HONG = new Color(0xFF, 0xF1, 0xF2);
+    public static final Color PASTEL_SAGE = new Color(0xF7, 0xFE, 0xE7);
+    public static final Color PASTEL_CAT = new Color(0xFA, 0xF6, 0xF0);
+
+    public record MauPastel(String ten, Color mau) {}
+    public static final java.util.List<MauPastel> DANH_SACH_PASTEL = java.util.List.of(
+        new MauPastel("Mặc định", PASTEL_MAC_DINH),
+        new MauPastel("Xanh mây", PASTEL_MAY),
+        new MauPastel("Bạc hà", PASTEL_BAC_HA),
+        new MauPastel("Oải hương", PASTEL_OAI_HUONG),
+        new MauPastel("Cam đào", PASTEL_DAO),
+        new MauPastel("Hồng phấn", PASTEL_HONG),
+        new MauPastel("Cốm non", PASTEL_SAGE),
+        new MauPastel("Cát ấm", PASTEL_CAT)
+    );
     public static final Font FONT=new Font("Segoe UI",Font.PLAIN,14),DAM=FONT.deriveFont(Font.BOLD),NHO=FONT.deriveFont(12f);
     public static final Font DON_CACH=new Font(tenFontLog(),Font.PLAIN,13);
     public static final int NUT_GUI=36,TOAST_CAO=48,TOAST_RONG=360,O_NHAP_CAO=32;
@@ -87,6 +109,21 @@ public final class Theme {
     public static JButton nutNhe(String ten,String icon) {
         JButton b=new JButton(ten); b.setFont(DAM); b.putClientProperty("JButton.buttonType","toolBarButton");
         if (!icon.isEmpty()) { b.setIcon(Theme.icon(icon)); } return b;
+    }
+    // Nut bat/tat hien mat khau dung icon mat Java2D, khong dung chu.
+    public static JButton nutMatKhau(javax.swing.JPasswordField o) {
+        JButton b=nutNhe("","eye-off");
+        b.setToolTipText("Hiện mật khẩu");
+        b.setFocusable(false);
+        b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        char echo=o.getEchoChar();
+        b.addActionListener(e -> {
+            boolean an=o.getEchoChar()!=0;
+            o.setEchoChar(an?(char)0:echo);
+            b.setIcon(icon(an?"eye":"eye-off"));
+            b.setToolTipText(an?"Ẩn mật khẩu":"Hiện mật khẩu");
+        });
+        return b;
     }
     // Nut gui hinh tron voi gradient hien dai va icon trang.
     @SuppressWarnings("serial")
@@ -197,6 +234,46 @@ public final class Theme {
                 java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
                 p.moveTo(4,7); p.quadTo(10,7,13,14);
                 a.draw(p); break;
+            }
+            case "search": {
+                a.drawOval(3,3,8,8);
+                a.drawLine(9,9,14,14);
+                break;
+            }
+            case "close": {
+                a.drawLine(4,4,13,13);
+                a.drawLine(13,4,4,13);
+                break;
+            }
+            case "eye": {
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(2,9); p.quadTo(9,3,16,9); p.quadTo(9,15,2,9);
+                a.draw(p); a.drawOval(7,7,4,4); a.fillOval(8,8,2,2);
+                break;
+            }
+            case "eye-off": {
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(2,9); p.quadTo(9,3,16,9); p.quadTo(9,15,2,9);
+                a.draw(p); a.drawLine(3,3,15,15);
+                break;
+            }
+            case "bell-off": {
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(6,8); p.quadTo(6,4,9,4); p.quadTo(12,4,12,8);
+                p.lineTo(14,12); p.lineTo(4,12); p.closePath();
+                a.draw(p);
+                a.drawArc(8,12,2,2,0,180);
+                a.drawLine(3,3,15,15);
+                break;
+            }
+            case "palette": {
+                java.awt.geom.Path2D p=new java.awt.geom.Path2D.Float();
+                p.moveTo(9,2); p.quadTo(16,2,16,8); p.quadTo(16,13,11,13);
+                p.quadTo(9,13,9,15); p.quadTo(9,16,7,16); p.quadTo(2,16,2,9);
+                p.quadTo(2,2,9,2); p.closePath();
+                a.draw(p);
+                a.fillOval(5,5,2,2); a.fillOval(9,4,2,2); a.fillOval(12,7,2,2);
+                break;
             }
             default: a.drawOval(2,2,14,14); a.drawLine(9,7,9,12); a.fillOval(8,4,2,2); break;
         }

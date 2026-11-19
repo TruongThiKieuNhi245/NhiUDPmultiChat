@@ -118,10 +118,10 @@ final class HopThoai extends JPanel {
     }
     // O mat khau.
     static JPanel oMatKhau(JPasswordField o) {
-        JPanel hang=new JPanel(new BorderLayout(Theme.S4,0)); JButton hien=Theme.nut("Hiện",false);
-        char echo=o.getEchoChar(); hien.setFocusable(false);
-        hien.addActionListener(e -> { boolean dangAn=o.getEchoChar()!=0; o.setEchoChar(dangAn?0:echo); hien.setText(dangAn?"Ẩn":"Hiện"); });
-        hang.add(o,BorderLayout.CENTER); hang.add(hien,BorderLayout.EAST); return hang;
+        JPanel hang=new JPanel(new BorderLayout(Theme.S4,0));
+        hang.add(o,BorderLayout.CENTER);
+        hang.add(Theme.nutMatKhau(o),BorderLayout.EAST);
+        return hang;
     }
     // Hien.
     void hien(Window cha,Consumer<HopThoai> gui) {

@@ -33,7 +33,7 @@ public final class ServerMain extends JFrame implements ServerCore.Listener {
     private final JLabel diaChi=Theme.nhan("IP LAN: đang xác định… · UDP "+Protocol.CONG_SERVER,false);
     private final JLabel trangThai=Theme.nhan("Chưa chạy Server",false);
     private final JLabel[] soLieu={Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true),Theme.nhan("0",true)};
-    private final JButton batDau=Theme.nut("Bắt đầu",true),dung=Theme.nut("Dừng",false),copy=Theme.nutNhe("Sao chép IP","");
+    private final JButton batDau=Theme.nut("Bắt đầu",true),dung=Theme.nut("Dừng",false),copy=Theme.nutNhe("Sao chép IP","copy");
     private final ExecutorService viecNen=Executors.newSingleThreadExecutor(v -> { Thread t=new Thread(v,"ui-server-task"); t.setDaemon(true); return t; });
     private final Path thuMucDuLieu=Path.of(System.getProperty("udpmultichat.dataDir","data"));
     private final ServerCore server=new ServerCore(thuMucDuLieu,this);

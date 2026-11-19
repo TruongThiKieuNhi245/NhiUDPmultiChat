@@ -28,14 +28,29 @@ public final class CauHinhClient {
     }
     // Ghi dong bo cho nhieu cua so tren cung JVM, doi ten file tam cung thu muc.
     public static synchronized void ghi(String ten,String server) throws IOException {
-        Properties p=new Properties(); p.setProperty("username",ten); p.setProperty("server",server);
+        Properties p=doc(); p.setProperty("username",ten); p.setProperty("server",server);
+        ghiTatCa(p);
+    }
+    private static void ghiTatCa(Properties p) throws IOException {
         StringWriter w=new StringWriter(); p.store(w,"Khong luu mat khau");
         Path tep=tepCauHinh().toAbsolutePath();
-        Path tam=Files.createTempFile(tep.getParent(),"client-",".tmp");
+        Path parent = tep.getParent() != null ? tep.getParent() : Path.of(".");
+        Path tam=Files.createTempFile(parent,"client-",".tmp");
         try {
             Files.writeString(tam,w.toString(),StandardCharsets.UTF_8);
             try { Files.move(tam,tep,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING); }
             catch (java.nio.file.AtomicMoveNotSupportedException e) { Files.move(tam,tep,StandardCopyOption.REPLACE_EXISTING); }
         } finally { Files.deleteIfExists(tam); }
+    }
+    // Luu mau nen phong chat theo roomId.
+    public static synchronized void luuMauNen(String roomId, String mauHex) {
+        try {
+            Properties p=doc(); p.setProperty("bg."+roomId, mauHex);
+            ghiTatCa(p);
+        } catch (IOException ignored) {}
+    }
+    // Doc mau nen phong chat theo roomId.
+    public static String layMauNen(String roomId) {
+        return doc().getProperty("bg."+roomId, "");
     }
 }

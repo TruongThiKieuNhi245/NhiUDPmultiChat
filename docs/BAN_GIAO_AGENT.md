@@ -18,6 +18,12 @@
   + *Mời thành viên:* Nút `+` trên thanh tiêu đề `ThanhVienPanel` mở `MoiThanhVienDialog` tìm kiếm user, loại trừ thành viên hiện có, kiểm tra phòng mở/sĩ số, gửi lời mời có thời hạn 7 ngày. Hộp thoại `LoiMoiPhongDialog` quản lý duyệt "Chấp nhận" / "Từ chối".
   + *Tắt thông báo phòng:* Menu "Tắt thông báo phòng" / "Bật thông báo phòng" trên `DanhSachPhongPanel`, hiển thị biểu tượng `🔕` cạnh tên phòng và không tính số tin chưa đọc (badge unread) cho phòng bị tắt.
   + *Kiểm thử tự động:* `M3cThanhVienSelfTest` 3/3 PASS, `AdminSelfTest` 16/16 PASS, `SelfTest` 75/75 PASS, `UiPreview` 10/10 PASS (60 ảnh PNG).
+- **Nâng cấp Giao diện, Khắc phục Ô vuông & Nền Pastel (20/11/2026):**
+  + *Khắc phục 100% lỗi ô vuông (Tofu glyphs):* Chuyển toàn bộ các biểu tượng Unicode ký tự cao sang vector Java2D thuần trong `Theme.java` (`search`, `close`, `eye`, `eye-off`, `bell-off`, `palette`, `more`, `up`, `down`). Loại bỏ hoàn toàn các ký tự gây lỗi ô vuông: `🔍`, `✕`, `🔕`, `👁️`, `⋮`, `▲`, `▼`.
+  + *Nút Mắt ẩn/hiện mật khẩu:* Thay thế toàn bộ nút chữ "Hiện" / "Ẩn" bằng nút icon mắt nhắm mở (`eye` / `eye-off`) Java2D vẽ tay mượt mà trong `DangNhapPanel`, `HopThoai`, `FormQuanTri`, `HoSoDialog`.
+  + *Đổi màu nền phòng chat (Pastel Backgrounds):* Bộ 8 màu pastel êm dịu, không chói (Mặc định Slate, Xanh mây, Bạc hà, Oải hương, Cam đào, Hồng phấn, Cốm non, Cát ấm). Nút `palette` trên header phòng và menu chuột phải. Lưu cấu hình theo từng phòng qua `CauHinhClient`.
+  + *Viết lại nội dung kiểm duyệt tự nhiên:* Hộp thoại Kick, Ban, Mute, Chuyển quyền trong `KiemDuyetUI` được diễn đạt bằng ngôn từ thân thiện, lịch sự, rõ ràng cho người dùng thật.
+  + *Đóng gói lại Portable:* Chạy lại `build-portable.ps1` cập nhật toàn bộ thư mục `dist/` và file ZIP độc lập.
 
 Ngày rà soát: 17/11/2026 - Cập nhật 20/11/2026. Hướng duy nhất: **desktop Java 21 + Swing/FlatLaf, UDP multicast trực tiếp, portable và hai máy LAN**. Không chuyển web. Prompt chuẩn: [PROMPT_NANG_CAP_VA_TRIEN_KHAI.md](PROMPT_NANG_CAP_VA_TRIEN_KHAI.md).
 

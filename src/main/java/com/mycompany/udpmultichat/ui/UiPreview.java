@@ -257,7 +257,7 @@ public final class UiPreview {
     static int demNhan(Container c,String text) {
         int so=0;
         for (var con:c.getComponents()) {
-            if (con instanceof javax.swing.JLabel l && l.getText().equals(text)) { so++; }
+            if (con instanceof javax.swing.JLabel l && text.equals(l.getText())) { so++; }
             if (con instanceof Container n) { so+=demNhan(n,text); }
         }
         return so;

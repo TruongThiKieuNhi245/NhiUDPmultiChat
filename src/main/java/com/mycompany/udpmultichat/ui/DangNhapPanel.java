@@ -48,7 +48,11 @@ final class DangNhapPanel extends JPanel {
         them(hangLai,"Nhập lại mật khẩu",HopThoai.oMatKhau(nhapLai),loiLai); hangLai.setVisible(false); form.add(hangLai);
         caiDat.putClientProperty("JButton.buttonType","toolBarButton"); caiDat.setHorizontalAlignment(JButton.LEFT); caiDat.setMargin(new java.awt.Insets(8,0,8,0)); caiDat.setAlignmentX(LEFT_ALIGNMENT); form.add(caiDat);
         them(server,"Địa chỉ Server · cổng 5000",ip,loiIp); server.add(thu,BorderLayout.SOUTH); server.setVisible(false); form.add(server);
-        caiDat.addActionListener(e -> { server.setVisible(!server.isVisible()); boCuc(); });
+        caiDat.addActionListener(e -> {
+            server.setVisible(!server.isVisible());
+            caiDat.setIcon(Theme.icon(server.isVisible() ? "up" : "down"));
+            boCuc();
+        });
         thu.addActionListener(e -> { if (!ip.getText().isBlank()) { Theme.datLoi(loiIp," "); boCuc(); khiThu.accept(ip.getText().strip()); } else { Theme.datLoi(loiIp,"Nhập địa chỉ Server."); boCuc(); } });
         the.add(form,BorderLayout.CENTER);
         JPanel cuoi=new JPanel(new BorderLayout(0,Theme.S8)); cho.setIcon(Theme.vongCho(() -> goc)); cho.setVisible(false); cho.setPreferredSize(new Dimension(100,24));

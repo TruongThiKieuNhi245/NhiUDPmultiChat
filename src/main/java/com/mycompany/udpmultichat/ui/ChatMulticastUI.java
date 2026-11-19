@@ -1,4 +1,5 @@
 package com.mycompany.udpmultichat.ui;
+import com.mycompany.udpmultichat.client.CauHinhClient;
 import com.mycompany.udpmultichat.client.ClientCore;
 import com.mycompany.udpmultichat.client.Listener;
 import com.mycompany.udpmultichat.common.Protocol;
@@ -9,9 +10,14 @@ import com.mycompany.udpmultichat.common.model.VaiTro;
 import com.mycompany.udpmultichat.ui.components.ThongBao;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.LinkedHashMap;
@@ -51,7 +57,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     private final ThongBao toast=new ThongBao(getLayeredPane());
     private final TepGiaoDien tepUI=new TepGiaoDien(this,client,this::phongChon,toast);
     private final JLabel tenPhong=Theme.nhan("Chọn phòng để trò chuyện",true),chiTiet=Theme.nhan(" ",false),ketNoi=Theme.nhan(" ",false);
-    private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã",""),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more"),timNut=Theme.nutNhe("🔍","");
+    private final JButton avatar=Theme.nutNhe("Tài khoản",""),copy=Theme.nutNhe("Sao chép mã","copy"),thanhVienNut=Theme.nutNhe("Thành viên (0)",""),menuPhong=Theme.nutNhe("","more"),timNut=Theme.nutNhe("","search"),nenNut=Theme.nutNhe("","palette");
     private final JLabel tenTaiKhoan=Theme.nhan("",true),vaiTaiKhoan=Theme.nhan("",false),anhTaiKhoan=Theme.nhan("",false);
     private QuanTriFrame admin;
     private final java.util.Map<String,Long> mute=new java.util.HashMap<>();
@@ -101,6 +107,9 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         thanhVienNut.addActionListener(e -> { thanhVienPanel.setVisible(!thanhVienPanel.isVisible()); chat.revalidate(); });
         timNut.setToolTipText("Tìm kiếm tin nhắn (Ctrl+F)");
         timNut.addActionListener(e -> { KhungChatPanel k=khung.get(phongDangXem); if (k!=null) k.batTimKiem(); });
+        nenNut.setToolTipText("Đổi màu nền phòng chat (Pastel)");
+        nenNut.addActionListener(e -> moMenuDoiMauNen(nenNut));
+        copy.setToolTipText("Sao chép mã phòng");
         menuPhong.setIcon(Theme.icon("more"));
         menuPhong.addActionListener(e -> { Phong p=phongChon(); if (p!=null) { phongPanel.menu(p).show(menuPhong,0,menuPhong.getHeight()); } });
         addWindowListener(new WindowAdapter() { @Override public void windowClosing(WindowEvent e) { dongCuaSo(); } }); capNhat();
@@ -139,7 +148,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         JPanel dau=new JPanel(new BorderLayout(Theme.S8,0)); dau.setBorder(Theme.le(Theme.S16));
         tenPhong.setFont(Theme.DAM.deriveFont(18f)); chiTiet.setFont(Theme.NHO); chiTiet.setForeground(Theme.PHU);
         JPanel ten=new JPanel(new GridLayout(2,1,0,Theme.S4)); ten.add(tenPhong); ten.add(chiTiet); dau.add(ten,BorderLayout.CENTER);
-        JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); nut.add(timNut); nut.add(copy); nut.add(thanhVienNut); nut.add(menuPhong);
+        JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); nut.add(timNut); nut.add(nenNut); nut.add(copy); nut.add(thanhVienNut); nut.add(menuPhong);
         dau.add(nut,BorderLayout.EAST); return dau;
     }
     // The tai khoan co le, hai dong va mui ten de nhan biet menu.
@@ -272,6 +281,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
                 phongPanel.capNhat(danhSach);
                 toast(ThongBao.Muc.THONG_TIN, !hienTai ? "Đã tắt thông báo phòng «" + p.ten + "»." : "Đã bật lại thông báo phòng «" + p.ten + "».");
             } break;
+            case "doimaunen": moMenuDoiMauNen(menuPhong); break;
             default: break;
         }
     }
@@ -329,6 +339,7 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         camChat.setText(den==Long.MAX_VALUE?"Bạn bị cấm chat vĩnh viễn.":den>0?"Bạn bị cấm chat đến "+java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM").format(java.time.Instant.ofEpochMilli(den).atZone(java.time.ZoneId.systemDefault())):""); camChat.setVisible(den>0);
         soan.choPhep(toi!=null && online && p!=null && p.dangMo && den==0,dangGui);
         phongPanel.choPhep(toi!=null && online); copy.setEnabled(p!=null); menuPhong.setEnabled(p!=null && online);
+        timNut.setEnabled(p!=null); nenNut.setEnabled(p!=null);
     }
     // Dong cua so.
     private void dongCuaSo() {
@@ -366,6 +377,10 @@ public final class ChatMulticastUI extends JFrame implements Listener {
     @Override public void onVaoPhong(Phong p) { trenEdt(() -> {
         if (!khung.containsKey(p.id)) {
             KhungChatPanel k=new KhungChatPanel(p);
+            String mauLuu=CauHinhClient.layMauNen(p.id);
+            if (!mauLuu.isEmpty()) {
+                try { k.datMauNen(Color.decode(mauLuu)); } catch (Exception ignored) {}
+            }
             k.datHoSo(client.hoSo()::anh,client.hoSo()::lay);
             k.datAnhTep(client.tep()::anh);
             k.datHanhDong(() -> phongPanel.quanLy(k.phong()),this::hanhDongTin);
@@ -376,6 +391,47 @@ public final class ChatMulticastUI extends JFrame implements Listener {
         if (phongDangXem.isEmpty()) { chonPhong(p.id); }
         phongPanel.capNhat(danhSach);
     }); }
+
+    // Mo menu popup de nguoi dung lua chon mau nen pastel cho phong chat.
+    private void moMenuDoiMauNen(java.awt.Component anchor) {
+        if (phongDangXem.isEmpty()) return;
+        JPopupMenu menu=new JPopupMenu();
+        JLabel header=new JLabel("  MÀU NỀN PHÒNG CHAT (PASTEL)");
+        header.setFont(Theme.NHO); header.setForeground(Theme.PHU);
+        menu.add(header);
+        menu.addSeparator();
+
+        KhungChatPanel k=khung.get(phongDangXem);
+        Color mauHienTai=k!=null?k.layMauNen():Theme.THE;
+
+        for (Theme.MauPastel mp:Theme.DANH_SACH_PASTEL) {
+            boolean dangChon=mauHienTai.equals(mp.mau());
+            JMenuItem item=new JMenuItem(mp.ten()+(dangChon?"  ✓":""));
+            item.setIcon(new javax.swing.Icon() {
+                public int getIconWidth() { return 18; }
+                public int getIconHeight() { return 18; }
+                public void paintIcon(Component c,Graphics g,int x,int y) {
+                    Graphics2D g2=(Graphics2D)g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(mp.mau());
+                    g2.fillRoundRect(x+2,y+2,14,14,6,6);
+                    g2.setColor(Theme.VIEN);
+                    g2.drawRoundRect(x+2,y+2,14,14,6,6);
+                    g2.dispose();
+                }
+            });
+            item.addActionListener(e -> {
+                if (k!=null) {
+                    k.datMauNen(mp.mau());
+                    String hex=String.format("#%02x%02x%02x",mp.mau().getRed(),mp.mau().getGreen(),mp.mau().getBlue());
+                    CauHinhClient.luuMauNen(phongDangXem,hex);
+                    toast(ThongBao.Muc.THANH_CONG,"Đã đổi nền phòng sang "+mp.ten());
+                }
+            });
+            menu.add(item);
+        }
+        menu.show(anchor,0,anchor.getHeight());
+    }
     private void vaoPhongDaMoi(String roomId) { vaoPhong(roomId,""); }
     // Roi phong dong rieng khung do va chuyen ve Sanh neu con.
     @Override public void onRoiPhong(String id,String lyDo) { trenEdt(() -> {

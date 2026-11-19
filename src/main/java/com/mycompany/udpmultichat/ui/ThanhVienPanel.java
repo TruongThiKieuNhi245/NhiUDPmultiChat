@@ -3,8 +3,12 @@ package com.mycompany.udpmultichat.ui;
 import com.mycompany.udpmultichat.common.model.Phong;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.Comparator;
 import java.util.List;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -83,11 +87,28 @@ final class ThanhVienPanel extends JPanel {
         }
 
         JPanel phai=new JPanel(new BorderLayout()); phai.setOpaque(false);
-        if (n.laToi(toi)) { JLabel ban=Theme.nhan("Bạn",false); ban.setFont(Theme.NHO); ban.setForeground(Theme.CHINH); phai.add(ban,BorderLayout.WEST); }
+        if (n.laToi(toi)) {
+            JLabel ban=new JLabel("Bạn") {
+                @Override protected void paintComponent(Graphics g) {
+                    Graphics2D g2=(Graphics2D)g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(Theme.CHON); g2.fillRoundRect(0,0,getWidth(),getHeight(),10,10);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+            };
+            ban.setFont(Theme.NHO); ban.setForeground(Theme.CHINH);
+            ban.setBorder(BorderFactory.createEmptyBorder(1,6,1,6));
+            phai.add(ban,BorderLayout.WEST);
+        }
 
         JPopupMenu menu=taoMenuThanhVien(n,n.laToi(toi),quanLy,toiLaAdmin);
         if (menu.getComponentCount()>0) {
-            var nut=Theme.nutNhe("⋮",""); nut.addActionListener(e -> menu.show(nut,0,nut.getHeight())); phai.add(nut,BorderLayout.EAST);
+            var nut=Theme.nutNhe("","more");
+            nut.setToolTipText("Tùy chọn thành viên");
+            nut.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+            nut.addActionListener(e -> menu.show(nut,0,nut.getHeight()));
+            phai.add(nut,BorderLayout.EAST);
             ganMenu(hang,menu);
         }
 

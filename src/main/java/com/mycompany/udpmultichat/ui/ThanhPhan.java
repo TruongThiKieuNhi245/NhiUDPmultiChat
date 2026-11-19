@@ -50,6 +50,20 @@ final class ThanhPhan {
             for (var c:getComponents()) { if (c instanceof JLabel l && "tenNguoiGui".equals(l.getName())) { l.setText(ten); } }
         }
         // Ve thanh phan bang token chung cua Theme.
-        @Override protected void paintComponent(Graphics g) { Theme.boTron(g,getWidth(),getHeight(),laToi?Theme.CHINH:Theme.CHON,Theme.BONG); super.paintComponent(g); }
+        @Override protected void paintComponent(Graphics g) {
+            if (laToi) {
+                Theme.boTron(g,getWidth(),getHeight(),Theme.CHINH,Theme.BONG);
+            } else {
+                Graphics2D g2=(Graphics2D)g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+                int r=Theme.BONG*2;
+                g2.setColor(Theme.THE);
+                g2.fillRoundRect(0,0,getWidth(),getHeight(),r,r);
+                g2.setColor(new java.awt.Color(0xE2,0xE8,0xF0));
+                g2.drawRoundRect(0,0,getWidth()-1,getHeight()-1,r,r);
+                g2.dispose();
+            }
+            super.paintComponent(g);
+        }
     }
 }

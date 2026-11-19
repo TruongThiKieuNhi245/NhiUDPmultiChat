@@ -101,9 +101,8 @@ public final class HoSoDialog extends JPanel {
     }
     // Moi o co nut Hien rieng; giu echo char do LAF quy dinh.
     private JPanel oMatKhau(JPasswordField o) {
-        JPanel p=new JPanel(new BorderLayout(Theme.S4,0)); JButton hien=Theme.nut("Hiện",false); char kyTu=o.getEchoChar();
-        hien.addActionListener(e -> { boolean an=o.getEchoChar()!=0; o.setEchoChar(an?'\0':kyTu); hien.setText(an?"Ẩn":"Hiện"); });
-        p.add(o); p.add(hien,BorderLayout.EAST); return p;
+        JPanel p=new JPanel(new BorderLayout(Theme.S4,0));
+        p.add(o,BorderLayout.CENTER); p.add(Theme.nutMatKhau(o),BorderLayout.EAST); return p;
     }
     // Loi chi chiem cho khi co noi dung, giu chieu cao input theo Theme.
     private static JLabel loi() { JLabel l=Theme.nhan("",false); l.setFont(Theme.NHO); l.setForeground(Theme.LOI); l.setVisible(false); return l; }

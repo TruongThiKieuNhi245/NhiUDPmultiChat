@@ -21,6 +21,8 @@ import javax.swing.event.DocumentListener;
 @SuppressWarnings("serial")
 final class KhungChatPanel extends JPanel {
     private final JPanel ds=new JPanel(); private final JScrollPane cuon;
+    private final JPanel nen=new JPanel(new BorderLayout());
+    private Color mauNenHienTai=Theme.THE;
     private Phong phong;
     private java.util.function.Function<String,java.awt.image.BufferedImage> anh=id -> null;
     private java.util.function.Function<String,com.mycompany.udpmultichat.common.model.NguoiDung> hoSo=id -> null;
@@ -49,12 +51,25 @@ final class KhungChatPanel extends JPanel {
     }
 
     KhungChatPanel(Phong phong) {
-        super(new BorderLayout()); this.phong=phong; ds.setLayout(new BoxLayout(ds,BoxLayout.Y_AXIS)); ds.setBackground(Theme.THE);
-        JPanel nen=new JPanel(new BorderLayout()); nen.setBackground(Theme.THE); nen.add(ds,BorderLayout.NORTH);
+        super(new BorderLayout()); this.phong=phong; ds.setLayout(new BoxLayout(ds,BoxLayout.Y_AXIS));
+        nen.add(ds,BorderLayout.NORTH);
         cuon=new JScrollPane(nen); cuon.setBorder(null); cuon.getVerticalScrollBar().setUnitIncrement(16);
+        datMauNen(Theme.THE);
         add(thanhTim,BorderLayout.NORTH); add(cuon,BorderLayout.CENTER);
         ganPhimTatTimKiem();
     }
+
+    void datMauNen(Color c) {
+        if (c==null) { c=Theme.THE; }
+        this.mauNenHienTai=c;
+        ds.setBackground(c);
+        nen.setBackground(c);
+        cuon.getViewport().setBackground(c);
+        setBackground(c);
+        revalidate();
+        repaint();
+    }
+    Color layMauNen() { return mauNenHienTai; }
 
     Phong phong() { return phong; }
     void capNhat(Phong p) { phong=p; }
@@ -193,7 +208,7 @@ final class KhungChatPanel extends JPanel {
         JPanel bar=new JPanel(new BorderLayout(Theme.S8,0));
         bar.setBackground(Theme.NEN); bar.setBorder(Theme.le(Theme.S8));
         JPanel trai=new JPanel(new FlowLayout(FlowLayout.LEFT,Theme.S4,0)); trai.setOpaque(false);
-        JLabel icon=Theme.nhan("🔍",false); txtTim.setPreferredSize(new Dimension(200,28));
+        JLabel icon=new JLabel(Theme.icon("search")); txtTim.setPreferredSize(new Dimension(200,28));
         txtTim.putClientProperty("JTextField.placeholderText","Tìm trong cuộc trò chuyện…");
         txtTim.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { timKiem(); }
@@ -204,9 +219,9 @@ final class KhungChatPanel extends JPanel {
         trai.add(icon); trai.add(txtTim); trai.add(lblDemTim); bar.add(trai,BorderLayout.CENTER);
 
         JPanel nut=new JPanel(new FlowLayout(FlowLayout.RIGHT,Theme.S4,0)); nut.setOpaque(false);
-        JButton len=Theme.nutNhe("▲",""),xuong=Theme.nutNhe("▼",""),dong=new JButton("✕");
+        JButton len=Theme.nutNhe("","up"),xuong=Theme.nutNhe("","down"),dong=Theme.nutNhe("","close");
+        len.setToolTipText("Kết quả trước"); xuong.setToolTipText("Kết quả sau"); dong.setToolTipText("Đóng tìm kiếm (Esc)");
         len.addActionListener(e -> chuyenTim(-1)); xuong.addActionListener(e -> chuyenTim(1));
-        dong.setContentAreaFilled(false); dong.setBorderPainted(false); dong.setFont(Theme.NHO);
         dong.addActionListener(e -> tatTimKiem());
         nut.add(len); nut.add(xuong); nut.add(dong); bar.add(nut,BorderLayout.EAST);
         bar.setVisible(false); return bar;

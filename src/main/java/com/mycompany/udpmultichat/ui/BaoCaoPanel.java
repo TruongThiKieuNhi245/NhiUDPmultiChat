@@ -123,7 +123,8 @@ final class BaoCaoPanel extends JPanel {
     private JPanel taoDuoi() {
         JPanel thanhNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, Theme.S8, 0));
         thanhNut.setOpaque(false);
-        JButton xemTruoc = Theme.nut("👁️ Xem trước báo cáo (In/PDF)", true);
+        JButton xemTruoc = Theme.nut("Xem trước báo cáo (In/PDF)", true);
+        xemTruoc.setIcon(Theme.icon("eye"));
         JButton xuatChon = Theme.nut("Xuất báo cáo đã chọn", false);
         xemTruoc.addActionListener(e -> xemTruocBaoCao());
         xuatChon.addActionListener(e -> xuatTuyChon());
