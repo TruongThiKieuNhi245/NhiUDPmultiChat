@@ -41,6 +41,7 @@ final class BangQuanTri extends JPanel {
         if (locNhatKy) { loc.setModel(new DefaultComboBoxModel<>(new String[]{"Tất cả"})); }
         for (String l:Arrays.copyOf(lenh,Math.min(2,lenh.length))) { JButton b=Theme.nut(l,l.equals("Thêm") || l.equals("Tạo phòng")); b.addActionListener(e -> action.accept(l)); toolbar.add(b); }
         if (lenh.length>2) { JButton more=Theme.nutNhe("Thao tác...",""); more.addActionListener(e -> { JPopupMenu m=new JPopupMenu(); for (String l:lenh) { JMenuItem i=new JMenuItem(l); i.addActionListener(x -> action.accept(l)); m.add(i); } m.show(more,0,more.getHeight()); }); toolbar.add(more); }
+        if (Arrays.asList(lenh).contains("Xuất danh sách")) { JButton bXuat=Theme.nutNhe("Xuất bảng","copy"); bXuat.setToolTipText("Xuất dữ liệu bảng ra file / Xem trước và In PDF"); bXuat.addActionListener(e -> action.accept("Xuất danh sách")); toolbar.add(bXuat); }
         JPanel dau=new JPanel(new BorderLayout(0,Theme.S8)); dau.add(toolbar,BorderLayout.NORTH); dau.add(trangThai); add(dau,BorderLayout.NORTH);
         JScrollPane cuon=new JScrollPane(table); cuon.setColumnHeaderView(table.getTableHeader()); add(cuon);
         tim.getDocument().addDocumentListener(new DocumentListener() {

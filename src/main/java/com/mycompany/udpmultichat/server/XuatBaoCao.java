@@ -36,6 +36,27 @@ public final class XuatBaoCao {
             donTam(thu,e); throw e;
         }
     }
+    // Xuat tuy chon cac nhom du lieu ra thu muc theo lua chon cua admin.
+    public static Path xuatTuyChon(AnhChupQuanTri a,Path reports,boolean coUsers,boolean coRooms,boolean coAudit,boolean coHtml,boolean coCsv) throws IOException {
+        Files.createDirectories(reports); String ten="baocao_"+DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss").format(LocalDateTime.now());
+        Path thu=Files.createTempDirectory(reports,".baocao-tam-");
+        try {
+            if (coCsv && coUsers) { csv(thu.resolve("nguoidung.csv"),List.of("Tên đăng nhập","Tên hiển thị","Vai trò","Trạng thái","Ngày tạo","Lần đăng nhập cuối","Số phòng","Số tin","Số tệp","Dung lượng"),chon(a.lay("USERS"),1,2,3,4,7,8,5,6,9,10)); }
+            if (coCsv && coRooms) {
+                csv(thu.resolve("phong.csv"),List.of("Mã","Tên","Loại","Trạng thái","Chủ phòng","Số thành viên","Số tin","Số tệp","Dung lượng","Ngày tạo"),chon(a.lay("ROOMS"),1,2,3,4,5,6,7,8,9,10));
+                csv(thu.resolve("thanhvien_theophong.csv"),List.of("Phòng","Người dùng","Vai trò","Online","Ngày vào","Số tin"),chon(a.lay("MEMBERS"),1,3,5,6,7,8));
+            }
+            if (coCsv && coAudit) { csv(thu.resolve("nhatky.csv"),List.of("Thời gian","Người thực hiện","Hành động","Đối tượng","Chi tiết"),a.lay("AUDIT")); }
+            if (coCsv && (coRooms || coUsers)) { csv(thu.resolve("tin_theo_ngay.csv"),List.of("Ngày","Phòng","Số tin","Số tệp","Số sticker","Số tin thu hồi"),a.lay("DAYS")); }
+            if (coHtml) { ghi(thu.resolve("tong_hop.html"),htmlTuyChon(a,coUsers,coRooms,coAudit,true)); }
+            int so=0;
+            while (true) {
+                Path dich=reports.resolve(ten+(so==0?"":"_"+so));
+                try { return Files.move(thu,dich); }
+                catch (FileAlreadyExistsException e) { so++; }
+            }
+        } catch (IOException | RuntimeException e) { donTam(thu,e); throw e; }
+    }
     // Chi don staging vua tao khi xuat loi, khong cham bao cao cu.
     private static void donTam(Path thu,Throwable loi) {
         try (var ds=Files.walk(thu)) {
@@ -71,6 +92,34 @@ public final class XuatBaoCao {
         bang(s,"Top phòng sôi nổi",List.of("Phòng","Số tin","Số tệp"),chon(phong,2,7,8));
         s.append("<h2>Tin nhắn 7 ngày gần nhất</h2>").append(bieuDo(a));
         bang(s,"Tài khoản bị khóa",List.of("Tài khoản","Tên hiển thị","Ngày tạo"),chon(a.lay("USERS").stream().filter(r -> r.get(4).equals("Bị khóa")).toList(),1,2,7));
+        return s.append("<p>Báo cáo tự chứa · UDP Chat · dữ liệu tại một thời điểm</p></main></html>").toString();
+    }
+    // HTML tuy chon cac nhom du lieu duoc chon de in hoac xem tren trinh duyet.
+    public static String htmlTuyChon(AnhChupQuanTri a,boolean coUsers,boolean coRooms,boolean coAudit,boolean coStats) {
+        StringBuilder s=new StringBuilder("<!doctype html><html lang='vi'><meta charset='utf-8'><title>Báo cáo UDP Chat</title><style>");
+        s.append("body{font:15px system-ui;color:#202635;background:#f5f6fa;margin:32px}main{max-width:1100px;margin:auto}h1{color:#4f6bed}.cards{display:flex;flex-wrap:wrap;gap:12px}.card{background:white;border:1px solid #c9ced9;border-radius:8px;padding:16px;min-width:145px}.card b{display:block;font-size:26px}table{border-collapse:collapse;width:100%;background:white;margin:16px 0 28px}th,td{border:1px solid #c9ced9;padding:10px;text-align:left}th{background:#e9edff}tr:nth-child(even){background:#fafbff}svg{background:white;width:100%;height:240px}@media print{body{margin:0;background:white}h2{break-after:avoid}tr{break-inside:avoid}.card{min-width:110px}}");
+        s.append("</style><main><h1>Báo cáo UDP Chat</h1><p>Thời điểm chụp dữ liệu: ").append(e(Instant.ofEpochMilli(a.luc()).atZone(ZoneId.systemDefault()).toString())).append("</p>");
+        if (coStats) {
+            s.append("<div class='cards'>");
+            for (var r:a.lay("STATS")) { s.append("<div class='card'>").append(e(r.get(0))).append("<b>").append(e(r.get(1))).append("</b></div>"); } s.append("</div>");
+            s.append("<p>Số liệu chụp tại thời điểm tạo báo cáo từ Server UDP Chat.</p>");
+        }
+        if (coUsers) {
+            var top=a.lay("USERS").stream().sorted(Comparator.comparingLong((List<String> r) -> Long.parseLong(r.get(6))).reversed()).limit(10).toList();
+            bang(s,"Top 10 người nhắn nhiều nhất",List.of("Tài khoản","Tên hiển thị","Số tin"),chon(top,1,2,6));
+            bang(s,"Danh sách tài khoản",List.of("Tài khoản","Tên hiển thị","Vai trò","Trạng thái"),chon(a.lay("USERS"),1,2,3,4));
+        }
+        if (coRooms) {
+            bang(s,"Số người dùng theo từng phòng",List.of("Mã","Phòng","Số người dùng"),chon(a.lay("ROOMS"),1,2,6));
+            var phong=a.lay("ROOMS").stream().sorted(Comparator.comparingLong((List<String> r) -> Long.parseLong(r.get(7))).reversed()).limit(10).toList();
+            bang(s,"Top phòng sôi nổi",List.of("Phòng","Số tin","Số tệp"),chon(phong,2,7,8));
+        }
+        if (coStats && !a.lay("DAYS").isEmpty()) {
+            s.append("<h2>Tin nhắn 7 ngày gần nhất</h2>").append(bieuDo(a));
+        }
+        if (coAudit && !a.lay("AUDIT").isEmpty()) {
+            bang(s,"Nhật ký kiểm toán hệ thống",List.of("Thời gian","Người thực hiện","Hành động","Đối tượng","Chi tiết"),chon(a.lay("AUDIT"),0,1,2,3,4));
+        }
         return s.append("<p>Báo cáo tự chứa · UDP Chat · dữ liệu tại một thời điểm</p></main></html>").toString();
     }
     // Bang HTML chi chen gia tri da thoat, khong nhan HTML nguoi dung.

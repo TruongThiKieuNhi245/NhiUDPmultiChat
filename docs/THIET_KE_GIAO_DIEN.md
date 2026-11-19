@@ -97,6 +97,18 @@ Toàn bộ biểu tượng trong ứng dụng được vẽ trực tiếp bằng
 - Thanh trạng thái xuất báo cáo: Nằm ở hàng riêng, rút gọn tên thư mục `baocao_...`, tách rời hoàn toàn cụm nút "Xuất báo cáo", "Mở thư mục", "Mở HTML", chống tràn giao diện 100%.
 - Khung nhật ký đơn cách (Consolas 13px) có màu phân biệt Cảnh báo (vàng) và Lỗi (đỏ).
 
+### 2.4. Trung tâm Quản trị & Báo cáo nâng cao (`QuanTriFrame`, `BaoCaoPanel`, `BaoCaoPreviewDialog`)
+- **Cấu trúc 5 tab hiện đại:** "Tổng quan", "Người dùng", "Phòng", "Nhật ký", "Báo cáo".
+- **Xuất riêng lẻ từng bảng:** Mỗi tab (Người dùng, Phòng, Nhật ký) có nút xuất riêng ("Xuất danh sách", "Xuất nhật ký") trực tiếp trên thanh công cụ của bảng, cho phép mở xem trước và in PDF tức thì mà không cần phải xuất toàn bộ hệ thống.
+- **Tab Báo cáo — Thiết kế 2 Thẻ (Cards) khoa học:**
+  - *Thẻ 1: Chọn nhóm dữ liệu:* Hộp chọn checkbox độc lập cho từng nhóm (Tài khoản người dùng, Phòng trò chuyện, Nhật ký kiểm toán, Thống kê 7 ngày & Biểu đồ) kèm 3 nút chọn nhanh: "Chọn tất cả", "Bỏ chọn", "Mặc định". Cho phép xuất linh hoạt bất kỳ tổ hợp nào (ví dụ: chỉ xuất 2 trong 3, hoặc 3 trong 4 nhóm).
+  - *Thẻ 2: Định dạng & Kết quả:* Chọn định dạng xuất (Trang web HTML tự chứa & In/Lưu PDF, Tệp CSV Excel UTF-8 BOM), hiển thị thư mục đích và các nút "Mở thư mục", "Mở báo cáo HTML".
+  - *Thanh nút hành động:* Nút "👁️ Xem trước báo cáo (In/PDF)" nổi bật (Primary) và "Xuất báo cáo đã chọn".
+- **Hộp thoại Xem trước & In/Lưu PDF (`BaoCaoPreviewDialog`):**
+  - Khung xem trước trực quan render HTML/CSS hoàn chỉnh trước khi xuất file.
+  - Nút **"In / Lưu PDF"**: Tích hợp hộp thoại in chuẩn của hệ điều hành qua `JEditorPane.print(...)` (sử dụng "Microsoft Print to PDF" để lưu PDF không cần dependency bên ngoài).
+  - Nút **"Mở trình duyệt"** và **"Lưu HTML"** hỗ trợ tương tác đa nền tảng.
+
 ---
 
 ## 3. Quy chuẩn tương tác và trạng thái thành phần (Component States)
