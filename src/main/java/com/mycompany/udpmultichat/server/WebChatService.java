@@ -84,6 +84,14 @@ public final class WebChatService implements AutoCloseable {
         return rooms.layTin(room, false, after);
     }
 
+    // Trang gan nhat hoac 50 tin truoc cursor, cung kiem quyen voi lich su dong bo.
+    public synchronized List<TinNhan> historyPage(String token, String room, long before) {
+        rooms.kiemTraThanhVien(require(token), room);
+        long end = before == 0 ? rooms.mocTin(room) : Math.min(before - 1, rooms.mocTin(room));
+        long start = Math.max(0, end - 50);
+        return rooms.layTin(room, false, start).stream().filter(t -> t.msgId <= end).toList();
+    }
+
     // Chi UdpChatTransport.receive duoc goi diem chap nhan tin moi nay.
     public synchronized Accepted receive(String token, String room, String clientMsgId, String text) throws IOException {
         var person = require(token);

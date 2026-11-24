@@ -1,0 +1,15 @@
+{
+  "artifact": ".selftest\\ux-package-67266c914d\\target\\UDPmultiChat-1.0-SNAPSHOT.jar",
+  "status": "PASS",
+  "checks": [
+    "java -jar serves UI and WebSocket",
+    "history error offers retry and clears alert after success",
+    "Vietnamese chat committed through UDP",
+    "test-only UDP control absent: 404",
+    "account and history survive actual JAR restart"
+  ],
+  "fixture": ".selftest\\web1-jar-96874e6e42d7",
+  "sha256": "8e31fc3e144546ee53c4ce418bb272faf14594e850e093baa3ed1fcab014369c",
+  "reviewArtifact": "target/ux-preview/UDPmultiChat-1.0-SNAPSHOT.jar",
+  "staticResourcesMatchWorkspace": true
+}

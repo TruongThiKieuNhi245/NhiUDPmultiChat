@@ -1,0 +1,174 @@
+{
+  "baseUrl": "http://127.0.0.1:60619",
+  "fixture": ".selftest\\web1-ux-3ddd8876020a",
+  "checks": [
+    "680 tin: mo phong tai trang cuoi 50 tin, khong lap request tu dau",
+    "Hinh hoc hai chieu, cung ten hien thi van phan biet userId; bong bong ngan vua noi dung",
+    "Pending/loi/retry/confirmed giu huong va cung DOM node; retry bang ban phim",
+    "Tin moi khong keo nguoi doc tin cu xuong day, giu selection",
+    "Ve tin moi va chu dong gui dua tin vao tam nhin",
+    "Phan trang ve tin 1 giu anchor; DOM/cache toi da 300; tai lai cua so moi",
+    "Reconnect bu msgId nho bi bo du frame lon da toi, dung thu tu va khong trung",
+    "Lich su giu huong; URL dai; IME/Shift Enter; 1000 byte UTF-8 va composer tu gian",
+    "Tablet/mobile 360 sang toi, khong tran ngang, drawer Escape/close tra focus",
+    "Zoom CSS 125/150% khong tran va nut gui trong viewport",
+    "Loi tai lich su co nut thu lai, tai duoc trang cuoi; aria live tach khoi lich su",
+    "Logout huy session va callback cu; endpoint paging tu choi vo danh; khong loi JS"
+  ],
+  "browser": "158.0.4370.33",
+  "geometry": [
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 815.4,
+      "width": 276.6,
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "own": true,
+      "leftGap": 859.4,
+      "rightGap": 30.0,
+      "width": 276.6,
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "own": true,
+      "leftGap": 519.4,
+      "rightGap": 30.0,
+      "width": 276.6,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 475.4,
+      "width": 276.6,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": true,
+      "leftGap": 1098.3,
+      "rightGap": 30.0,
+      "width": 37.7,
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 714.3,
+      "width": 37.7,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": true,
+      "leftGap": 587.5,
+      "rightGap": 30.0,
+      "width": 208.5,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 883.5,
+      "width": 208.5,
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "own": true,
+      "leftGap": 819.2,
+      "rightGap": 30.0,
+      "width": 316.8,
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "own": true,
+      "leftGap": 819.2,
+      "rightGap": 30.0,
+      "width": 316.8,
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 435.2,
+      "width": 316.8,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 584.0,
+      "width": 168.0,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 74,
+      "rightGap": 479.1,
+      "width": 272.9,
+      "viewport": {
+        "width": 1100,
+        "height": 850
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 62,
+      "rightGap": 155.2,
+      "width": 422.8,
+      "viewport": {
+        "width": 900,
+        "height": 900
+      }
+    },
+    {
+      "own": false,
+      "leftGap": 46,
+      "rightGap": 48.4,
+      "width": 265.6,
+      "viewport": {
+        "width": 360,
+        "height": 800
+      }
+    }
+  ],
+  "cacheMax": 300,
+  "anchorMaxErrorPx": 0,
+  "status": "PASS"
+}

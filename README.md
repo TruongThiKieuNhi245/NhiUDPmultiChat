@@ -1,3 +1,9 @@
+> **Chặng UX Web 1 (25/11/2026):** tin của mình bên phải theo `userId`, bong bóng hai phía, composer gọn, drawer có focus, tải lịch sử gần nhất và cache 300 tin. Xem [bàn giao UX, ảnh thật và 5 bước thử](docs/WEB1_UX_NGHIEM_THU.md). Web 2–4 tiếp tục sau khi người dùng xem chặng này.
+>
+> QA mới: `python -X utf8 scripts/web1-ux-browser-qa.py` sau `test-compile dependency:build-classpath` như bên dưới. Hai tài khoản trùng tên, fixture 680 tin; dữ liệu riêng trong `.selftest/`. Bản nháp chỉ giữ trong RAM của tab; đóng tab sẽ mất bản nháp và hàng chưa xác nhận.
+>
+> Trước `mvn package`, dừng tiến trình đang chạy chính JAR đích để Windows cho phép đổi tên artifact. Có thể dựng từ bản sao source trong fixture khi cần giữ server cũ hoạt động. Mốc này dùng artifact riêng; đường dẫn và kết quả được ghi trong báo cáo UX.
+
 # UDPmultiChat Web 1 — chạy bằng URL
 
 Web 1 có đăng ký/đăng nhập, Sảnh chung, tin tiếng Việt, trạng thái gửi/thử lại, lịch sử và reconnect. Java 21, Maven, Spring Boot 3.5.16; giữ `com.mycompany:UDPmultiChat:1.0-SNAPSHOT`.

@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 ROOT = Path(__file__).resolve().parents[1]
 RUN = ROOT / '.selftest' / ('web1-browser-' + uuid.uuid4().hex[:12])
 RUN.mkdir(parents=True)
-OUT = ROOT / 'docs/screenshots/web1'
+OUT = ROOT / os.environ.get('CHAT_QA_OUTPUT', 'docs/screenshots/web1')
 OUT.mkdir(parents=True, exist_ok=True)
 with socket.socket() as available:
     available.bind(('127.0.0.1', 0))
@@ -116,6 +116,7 @@ try:
         pa.get_by_role('button', name='Đổi giao diện sáng tối').last.click()
         pa.screenshot(path=str(OUT / '04-chat-desktop-toi.png'), full_page=True)
         # Dong ket noi browser B bang Offline; A tiep tuc gui, B reconnect va lay bu.
+        pb.locator('#message').fill('Bản nháp được giữ khi mất kết nối')
         b.set_offline(True)
         expect(pb.locator('#connection')).to_have_text('Mất kết nối', timeout=15000)
         send(pa, 'Tin gửi khi An mất mạng sẽ được lấy bù sau kết nối lại.')
@@ -124,10 +125,14 @@ try:
         expect(pb.locator('#connection')).to_have_text('Đã kết nối', timeout=20000)
         expect(pb.locator('.message-text')).to_have_count(before + 2)
         assert pb.locator(f'[data-client-msg-id="{retry_id}"]').count() == 1
-        check('Mat mang browser B, reconnect lay bu lich su va khong nhan trung')
+        expect(pb.locator('#message')).to_have_value('Bản nháp được giữ khi mất kết nối')
+        pb.locator('#message').fill('')
+        check('Mat mang browser B, reconnect lay bu lich su, giu ban nhap va khong nhan trung')
         # Desktop 150% zoom mo phong bang CSS zoom, mobile la viewport mo phong.
         pa.evaluate("document.body.style.zoom='1.5'")
         assert pa.evaluate('document.documentElement.scrollWidth <= innerWidth')
+        pa.wait_for_timeout(250)
+        assert pa.locator('#send').bounding_box()['y'] + pa.locator('#send').bounding_box()['height'] <= 961
         pa.screenshot(path=str(OUT / '05-chat-zoom-150.png'), full_page=True)
         pa.evaluate("document.body.style.zoom='1'")
         check('Desktop mo phong zoom 150%, khong cuon ngang')

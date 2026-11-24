@@ -1,0 +1,31 @@
+{
+  "baseUrl": "http://127.0.0.1:60807",
+  "fixture": ".selftest\\web1-browser-c849487b8eef",
+  "checks": [
+    "Hai tai khoan trong hai BrowserContext, cookie HttpOnly rieng",
+    "Browser A gui tieng Viet, Browser B nhan realtime va nguoc lai",
+    "Noi dung HTML hien bang text, khong thuc thi script",
+    "Dung receiver UDP, WS van ket noi, tin loi khong luu/phat",
+    "Khoi phuc UDP, gui lai cung clientMsgId chi tao mot tin",
+    "Mat mang browser B, reconnect lay bu lich su, giu ban nhap va khong nhan trung",
+    "Desktop mo phong zoom 150%, khong cuon ngang",
+    "Viewport 360px sang/toi, drawer phong va composer hoat dong",
+    "Composer chan noi dung vuot 1000 byte UTF-8",
+    "Dang xuat thu hoi phien, khong co loi JavaScript",
+    "Doi chieu log clientMsgId: SEND < RECEIVE < COMMITTED < WS_DELIVER"
+  ],
+  "browser": "158.0.4370.33",
+  "latencyBrowserAToBMs": 66.27,
+  "retryClientMsgId": "e69avdCc5c8ejEpZTizAQw",
+  "udpEvidence": [
+    "2026-11-25T05:38:35.702+07:00  INFO 24288 --- [UDPmultiChat] [.1-60807-exec-1] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=0",
+    "2026-11-25T05:38:36.507+07:00  INFO 24288 --- [UDPmultiChat] [  web-udp-retry] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=0",
+    "2026-11-25T05:38:37.357+07:00  INFO 24288 --- [UDPmultiChat] [  web-udp-retry] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=0",
+    "2026-11-25T05:38:38.768+07:00  INFO 24288 --- [UDPmultiChat] [.1-60807-exec-5] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=0",
+    "2026-11-25T05:38:38.769+07:00  INFO 24288 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=0",
+    "2026-11-25T05:38:38.778+07:00  INFO 24288 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=4",
+    "2026-11-25T05:38:38.780+07:00  INFO 24288 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=4",
+    "2026-11-25T05:38:38.781+07:00  INFO 24288 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=e69avdCc5c8ejEpZTizAQw msgId=4"
+  ],
+  "status": "PASS"
+}

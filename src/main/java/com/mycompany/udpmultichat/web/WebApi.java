@@ -42,6 +42,12 @@ public class WebApi {
     }
     @GetMapping("/health")
     Map<String, Object> health() { return Map.of("http", "up", "udpReceiver", udp.running(), "lastUdpReceive", udp.lastReceived()); }
+    @GetMapping("/history/page")
+    List<ChatMessage> historyPage(HttpSession session, @RequestParam(defaultValue = "sanh") String roomId,
+                                @RequestParam(defaultValue = "0") long before) {
+        if (before < 0) { throw new IllegalArgumentException("Cursor không hợp lệ."); }
+        return service.historyPage(WebSecurity.token(session), roomId, before).stream().map(ChatMessage::from).toList();
+    }
     private static void validate(Credentials body) {
         if (body.login() == null || body.password() == null || body.login().length() > 20 || body.password().length() > 128) {
             throw new IllegalArgumentException("Kiểm tra tên đăng nhập và mật khẩu.");

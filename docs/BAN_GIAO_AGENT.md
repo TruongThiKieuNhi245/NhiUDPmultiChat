@@ -1,3 +1,11 @@
+## Cập nhật chặng UX Web 1 — 25/11/2026
+
+Source tiếp quản đã là Web 1 tại `c3ed958`, khác baseline desktop trong phần lịch sử bên dưới. Giữ nguyên sáu file tài liệu có sửa đổi của người dùng. Bàn giao mới, bảng vấn đề/nguyên nhân, bản đồ file/hàm, lệnh QA, ảnh và giới hạn nằm tại [WEB1_UX_NGHIEM_THU.md](WEB1_UX_NGHIEM_THU.md).
+
+Chặng này sửa hướng tin theo `userId`, render theo khoá ổn định, phân trang gần nhất/cũ hơn, giới hạn cache/DOM, focus drawer, composer và vòng đời kết nối. Giữ UDP receive → kiểm quyền → lưu → phát WS. Dừng ở chặng UX; chưa bắt đầu nghiệp vụ Web 2–4.
+
+---
+
 # Bản bàn giao và rà soát workspace cho Agent
 
 **Tiếp quản 18/11/2026 - 19/11/2026:**

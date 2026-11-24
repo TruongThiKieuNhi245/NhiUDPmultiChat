@@ -122,6 +122,30 @@ class Web1IntegrationTest {
         System.out.println("PASS Web1: dang nhap web nang SHA-256 cu sang PBKDF2, restart dang nhap duoc");
     }
 
+    @Test void historyPagesAreBoundedOrderedAndAuthorized(@TempDir Path directory) throws Exception {
+        var disk = new com.mycompany.udpmultichat.server.KhoLuuTru(directory, text -> { });
+        for (int i = 1; i <= 123; i++) {
+            disk.ghiTin(new TinNhan(i, "sanh", "fixture", "Lịch sử", "Tin " + i, i, TinNhan.taoMa(), "T"));
+        }
+        try (var service = new WebChatService(directory)) {
+            service.register("paging", "sample-password");
+            var identity = service.login("paging", "sample-password");
+            var latest = service.historyPage(identity.token(), "sanh", 0);
+            assertEquals(50, latest.size()); assertEquals(74, latest.getFirst().msgId); assertEquals(123, latest.getLast().msgId);
+            var older = service.historyPage(identity.token(), "sanh", 74);
+            assertEquals(50, older.size()); assertEquals(24, older.getFirst().msgId); assertEquals(73, older.getLast().msgId);
+            var first = service.historyPage(identity.token(), "sanh", 24);
+            assertEquals(23, first.size()); assertEquals(1, first.getFirst().msgId);
+            assertTrue(service.historyPage(identity.token(), "sanh", 1).isEmpty());
+            assertEquals(123, service.historyPage(identity.token(), "sanh", Long.MAX_VALUE).getLast().msgId);
+            assertThrows(IllegalArgumentException.class, () -> service.historyPage(identity.token(), "other", 0));
+            service.logout(identity.token());
+            assertThrows(IllegalArgumentException.class, () -> service.historyPage(identity.token(), "sanh", 0));
+        }
+        Client anonymous = new Client();
+        assertEquals(401, anonymous.get("/api/history/page").statusCode());
+    }
+
     private final class Client {
         final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         final HttpClient http = HttpClient.newBuilder().cookieHandler(cookies).connectTimeout(Duration.ofSeconds(3)).build();
