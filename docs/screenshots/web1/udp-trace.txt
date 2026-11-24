@@ -1,0 +1,27 @@
+2026-11-25T00:49:02.668+07:00  INFO 15972 --- [UDPmultiChat] [.1-55998-exec-8] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=xAKk-KNT0h7sNAK5pBRGNg msgId=0
+2026-11-25T00:49:02.670+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=xAKk-KNT0h7sNAK5pBRGNg msgId=0
+2026-11-25T00:49:02.683+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=xAKk-KNT0h7sNAK5pBRGNg msgId=1
+2026-11-25T00:49:02.686+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=xAKk-KNT0h7sNAK5pBRGNg msgId=1
+2026-11-25T00:49:02.688+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=xAKk-KNT0h7sNAK5pBRGNg msgId=1
+2026-11-25T00:49:02.825+07:00  INFO 15972 --- [UDPmultiChat] [.1-55998-exec-9] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=gJHNGPCfNw3W9Ovt7knZsg msgId=0
+2026-11-25T00:49:02.825+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=gJHNGPCfNw3W9Ovt7knZsg msgId=0
+2026-11-25T00:49:02.833+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=gJHNGPCfNw3W9Ovt7knZsg msgId=2
+2026-11-25T00:49:02.835+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=gJHNGPCfNw3W9Ovt7knZsg msgId=2
+2026-11-25T00:49:02.836+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=gJHNGPCfNw3W9Ovt7knZsg msgId=2
+2026-11-25T00:49:03.011+07:00  INFO 15972 --- [UDPmultiChat] [.1-55998-exec-6] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=0odLUiEPNxbeiSdUxgsgIQ msgId=0
+2026-11-25T00:49:03.012+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=0odLUiEPNxbeiSdUxgsgIQ msgId=0
+2026-11-25T00:49:03.016+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=0odLUiEPNxbeiSdUxgsgIQ msgId=3
+2026-11-25T00:49:03.018+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=0odLUiEPNxbeiSdUxgsgIQ msgId=3
+2026-11-25T00:49:03.019+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=0odLUiEPNxbeiSdUxgsgIQ msgId=3
+2026-11-25T00:49:03.210+07:00  INFO 15972 --- [UDPmultiChat] [.1-55998-exec-3] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=0
+2026-11-25T00:49:04.017+07:00  INFO 15972 --- [UDPmultiChat] [  web-udp-retry] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=0
+2026-11-25T00:49:04.836+07:00  INFO 15972 --- [UDPmultiChat] [  web-udp-retry] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=0
+2026-11-25T00:49:06.103+07:00  INFO 15972 --- [UDPmultiChat] [.1-55998-exec-5] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=0
+2026-11-25T00:49:06.103+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=0
+2026-11-25T00:49:06.112+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=4
+2026-11-25T00:49:06.115+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=4
+2026-11-25T00:49:06.117+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=ktW1BWCH0KjFQilNraOOnA msgId=4
+2026-11-25T00:49:06.830+07:00  INFO 15972 --- [UDPmultiChat] [.1-55998-exec-1] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=VAJYX3IO1ypd6me1cqaR7Q msgId=0
+2026-11-25T00:49:06.831+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=VAJYX3IO1ypd6me1cqaR7Q msgId=0
+2026-11-25T00:49:06.835+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=VAJYX3IO1ypd6me1cqaR7Q msgId=5
+2026-11-25T00:49:06.837+07:00  INFO 15972 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=VAJYX3IO1ypd6me1cqaR7Q msgId=5

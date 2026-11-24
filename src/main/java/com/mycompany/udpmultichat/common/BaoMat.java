@@ -22,17 +22,28 @@ public final class BaoMat {
 
     // Bam salt va mat khau; file du lieu chi luu salt va ket qua bam.
     public static String bam(String salt, String matKhau) {
-        try {
-            byte[] duLieu = (salt + ":" + matKhau).getBytes(StandardCharsets.UTF_8);
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(duLieu));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Java không hỗ trợ SHA-256", e);
-        }
+        try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest((salt + ":" + matKhau).getBytes(StandardCharsets.UTF_8))); }
+        catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
     }
-
-    // So sanh hash voi thoi gian khong phu thuoc vi tri khac nhau.
+    // Web dung KDF cham; desktop giu bam cu de tuong thich timeout UDP hien co.
+    public static String bamHienDai(String salt, String matKhau) {
+        return "pbkdf2$210000$" + pbkdf2(salt, matKhau);
+    }
+    private static String pbkdf2(String salt, String password) {
+        var spec = new javax.crypto.spec.PBEKeySpec(password.toCharArray(), salt.getBytes(StandardCharsets.UTF_8), 210000, 256);
+        try {
+            return HexFormat.of().formatHex(javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded());
+        } catch (java.security.GeneralSecurityException e) { throw new IllegalStateException(e); }
+        finally { spec.clearPassword(); }
+    }
+    // Doc hash SHA-256 cu de nhap tu ban sao desktop; hash moi dung PBKDF2.
     public static boolean dungMatKhau(String salt, String hash, String matKhau) {
-        return MessageDigest.isEqual(hash.getBytes(StandardCharsets.UTF_8),
-                bam(salt, matKhau).getBytes(StandardCharsets.UTF_8));
+        String expected;
+        if (hash.startsWith("pbkdf2$210000$")) { expected = bamHienDai(salt, matKhau); }
+        else {
+            try { expected = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest((salt + ":" + matKhau).getBytes(StandardCharsets.UTF_8))); }
+            catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        }
+        return MessageDigest.isEqual(hash.getBytes(StandardCharsets.UTF_8), expected.getBytes(StandardCharsets.UTF_8));
     }
 }

@@ -1,3 +1,61 @@
+# UDPmultiChat Web 1 — chạy bằng URL
+
+Web 1 có đăng ký/đăng nhập, Sảnh chung, tin tiếng Việt, trạng thái gửi/thử lại, lịch sử và reconnect. Java 21, Maven, Spring Boot 3.5.16; giữ `com.mycompany:UDPmultiChat:1.0-SNAPSHOT`.
+
+## Chạy web local
+
+```powershell
+$mvnChat = 'C:/Program Files/Apache NetBeans/java/maven/bin/mvn.cmd'
+& $mvnChat -q package
+java -jar target/UDPmultiChat-1.0-SNAPSHOT.jar
+```
+
+Mở **http://127.0.0.1:8080**. Bấm **Tạo tài khoản**, dùng tên 3–20 chữ/số/gạch dưới, mật khẩu 6–128 ký tự. Không có mật khẩu demo hoặc admin mặc định của bản web. Mỗi tài khoản chỉ đăng nhập một phiên; dùng hai tài khoản và hai cửa sổ/profile trình duyệt độc lập để thử.
+
+Điểm chạy web: `com.mycompany.udpmultichat.web.WebApplication`. Có thể dùng `& $mvnChat spring-boot:run`. Điểm chạy desktop vẫn là `ClientMain` / `server.ServerMain`, chỉ định `-Dexec.mainClass` khi chạy; các phần phía dưới là tài liệu desktop lịch sử.
+
+Dữ liệu web mặc định ở **web-data/** (được bỏ qua trong Git), không dùng `data/`, `reports/` hoặc `client.properties` desktop. Dừng ứng dụng trước khi sao lưu thư mục. Chỉ chạy một instance và không cho desktop cùng ghi một data dir. Giữ thư mục này qua restart; xoá thư mục sẽ mất tài khoản/lịch sử web.
+
+Cấu hình tùy chọn:
+
+```powershell
+$env:PORT = '8080'
+$env:CHAT_DATA_DIR = 'D:/duong-dan-rieng/chat-data'
+# Chỉ bật khi muốn thử trong LAN tin cậy:
+$env:BIND_ADDRESS = '0.0.0.0'
+java -jar target/UDPmultiChat-1.0-SNAPSHOT.jar
+```
+
+Trên thiết bị LAN mở `http://<IPv4-máy-chạy>:8080`; cần máy/thiết bị cùng mạng và cổng HTTP được phép. UDP chỉ bind `127.0.0.1`, không mở ra LAN/Internet. Mặc định local là HTTP/WS. HTTPS/WSS, reverse proxy, cookie `COOKIE_SECURE=true`, host 0 đồng và kiểm thử thiết bị thật nằm ở Web 4; chưa public/deploy.
+
+## Thử tay Web 1 (5 bước)
+
+1. Build/chạy bằng lệnh trên, tạo tài khoản A trong cửa sổ thường và B trong cửa sổ ẩn danh/profile khác.
+2. Trong Sảnh chung, A gửi tiếng Việt, B trả lời. Cả hai thấy cùng tin; người gửi có `Đang gửi…` rồi `✓ Đã gửi`.
+3. Đổi sáng/tối, thu cửa sổ xuống 360 px, mở/đóng danh sách phòng. Enter gửi, Shift+Enter xuống dòng; ô soạn chặn hơn 1000 byte UTF-8.
+4. Dùng DevTools cho B Offline rồi Online: A gửi trong lúc B mất mạng; khi nối lại B nhận bù và không nhân tin. Đóng/mở lại ứng dụng, đăng nhập và kiểm tra lịch sử.
+5. Chạy QA fixture dưới đây để tắt **riêng receiver UDP** mà WebSocket vẫn mở. Tin lỗi chưa vào lịch sử; khôi phục rồi bấm `Gửi lại` giữ cùng mã, chỉ có một bản ghi. API điều khiển fixture không có trong JAR chạy thật.
+
+## Kiểm thử tự động và bằng chứng
+
+```powershell
+& $mvnChat -q test
+& $mvnChat -q test-compile dependency:build-classpath '-Dmdep.outputFile=target/web-classpath.txt'
+# Python có Playwright, Microsoft Edge đã cài:
+python -X utf8 scripts/web1-browser-qa.py
+# Cần chạy package trước khi thử artifact:
+python -X utf8 scripts/web1-package-smoke.py
+# SelfTest desktop là main, Maven test không tự chạy nhóm này:
+$chatCp = 'target/test-classes;target/classes;' + (Get-Content -Raw target/web-classpath.txt).Trim()
+java -cp $chatCp com.mycompany.udpmultichat.SelfTest
+```
+
+Nếu Python chưa có Playwright: `python -m pip install playwright`. QA dùng Edge headless đã cài, hai BrowserContext có cookie độc lập; dữ liệu mỗi lượt ở `.selftest/web1-*`. Viewport mobile và zoom là mô phỏng, chưa thay thử điện thoại thật. Test tích hợp dùng HTTP, WebSocket và DatagramSocket thật, gồm mất/trùng/đảo thứ tự gói, lỗi đĩa, session/Origin/CSRF và chống trùng qua restart.
+
+Xem [báo cáo nghiệm thu, bản đồ file/hàm và kế hoạch Web 2–4](docs/WEB1_NGHIEM_THU.md), [ảnh desktop](docs/screenshots/web1/02-chat-desktop-sang.png), [ảnh mobile](docs/screenshots/web1/06-chat-mobile-sang.png), [kết quả browser](docs/screenshots/web1/browser-results.json) và [log đối chiếu UDP](docs/screenshots/web1/udp-trace.txt).
+
+---
+
 > **Bản bàn giao hoàn thiện đồ án tại [docs/BAN_GIAO_AGENT.md](docs/BAN_GIAO_AGENT.md).**
 > Hướng ứng dụng: **Desktop UDP Multi-room Chat (Java 21 + Swing + FlatLaf hiện đại), 100% UDP Unicast & Multicast trực tiếp, bản đóng gói Portable độc lập và hỗ trợ chạy 2 máy thật trong mạng LAN**.
 > Toàn bộ mốc phát triển **M1 -> M7 đã hoàn thành và kiểm chứng 100%**:

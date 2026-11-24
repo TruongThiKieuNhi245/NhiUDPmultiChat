@@ -17,13 +17,16 @@ import java.util.Map;
 /** Vai tro: Gop tai khoan va phien; Server la noi quyet dinh quyen va online. Ai goi: ServerCore. Goi: KhoLuuTru, BaoMat, NguoiDung. */
 public final class QuanLyNguoiDung {
     private final KhoLuuTru kho;
+    private final boolean matKhauHienDai;
     private final Map<String, TaiKhoan> taiKhoan;
     private final java.util.Properties trangThai;
     private final Map<String, Phien> phien = new LinkedHashMap<>();
 
     // Khoi tao lop va noi cac thanh phan can thiet.
-    public QuanLyNguoiDung(KhoLuuTru kho) throws IOException {
-        this.kho = kho;
+    public QuanLyNguoiDung(KhoLuuTru kho) throws IOException { this(kho, false); }
+    // Web bat chinh sach KDF va nang hash; desktop giu tuong thich du lieu/giao thuc cu.
+    public QuanLyNguoiDung(KhoLuuTru kho, boolean matKhauHienDai) throws IOException {
+        this.kho = kho; this.matKhauHienDai = matKhauHienDai;
         taiKhoan = kho.docNguoiDung(); trangThai=kho.docThuocTinh("accounts");
         String tenAdmin = chuanHoaTen(kho.cauHinh("admin.username"));
         TaiKhoan cu = taiKhoan.get(tenAdmin);
@@ -32,6 +35,10 @@ public final class QuanLyNguoiDung {
             taiKhoan.put(tenAdmin,new TaiKhoan(admin,kho.cauHinh("admin.salt"),kho.cauHinh("admin.passwordHash")));
         }
         kho.ghiNguoiDung(taiKhoan.values());
+    }
+
+    private String bamMatKhau(String salt, String password) {
+        return matKhauHienDai ? BaoMat.bamHienDai(salt, password) : BaoMat.bam(salt, password);
     }
 
     // ===== DANG KY / DANG NHAP =====
@@ -46,7 +53,7 @@ public final class QuanLyNguoiDung {
         String salt = BaoMat.ngauNhien(16);
         NguoiDung nguoi = new NguoiDung(BaoMat.ngauNhien(12), ten, ten, VaiTro.THANH_VIEN,
                 Instant.now().toString());
-        taiKhoan.put(ten, new TaiKhoan(nguoi, salt, BaoMat.bam(salt, matKhau)));
+        taiKhoan.put(ten, new TaiKhoan(nguoi, salt, bamMatKhau(salt, matKhau)));
         try { kho.ghiNguoiDung(taiKhoan.values()); }
         catch (IOException e) { taiKhoan.remove(ten); throw e; }
         return nguoi;
@@ -71,6 +78,14 @@ public final class QuanLyNguoiDung {
             if (p.nguoi.id.equals(tk.nguoi.id)) {
                 throw new IllegalArgumentException("Tài khoản đang đăng nhập ở nơi khác; chờ hết phiên nếu mất mạng");
             }
+        }
+        // Nang hash cu khi da xac thuc, nam trong giao dich tai khoan hien co.
+        if (matKhauHienDai && !tk.hash.startsWith("pbkdf2$")) {
+            String saltMoi = BaoMat.ngauNhien(16);
+            tk = new TaiKhoan(tk.nguoi, saltMoi, bamMatKhau(saltMoi, matKhau));
+            taiKhoan.put(ten, tk);
+            try { kho.ghiNguoiDung(taiKhoan.values()); }
+            catch (IOException e) { throw new IllegalArgumentException("Không nâng cấp được mật khẩu.", e); }
         }
         Phien moi = new Phien(BaoMat.ngauNhien(24), congKhai(tk), diaChi);
         if (Boolean.parseBoolean(trangThai.getProperty(tk.nguoi.id+".force","false"))) { trangThai.setProperty(tk.nguoi.id+".tempUsed","true"); }
@@ -158,7 +173,7 @@ public final class QuanLyNguoiDung {
         kiemTraMatKhau(moi); TaiKhoan tk=taiKhoan.get(p.nguoi.tenDangNhap);
         if (!BaoMat.dungMatKhau(tk.salt,tk.hash,cu)) { throw new IllegalArgumentException("Mật khẩu hiện tại không đúng."); }
         if (p.nguoi.tenDangNhap.equalsIgnoreCase(kho.cauHinh("admin.username").trim()) && moi.equals("admin123")) { throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu mặc định."); }
-        String salt=BaoMat.ngauNhien(16),hash=BaoMat.bam(salt,moi);
+        String salt=BaoMat.ngauNhien(16),hash=bamMatKhau(salt,moi);
         NguoiDung n=tk.nguoi.voiHoSo(tk.nguoi.tenHienThi,tk.nguoi.gioiThieu,tk.nguoi.anhHash,false);
         if (n.tenDangNhap.equalsIgnoreCase(kho.cauHinh("admin.username").trim())) { kho.doiMatKhauAdmin(salt,hash); }
         trangThai.remove(n.id+".force"); trangThai.remove(n.id+".tempUsed"); kho.ghiThuocTinh("accounts",trangThai);
@@ -222,7 +237,7 @@ public final class QuanLyNguoiDung {
     // Mat khau tam chi duoc tra ve khi hash va co bat buoc da luu du.
     private String datLaiNoi(Phien actor,String id) throws IOException {
         if (actor.nguoi.id.equals(id)) { throw new IllegalArgumentException("Hãy dùng Đổi mật khẩu cho chính mình."); }
-        NguoiDung n=lay(id); String mk=BaoMat.ngauNhien(5),salt=BaoMat.ngauNhien(16),hash=BaoMat.bam(salt,mk);
+        NguoiDung n=lay(id); String mk=BaoMat.ngauNhien(5),salt=BaoMat.ngauNhien(16),hash=bamMatKhau(salt,mk);
         if (n.tenDangNhap.equals(kho.cauHinh("admin.username"))) { kho.doiMatKhauAdmin(salt,hash); }
         trangThai.remove(id+".tempUsed"); trangThai.setProperty(id+".force","true"); kho.ghiThuocTinh("accounts",trangThai);
         thayTaiKhoan(new TaiKhoan(n,salt,hash)); return mk;
