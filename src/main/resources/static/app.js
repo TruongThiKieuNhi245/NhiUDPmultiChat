@@ -1,3 +1,4 @@
+import { FileUpload } from './file-upload.js';
 import { WorkspaceUI } from './workspace-ui.js';
 import { ChatStore, ROOM, CACHE_LIMIT } from './chat-store.js';
 import { ChatView, nearBottom } from './chat-view.js';
@@ -16,6 +17,8 @@ let activeRoom = ROOM, roomEpoch = 0, replying = null, recallCursor = 0, lastTyp
 const drafts = new Map(), roomUnread = new Map(), typingUsers = new Map();
 const ui = new WorkspaceUI({ api, action, selectRoom, currentRoom: () => activeRoom,
   jump: jumpTo, sendSticker: code => enqueue(code,'S'), updateProfile });
+const fileUpload = new FileUpload({ ui, csrf: () => csrf, api, currentRoom: () => ui.room(),
+  send: (file,room) => room===activeRoom ? enqueue(file.text,'F',{file}) : false });
 ui.unread = roomUnread;
 ui.pending = () => [...store.pending.values()];
 ui.retry = async item => { await selectRoom(item.roomId); sendItem(item); };
@@ -58,7 +61,7 @@ function updateRoomHeader() {
 }
 function showReply() {
   $('replying').hidden = !replying;
-  $('replying-text').textContent = replying ? `Trả lời ${replying.nickname || replying.name}: ${replying.kind==='S'?'[Sticker]':replying.text.slice(0,100)}` : '';
+  $('replying-text').textContent = replying ? `Trả lời ${replying.nickname || replying.name}: ${replying.kind==='S'?'[Sticker]':replying.kind==='F'?'[Tệp] '+(replying.file?.name || ''):replying.text.slice(0,100)}` : '';
   updateComposer();
 }
 $('cancel-reply').onclick = () => { replying=null; showReply(); $('message').focus(); };
@@ -91,7 +94,7 @@ function applyRecall(message) {
   store.markRecall(message.roomId,message.msgId);
   for(const item of store.pending.values())if(item.roomId===message.roomId && item.replyTo===message.msgId)item.replyText='Tin đã thu hồi';
   for(const card of document.querySelectorAll('[data-search-msg-id]'))if(card.dataset.roomId===message.roomId && card.dataset.searchMsgId===String(message.msgId))card.textContent='Tin đã thu hồi';
-  const update=item=>item.msgId===message.msgId ? {...item,text:'',kind:'D',recalled:true,replyTo:0,replyText:''}
+  const update=item=>item.msgId===message.msgId ? {...item,text:'',kind:'D',recalled:true,replyTo:0,replyText:'',file:null}
     : item.replyTo===message.msgId ? {...item,replyText:'Tin đã thu hồi'} : item;
   if(message.roomId!==activeRoom)return;
   for(const [key,item] of store.saved)store.saved.set(key,update(item));
@@ -142,7 +145,7 @@ function showAuth(reason = '') {
   stopSession();
   drawer(false);
   me = null;
-  ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
+  fileUpload.reset();ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
   draft = '';
   $('message').value = '';
   store.clear();
@@ -403,6 +406,7 @@ function updateComposer() {
   const room=ui.room(), writable=!me?.forcePassword && (!room || (room.joined && room.open && room.mutedUntil<Date.now()));
   $('send').disabled = socket?.readyState !== 1 || !writable || !input.value.trim() || bytes > 1000;
   $('sticker').disabled=socket?.readyState!==1 || !writable;
+  $('attach').disabled=socket?.readyState!==1 || !writable;
   input.style.height = 'auto';
   input.style.height = Math.min(130, input.scrollHeight) + 'px';
 }
@@ -447,13 +451,13 @@ function sendItem(item) {
     if (session === generation && store.pending.get(key)?.state === 'pending') failItem(item, 'Chưa nhận xác nhận. Hãy gửi lại.');
   }, 5000));
 }
-async function enqueue(text,kind='T') {
+async function enqueue(text,kind='T',extra={}) {
   if (socket?.readyState!==1 || me?.forcePassword) return;
   if (store.pending.size >= 100) { $('send-error').textContent = 'Hãy xử lý các tin chưa gửi trước.'; return; }
   const room=ui.room();
   if (room && (!room.open || room.mutedUntil>Date.now())) { $('send-error').textContent='Phòng đang đóng hoặc bạn đang bị cấm chat.'; return; }
   const quote=kind==='T'?replying:null;
-  const item = { roomId: activeRoom,text,kind,replyTo:quote?.msgId || 0,replyName:quote?.name || '',replyText:'',clientMsgId:messageId(),timestamp:Date.now(),name:me.name,userId:me.id };
+  const item = { roomId: activeRoom,text,kind,replyTo:quote?.msgId || 0,replyName:quote?.name || '',replyText:'',clientMsgId:messageId(),timestamp:Date.now(),name:me.name,userId:me.id,...extra };
   const session=generation,epoch=roomEpoch;
   if (!store.latest) {
     try { await latestPage(session,epoch); } catch(error) { $('send-error').textContent=error.message; return; }
@@ -461,7 +465,7 @@ async function enqueue(text,kind='T') {
   }
   $('send-error').textContent='';sendItem(item);
   if(kind==='T'){$('message').value='';draft='';replying=null;showReply();drafts.delete(activeRoom);}
-  updateComposer();$('message').focus();
+  updateComposer();$('message').focus();return true;
 }
 $('compose-form').onsubmit = event => { event.preventDefault(); if(!$('send').disabled)enqueue($('message').value); };
 addEventListener('offline', () => socket?.close());

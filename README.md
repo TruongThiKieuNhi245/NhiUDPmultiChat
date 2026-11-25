@@ -1,3 +1,9 @@
+## Web 3.1 — Tệp/ảnh và giao diện gradient (25/11/2026)
+
+Bổ sung upload/download HTTP có xác thực (tối đa 10 MB), progress/hủy/thử lại, thẻ tệp/thumbnail và metadata qua UDP thật. Giao diện tím–indigo có gradient, nút rõ hơn, sáng/tối và composer mobile. Bản đồ file/API, bằng chứng QA, giới hạn và bước thử tay: [nghiệm thu Web 3.1](docs/WEB3_1_NGHIEM_THU.md). Quản trị/PDF/backup thuộc mốc tiếp theo; chưa push/public.
+
+---
+
 > **Web 2 (25/11/2026):** đã có phòng/thành viên/lời mời offline, hồ sơ/avatar/mật khẩu, 36 sticker Noto, reply/thu hồi/search/TXT, typing và bản nháp theo phòng. Chat mới vẫn qua UDP thật. Xem [bàn giao Web 2, ảnh và 5 bước thử](docs/WEB2_NGHIEM_THU.md).
 >
 > QA: `python -X utf8 scripts/web2-browser-qa.py`; kiểm artifact/restart: `python -X utf8 scripts/web2-package-smoke.py` (biến `CHAT_QA_JAR` chọn JAR riêng). Chạy `test-compile dependency:build-classpath` như bên dưới trước browser QA. Dùng fixture riêng, không dùng dữ liệu vận hành. Bản xem thử Web 2 dùng cổng/data dir riêng; URL và lệnh ở báo cáo Web 2.

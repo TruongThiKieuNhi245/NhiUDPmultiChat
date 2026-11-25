@@ -1,4 +1,4 @@
-import { element } from './chat-view.js';
+import { element, fileSize } from './chat-view.js';
 const $ = id => document.getElementById(id);
 
 // Dialog native giu focus va Escape; chi chen markup do ung dung soan san.
@@ -135,7 +135,7 @@ export class WorkspaceUI {
     for(const item of pending) {
       const card=element('section','info-card');
       const room=this.snapshot.rooms.find(room=>room.id===item.roomId);
-      card.append(element('strong','',room?.name || 'Phòng không còn truy cập được'),element('p','',item.kind==='S'?'[Sticker '+item.text+']':item.text),element('p','error',item.error || 'Đang gửi…'));
+      card.append(element('strong','',room?.name || 'Phòng không còn truy cập được'),element('p','',item.kind==='S'?'[Sticker '+item.text+']':item.kind==='F'?'[Tệp] '+(item.file?.name || 'Tệp đính kèm')+' · '+fileSize(item.file?.size || 0):item.text),element('p','error',item.error || 'Đang gửi…'));
       if(room?.joined)this.button(card,'Tới phòng và gửi lại',async()=>{this.dialog.close();await this.retry(item);});
       this.button(card,'Bỏ hàng trên thiết bị',()=>{
         const {content:explanation}=this.form('Bỏ hàng chờ trên thiết bị',[],async()=>{this.discard(item);},{submitText:'Bỏ hàng chờ'});

@@ -23,7 +23,7 @@ public class WebSecurity {
     }
     @Bean
     SecurityFilterChain security(HttpSecurity http, WebChatService service) throws Exception {
-        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/index.html", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/app.css", "/error",
+        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/index.html", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/file-upload.js", "/app.css", "/error",
                 "/api/csrf", "/api/login", "/api/register").permitAll().anyRequest().authenticated());
         http.exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> res.sendError(401)));
         http.headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
@@ -41,7 +41,10 @@ public class WebSecurity {
             }
             @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
                     throws ServletException, IOException {
-                if (req.getContentLengthLong() > (req.getRequestURI().equals("/api/actions/profile-save")?96000:8192)) { res.sendError(413); return; }
+                boolean upload=req.getRequestURI().equals("/api/files/upload") && req.getMethod().equals("POST");
+                if(upload && (token(req.getSession(false)).isEmpty() || !service.active(token(req.getSession(false))))) { res.sendError(401);return; }
+                if(upload && req.getHeader("X-CSRF-TOKEN")==null) { res.sendError(403);return; }
+                if (req.getContentLengthLong() > (upload?11*1024*1024:req.getRequestURI().equals("/api/actions/profile-save")?96000:8192)) { res.sendError(413); return; }
                 if ("POST".equals(req.getMethod()) && java.util.Set.of("/api/login", "/api/register").contains(req.getRequestURI())
                         && !allow(req.getRemoteAddr())) { res.sendError(429); return; }
                 String key = token(req.getSession(false));
@@ -52,7 +55,7 @@ public class WebSecurity {
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     } catch (IllegalArgumentException e) { SecurityContextHolder.clearContext(); }
                 }
-                chain.doFilter(new BoundedJsonRequest(req,req.getRequestURI().equals("/api/actions/profile-save")?96000:8192),res);
+                chain.doFilter(upload?req:new BoundedJsonRequest(req,req.getRequestURI().equals("/api/actions/profile-save")?96000:8192),res);
             }
         }, SecurityContextHolderFilter.class);
         return http.build();

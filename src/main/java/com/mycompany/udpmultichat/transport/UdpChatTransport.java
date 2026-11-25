@@ -60,8 +60,9 @@ public final class UdpChatTransport implements AutoCloseable {
         try {
             if (room == null || !room.matches("sanh|[a-f0-9]{24}")) { throw new IllegalArgumentException("Phòng không hợp lệ."); }
             if (text == null) { throw new IllegalArgumentException("Hãy nhập nội dung tin nhắn."); }
-            if (!Set.of("T","S").contains(kind) || replyTo<0) throw new IllegalArgumentException("Loại tin không hợp lệ.");
+            if (!Set.of("T","S","F").contains(kind) || replyTo<0) throw new IllegalArgumentException("Loại tin không hợp lệ.");
             if (kind.equals("S") && (replyTo!=0 || !Protocol.stickerHopLe(text))) throw new IllegalArgumentException("Sticker không hợp lệ.");
+            if(kind.equals("F") && replyTo!=0)throw new IllegalArgumentException("Thẻ tệp không hỗ trợ reply trực tiếp.");
             String payload=kind.equals("T")?WebReply.encode(text,replyTo):text;
             Goi.kiemTraTin(new TinNhan(1,room,"x".repeat(24),"Tên người dùng",payload,0,id,kind));
             String nonce = BaoMat.ngauNhien(16);

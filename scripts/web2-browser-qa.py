@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 ROOT = Path(__file__).resolve().parents[1]
 RUN = ROOT / '.selftest' / ('web2-browser-' + uuid.uuid4().hex[:12])
 RUN.mkdir(parents=True)
-OUT = ROOT / 'docs/screenshots/web2'
+OUT = ROOT / os.environ.get('CHAT_QA_OUTPUT', 'docs/screenshots/web2')
 OUT.mkdir(parents=True, exist_ok=True)
 with socket.socket() as available:
     available.bind(('127.0.0.1', 0))

@@ -116,6 +116,10 @@ public class WebApi {
     }
     @RestControllerAdvice
     static class Errors {
+        @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+        ResponseEntity<Map<String,String>> uploadTooLarge() {
+            return ResponseEntity.status(413).body(Map.of("error","Tệp vượt 10 MB. Hãy chọn tệp nhỏ hơn hoặc chia tệp trước khi gửi."));
+        }
         @ExceptionHandler(BoundedJsonRequest.TooLarge.class)
         ResponseEntity<Map<String,String>> bodyTooLarge() {
             return ResponseEntity.status(413).body(Map.of("error","Dữ liệu yêu cầu quá lớn. Hãy rút ngắn hoặc chọn ảnh nhỏ hơn."));

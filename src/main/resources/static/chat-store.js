@@ -26,7 +26,7 @@ export class ChatStore {
   }
 
   sanitize(message) {
-    if (this.recalled.has(`${message.roomId}:${message.msgId}`)) return {...message,text:'',kind:'D',recalled:true,replyTo:0,replyText:''};
+    if (this.recalled.has(`${message.roomId}:${message.msgId}`)) return {...message,text:'',kind:'D',recalled:true,replyTo:0,replyText:'',file:null};
     if (message.replyTo && this.recalled.has(`${message.roomId}:${message.replyTo}`)) return {...message,replyText:'Tin đã thu hồi'};
     return message;
   }

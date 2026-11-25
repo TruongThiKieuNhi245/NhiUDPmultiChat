@@ -74,6 +74,7 @@ final class KhoTep {
         var ds=muc.values().stream().filter(t -> room==null || t.room().equals(room)).filter(t -> user==null || t.user().equals(user)).toList();
         return new long[]{ds.size(),ds.stream().mapToLong(TepTin::kichThuoc).sum()};
     }
+    List<TepTin> entries() { return List.copyOf(muc.values()); }
     // Doi ten nguyen tu neu he thong tep ho tro; khong ghi de tep dich.
     static void doiTen(Path tam,Path dich) throws IOException {
         try { Files.move(tam,dich,StandardCopyOption.ATOMIC_MOVE); }

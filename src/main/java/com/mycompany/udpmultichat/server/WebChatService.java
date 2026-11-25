@@ -15,6 +15,7 @@ public final class WebChatService implements AutoCloseable {
     private final QuanLyPhong rooms;
     private final KiemDuyet moderation;
     private final WebWorkspace workspace;
+    private final WebFiles files;
     private volatile java.util.function.Consumer<Event> events=event -> { };
     public record Event(String type,String roomId,Object data) { }
     public void onEvent(java.util.function.Consumer<Event> listener) { events=listener; }
@@ -42,6 +43,7 @@ public final class WebChatService implements AutoCloseable {
             moderation = new KiemDuyet(store, new NhatKy(directory, 5_000_000));
             rooms.kiemDuyet(moderation::kiemTraGui, moderation::kiemTraVao);
             workspace=new WebWorkspace(store,users,rooms,moderation);
+            files=new WebFiles(directory);cleanupFiles();
         } catch (IOException | RuntimeException e) { dataLock.release(); lockChannel.close(); throw e; }
     }
 
@@ -103,14 +105,16 @@ public final class WebChatService implements AutoCloseable {
     public synchronized Accepted receive(String token,String room,String clientMsgId,String text,String kind,long replyTo) throws IOException {
         var person = require(token);
         users.kiemTraBatBuoc(person,Protocol.GUI_TIN);
-        if (!Set.of("T","S").contains(kind) || replyTo<0) throw new IllegalArgumentException("Loại tin không hợp lệ.");
+        if (!Set.of("T","S","F").contains(kind) || replyTo<0) throw new IllegalArgumentException("Loại tin không hợp lệ.");
         if (kind.equals("S") && (replyTo!=0 || !Protocol.stickerHopLe(text))) throw new IllegalArgumentException("Sticker không hợp lệ.");
+        if (kind.equals("F") && replyTo!=0)throw new IllegalArgumentException("Thẻ tệp không hỗ trợ reply trực tiếp.");
         String stored=kind.equals("T")?WebReply.encode(text,replyTo):text;
         rooms.kiemTraGui(person, room);
         if (replyTo>0) rooms.tinNhan().theoId(room,replyTo);
         TinNhan old=rooms.tinNhan().theoMa(room,person.nguoi.id,clientMsgId);
         if(old!=null && old.thuHoi)workspace.checkRecalledRetry(old,kind,stored);
         boolean duplicate = old != null;
+        if(kind.equals("F") && (old==null || !old.thuHoi))files.validate(room,person.nguoi.id,text,rooms.tinNhan().cacTep(),duplicate);
         if (!duplicate && rooms.mocTin(room) >= 10000) { throw new IllegalArgumentException("Phòng đã đạt giới hạn 10.000 tin của bộ lưu trữ hiện tại."); }
         if (!duplicate && !moderation.choTin(person, System.currentTimeMillis())) {
             throw new IllegalArgumentException("Bạn gửi quá nhanh. Hãy chờ một chút.");
@@ -148,7 +152,9 @@ public final class WebChatService implements AutoCloseable {
     public synchronized Object action(String token,String action,Map<String,String> args) throws IOException {
         var person=require(token);
         mutation(token);
-        Object result=workspace.action(person,action,args); changed(); return result;
+        Object result=workspace.action(person,action,args);
+        if(action.equals("room-delete"))files.removeRoom(args.get("roomId"));
+        changed(); return result;
     }
     private void mutation(String token) {
         var attempts=sessions.get(token).actions;
@@ -168,12 +174,13 @@ public final class WebChatService implements AutoCloseable {
         String quote="",author="";
         if (reply>0) {
             var source=rooms.tinNhan().theoId(t.roomId,reply); author=source.ten;
-            quote=source.thuHoi?"Tin đã thu hồi":source.loai.equals("S")?"[Sticker]":WebReply.body(source.noiDung);
+            quote=source.thuHoi?"Tin đã thu hồi":source.loai.equals("S")?"[Sticker]":source.loai.equals("F")?"[Tệp] "+TepTin.doc(source.roomId,source.userId,source.noiDung,0).ten():WebReply.body(source.noiDung);
             if (quote.length()>160) quote=quote.substring(0,160)+"…";
         }
         var user=users.timTheoId(t.userId);
         return new WebMessage(t.msgId,t.roomId,t.userId,t.ten,t.thuHoi?"":t.loai.equals("T")?WebReply.body(t.noiDung):t.noiDung,
-                t.thoiGian,t.maClient,t.loai,t.thuHoi,reply,author,quote,rooms.layBietDanh(t.roomId,t.userId),user==null?"":user.anhHash);
+                t.thoiGian,t.maClient,t.loai,t.thuHoi,reply,author,quote,rooms.layBietDanh(t.roomId,t.userId),user==null?"":user.anhHash,
+                !t.thuHoi && t.loai.equals("F")?files.describe(t.roomId,t.userId,t.noiDung):null);
     }
     public synchronized List<WebMessage> messages(String token,String room,long cursor,boolean before) {
         return (before?historyPage(token,room,cursor):history(token,room,cursor)).stream().map(this::message).toList();
@@ -210,6 +217,7 @@ public final class WebChatService implements AutoCloseable {
         workspace.rememberRecall(original);
         var t=rooms.tinNhan().thuHoi(person,rooms.lay(room),id);
         events.accept(new Event("recall",room,message(t)));
+        if(original.loai.equals("F") && !original.thuHoi)files.remove(TepTin.doc(room,original.userId,original.noiDung,0).id());
     }
     public synchronized String export(String token,String room) {
         workspace.read(require(token),room);
@@ -220,10 +228,32 @@ public final class WebChatService implements AutoCloseable {
             for (var t:page) {
                 var m=message(t); after=t.msgId;
                 out.append(java.time.Instant.ofEpochMilli(m.timestamp())).append(" | ").append(m.name()).append(" | ")
-                        .append(m.recalled()?"[Tin đã thu hồi]":m.kind().equals("S")?"[Sticker "+m.text()+"]":m.text()).append('\n');
+                        .append(m.recalled()?"[Tin đã thu hồi]":m.kind().equals("S")?"[Sticker "+m.text()+"]":m.file()!=null?"[Tệp] "+m.file().name()+" ("+TepTin.dungLuong(m.file().size())+")":m.text()).append('\n');
             }
         } while (page.size()==50);
         return out.toString();
+    }
+    public synchronized WebFiles.Ticket beginUpload(String token,String room,String name,long size) throws IOException {
+        var person=require(token);mutation(token);users.kiemTraBatBuoc(person,Protocol.GUI_TIN);rooms.kiemTraGui(person,room);
+        cleanupFiles();return files.begin(room,person.nguoi.id,name,size);
+    }
+    public long writeUpload(WebFiles.Ticket ticket,java.io.InputStream input) throws IOException { return files.write(ticket,input); }
+    public synchronized WebFile finishUpload(String token,WebFiles.Ticket ticket,long crc) throws IOException {
+        var person=require(token);users.kiemTraBatBuoc(person,Protocol.GUI_TIN);rooms.kiemTraGui(person,ticket.room());
+        if(!person.nguoi.id.equals(ticket.user()))throw new IllegalArgumentException("Lượt tải lên thuộc tài khoản khác.");
+        return files.finish(ticket,crc);
+    }
+    public void abortUpload(WebFiles.Ticket ticket) throws IOException { files.abort(ticket); }
+    public synchronized WebFiles.Download download(String token,String id,boolean thumbnail) throws IOException {
+        var person=require(token);var file=files.metadata(id);workspace.read(person,file.room());
+        if(!rooms.tinNhan().cacTep().contains(id))throw new IllegalArgumentException("Tệp chưa được gửi hoặc đã thu hồi.");
+        return files.open(id,thumbnail);
+    }
+    public synchronized void discardUpload(String token,String id) throws IOException {
+        var person=require(token);mutation(token);files.discard(person.nguoi.id,id,rooms.tinNhan().cacTep());
+    }
+    public synchronized void cleanupFiles() throws IOException {
+        files.cleanup(rooms.tinNhan().cacTep(),rooms.tatCa().stream().map(r->r.id).collect(java.util.stream.Collectors.toSet()));
     }
     public record Identity(String token, String id, String login, String name) { }
     public record Accepted(TinNhan message, boolean duplicate) { }

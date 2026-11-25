@@ -5,6 +5,8 @@ export function element(tag, className, text) {
   return node;
 }
 
+export const fileSize = bytes => bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes/1024).toFixed(1)} KB` : `${(bytes/1048576).toFixed(1)} MB`;
+
 const dateKey = item => new Date(item.timestamp).toLocaleDateString('vi-VN');
 export const nearBottom = timeline => timeline.scrollHeight - timeline.scrollTop - timeline.clientHeight < 90;
 
@@ -43,7 +45,7 @@ export class ChatView {
     identity.setAttribute('aria-label', `${item.name}, xem định danh tài khoản`);
     meta.append(identity, account);
     const quote = element('button', 'reply-preview'); quote.type = 'button';
-    const text = element('p', 'message-text');
+    const text = element('div', 'message-text');
     const footer = element('div', 'message-footer');
     const time = element('time');
     const state = element('span', 'message-state');
@@ -81,7 +83,7 @@ export class ChatView {
     ref.identity.textContent = item.nickname || item.name;
     // Khong gan lai textContent neu khong doi, de giu selection khi co tin moi.
     const content = item.recalled ? 'Tin đã thu hồi' : item.text;
-    const contentKey = (item.kind || 'T') + ':' + content;
+    const contentKey = (item.kind || 'T') + ':' + content + (item.kind==='F'?':'+Boolean(item.msgId):'');
     if (ref.text.dataset.content !== contentKey) {
       ref.text.dataset.content = contentKey;
       if (item.kind === 'S' && !item.recalled) {
@@ -89,6 +91,19 @@ export class ChatView {
         image.src = '/api/stickers/' + encodeURIComponent(item.text) + '.png'; image.alt = 'Sticker ' + item.text;
         image.onerror = () => { ref.text.textContent = '[Sticker không còn được hỗ trợ]'; };
         ref.text.replaceChildren(image);
+      } else if(item.kind==='F' && item.file && !item.recalled) {
+        const file=item.file,card=element('div','file-card');
+        if(file.image && item.msgId) {
+          const image=element('img','file-thumbnail');image.width=240;image.height=150;image.loading='lazy';
+          image.alt='Xem trước '+file.name;image.src='/api/files/'+encodeURIComponent(file.id)+'?thumbnail=true';
+          image.onerror=()=>{image.alt='Không tải được ảnh xem trước. Dùng Tải xuống để thử lại.';};card.append(image);
+        }
+        const size=fileSize(file.size);
+        card.append(element('strong','file-name',file.name),element('span','file-size',size));
+        if(item.msgId) {
+          const link=element('a','file-download','↓ Tải xuống');link.href='/api/files/'+encodeURIComponent(file.id);card.append(link);
+        }else card.append(element('span','file-size','Đã tải lên · Đang chờ gửi tin'));
+        ref.text.replaceChildren(card);
       } else ref.text.textContent = content;
     }
     ref.row.classList.toggle('recalled', Boolean(item.recalled));
@@ -96,7 +111,7 @@ export class ChatView {
     ref.quote.textContent = `${item.replyName || 'Tin gốc'}: ${item.replyText || 'Xem tin được trả lời'}`;
     ref.quote.onclick = () => this.actions.jump?.(item.replyTo);
     ref.menu.hidden = !item.msgId || item.recalled;
-    ref.copy.hidden = item.kind === 'S';
+    ref.copy.hidden = item.kind !== 'T';
     ref.copy.onclick = async () => {
       try { await navigator.clipboard.writeText(item.text); ref.copy.textContent = 'Đã sao chép'; }
       catch { ref.copy.textContent = 'Hãy chọn chữ và dùng Ctrl+C'; }

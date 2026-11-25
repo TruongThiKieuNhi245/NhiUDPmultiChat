@@ -1,3 +1,9 @@
+## Cập nhật Web 3.1 — 25/11/2026
+
+Tiếp quản `be607ec`. Mốc này hoàn thiện tệp/ảnh HTTP + metadata F qua UDP CHAT2 và giao diện gradient; giữ dữ liệu vận hành cùng các sửa đổi tài liệu có sẵn. Chi tiết source/API, quota/cleanup, QA browser/JAR và phần còn lại: [WEB3_1_NGHIEM_THU.md](WEB3_1_NGHIEM_THU.md). Đây chưa phải nghiệm thu toàn bộ Web 3; dừng sau mốc để xem kết quả, chưa push/public.
+
+---
+
 ## Cập nhật Web 2 — 25/11/2026
 
 Tiếp quản `939662b`; giữ các sửa đổi tài liệu có trước. Web 2 nối nhiều phòng, thành viên/lời mời/biệt danh, hồ sơ/avatar/đổi mật khẩu, sticker/reply/thu hồi/search/TXT và các trạng thái chat. Bản đồ file/API, kết quả QA, ảnh, artifact riêng và giới hạn nằm trong [WEB2_NGHIEM_THU.md](WEB2_NGHIEM_THU.md).
