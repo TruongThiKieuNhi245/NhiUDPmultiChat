@@ -127,7 +127,8 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
     private void event(WebChatService.Event event) {
         if(event.type().equals("session-revoked")){closeIdentity((String)event.data());return;}
         peers.values().forEach(peer -> {
-            if (valid(peer) && (event.roomId().isEmpty() || service.canRead(peer.token,event.roomId()))) {
+            if (valid(peer) && (!event.recipientId().isEmpty()?service.identity(peer.token).id().equals(event.recipientId()):
+                    event.roomId().isEmpty() || service.canRead(peer.token,event.roomId()))) {
                 send(peer.socket,Map.of("type",event.type(),"roomId",event.roomId(),"data",event.data()));
             }
         });

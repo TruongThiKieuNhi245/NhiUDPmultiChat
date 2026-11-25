@@ -1,3 +1,9 @@
+## Web 3.3 — Quản lý thành viên và thông báo
+
+Đã hoàn thiện phản hồi cấm/gỡ cấm chat, đuổi, ban/gỡ ban và chuyển chủ; banner thời hạn/lý do, danh sách cấm theo phòng/toàn hệ thống và thông báo riêng sau khi mất quyền phòng. Sửa admin thay chủ chưa được nối phòng, race CSRF khi đăng ký sớm và typing khi đổi phòng nhanh. [Bàn giao, ảnh và 5 bước thử](docs/WEB3_3_THANH_VIEN_NGHIEM_THU.md). Bản mới: **http://127.0.0.1:8085** (8084 giữ nguyên bản cũ). 30 JUnit; 11 nhóm browser thành viên, 12 admin JAR/restart, 12 UX, 11 Web 2, 8 tệp đều đạt. Chưa push/public.
+
+---
+
 ## Web 3.2 — Quản trị, thống kê và báo cáo PDF
 
 Đã có trang `/admin` với **Tổng quan, Người dùng, Phòng, Nhật ký, Báo cáo**; CRUD/kiểm duyệt/thu hồi phiên, thống kê cùng snapshot, tải **PDF A4 có dấu tiếng Việt** và ZIP 4 CSV + 1 HTML. Sidebar bỏ panel Tin chờ/lỗi; xuất lịch sử chuyển vào **Thông tin phòng**, có HTML dễ đọc và TXT. Giữ trạng thái lỗi/gửi lại tại tin để phản ánh đúng kết quả gửi qua UDP.

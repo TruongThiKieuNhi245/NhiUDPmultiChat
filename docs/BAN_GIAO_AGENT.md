@@ -1,3 +1,9 @@
+## Cập nhật Web 3.3 — Quản lý thành viên và thông báo
+
+Tiếp quản `1351412`; giữ sáu tài liệu có sửa đổi và mọi dữ liệu/preview cũ. Hoàn thiện moderation feedback/notice riêng/banner/lệnh còn hạn/gỡ cấm; sửa admin thay chủ, CSRF early submit và typing. [Chi tiết file/hàm, QA và bản mới 8085](WEB3_3_THANH_VIEN_NGHIEM_THU.md). JUnit 30, desktop admin 16; browser thành viên/admin/UX/Web 2/tệp đều PASS trong phạm vi ghi ở nghiệm thu. Backup/rollback và Web 4 còn tiếp theo; chưa push/public.
+
+---
+
 ## Cập nhật Web 3.2 — Quản trị, thống kê và PDF
 
 Tiếp quản `4e02c11`, giữ nguyên dữ liệu và sáu tài liệu đã sửa trước đó. Hoàn thành `/admin` năm mục, CRUD/kiểm duyệt/broadcast qua UDP thật, revoke HTTP/WS, thống kê và PDF A4 tiếng Việt cùng snapshot với CSV/HTML. Bỏ panel Tin chờ/lỗi, đưa xuất HTML/TXT vào thông tin phòng; lỗi/retry còn tại hàng tin.

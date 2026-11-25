@@ -616,3 +616,52 @@ body:has(.admin-page:not([hidden])) { overflow:hidden; }
   .table-toolbar input { width:100%; max-width:none; }
   .admin-tools > button { min-height:44px; }
 }
+
+/* Phan hoi thao tac tach khoi tin chat va trang thai ket noi. */
+.feedback {
+  position:fixed;
+  z-index:100;
+  top:80px;
+  right:18px;
+  width:min(420px, calc(100vw - 32px));
+  max-height:40dvh;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  display:grid;
+  gap:10px;
+  pointer-events:none;
+}
+.feedback:empty { display:none; }
+.feedback-card {
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:12px 14px;
+  border:1px solid var(--accent-border);
+  border-left:5px solid var(--primary);
+  border-radius:12px;
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 8px 28px #0003;
+  pointer-events:auto;
+  overflow-wrap:anywhere;
+}
+.feedback-card p { margin:4px 0; line-height:1.55; flex:1; }
+.feedback-card .icon-button { flex:0 0 44px; }
+.feedback-important { border-left-color:var(--error); }
+.app-dialog .feedback { position:sticky; top:0; width:100%; margin-bottom:14px; }
+.room-restriction {
+  margin:0 0 10px;
+  padding:12px 14px;
+  border:1px solid var(--accent-border);
+  border-left:4px solid var(--primary);
+  border-radius:10px;
+  background:var(--accent-surface);
+  color:var(--accent-text);
+  line-height:1.5;
+  overflow-wrap:anywhere;
+}
+.moderation-label { color:var(--error); font-weight:600; }
+@media(max-width:760px) {
+  .feedback { top:68px; right:12px; width:calc(100vw - 24px); }
+}

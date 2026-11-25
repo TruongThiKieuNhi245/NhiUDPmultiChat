@@ -1,3 +1,4 @@
+import { Feedback, moderationText } from './feedback.js';
 import { AdminUI } from './admin-ui.js';
 import { FileUpload } from './file-upload.js';
 import { WorkspaceUI } from './workspace-ui.js';
@@ -5,6 +6,7 @@ import { ChatStore, ROOM, CACHE_LIMIT } from './chat-store.js';
 import { ChatView, nearBottom } from './chat-view.js';
 
 const $ = id => document.getElementById(id);
+const feedback = new Feedback();
 const store = new ChatStore(), encoder = new TextEncoder(), timers = new Map();
 const view = new ChatView($('messages'), item => sendItem(item), {
   reply: item => { replying = item; showReply(); $('message').focus(); },
@@ -14,7 +16,7 @@ const view = new ChatView($('messages'), item => sendItem(item), {
     await api('/recall',{method:'POST',body:JSON.stringify({roomId:item.roomId,msgId:item.msgId})});
   },{submitText:'Thu hồi'})
 });
-let activeRoom = ROOM, roomEpoch = 0, replying = null, recallCursor = 0, lastTyping = 0;
+let activeRoom = ROOM, roomEpoch = 0, replying = null, recallCursor = 0, lastTyping = 0, typingTimer;
 const drafts = new Map(), roomUnread = new Map(), typingUsers = new Map();
 const ui = new WorkspaceUI({ api, action, selectRoom, currentRoom: () => activeRoom,
   jump: jumpTo, sendSticker: code => enqueue(code,'S'), updateProfile });
@@ -26,7 +28,9 @@ const fileUpload = new FileUpload({ ui, csrf: () => csrf, api, currentRoom: () =
   send: (file,room) => room===activeRoom ? enqueue(file.text,'F',{file}) : false });
 ui.unread = roomUnread;
 ui.pending = () => [...store.pending.values()];
-async function action(name,data) { return api('/actions/'+name,{method:'POST',body:JSON.stringify(data)}); }
+async function action(name,data) { const session=generation;const result=await api('/actions/'+name,{method:'POST',body:JSON.stringify(data)});if(session===generation)feedback.action(name,data,result);return result; }
+ui.notify=(text,options)=>feedback.show(text,options);
+ui.success=(name,data,result)=>feedback.action(name,data,result);
 function updateProfile(profile) {
   if (!me) return;
   const forced = me.forcePassword;
@@ -73,7 +77,7 @@ async function selectRoom(id,force=false) {
   if (!me || (activeRoom===id && !force)) { drawer(false); return; }
   drafts.delete(activeRoom); drafts.set(activeRoom,{text:$('message').value,reply:replying?{...replying,text:''}:null});
   if (drafts.size>20) drafts.delete(drafts.keys().next().value);
-  roomEpoch++; activeRoom=id; store.roomId=id; store.saved.clear(); store.cursor=0;store.initialized=false;store.latest=true;
+  clearTimeout(typingTimer);lastTyping=0;roomEpoch++; activeRoom=id; store.roomId=id; store.saved.clear(); store.cursor=0;store.initialized=false;store.latest=true;
   recallCursor=0;unread=0;roomUnread.delete(id);view.clear();typingUsers.clear();$('typing').textContent='';
   const entry=drafts.get(id);$('message').value=entry?.text || '';replying=entry?.reply || null;
   updateRoomHeader();showReply();ui.renderRooms();drawer(false);
@@ -134,10 +138,15 @@ async function api(url, options = {}) {
   }
   return data;
 }
-async function loadCsrf() { csrf = await api('/csrf'); }
+// Hop nhat request khoi tao va submit som de tranh hai cookie CSRF canh tranh.
+let csrfLoading;
+async function loadCsrf() {
+  if(!csrfLoading)csrfLoading=api('/csrf').then(value=>{csrf=value;}).finally(()=>{csrfLoading=null;});
+  return csrfLoading;
+}
 function stopSession() {
   generation++;
-  clearTimeout(reconnectTimer);
+  clearTimeout(reconnectTimer);clearTimeout(typingTimer);
   for (const timer of timers.values()) clearTimeout(timer);
   timers.clear();
   const previous = socket;
@@ -148,7 +157,7 @@ function showAuth(reason = '') {
   stopSession();
   drawer(false);
   me = null;
-  fileUpload.reset();admin.reset();ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
+  feedback.clear();fileUpload.reset();admin.reset();ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
   draft = '';
   $('message').value = '';
   store.clear();
@@ -265,17 +274,27 @@ function connect() {
       reconnectAttempt = 0;
       status('Đã kết nối', true);
       alertChat();
-      try { if (!me.forcePassword) await syncHistory(session,roomEpoch); }
+      try { if (!me.forcePassword) {await ui.refresh();if(valid())await syncHistory(session,roomEpoch);} }
       catch (error) { if (valid()) { historyFailed = true; alertChat('Chưa tải được lịch sử. Bấm Về tin mới để thử lại. ' + error.message); $('new-messages').hidden = false; } }
     }
     if (data.type === 'ping' && current.readyState === 1) current.send(JSON.stringify({ type: 'ping' }));
     if (data.type === 'admin-updated') admin.invalidate();
+    if(data.type==='member-notice') {
+      const notice=data.data;
+      if(notice.userId===me.id){
+        if(['KICK','BAN'].includes(notice.kind) && data.roomId===activeRoom)ui.dialog?.close();
+        if(!valid())return;
+        feedback.show(moderationText(notice),{id:notice.id,important:true});ui.scheduleRefresh();
+      }
+    }
+    if(data.type==='room-activity' && data.data.actorId!==me.id && data.data.userId!==me.id)feedback.show(data.data.text,{id:data.data.id});
     if (data.type === 'workspace') {ui.scheduleRefresh();admin.invalidate();}
     if (data.type === 'history-cleared' && data.roomId===activeRoom){recallCursor=0;syncRecalls(generation,roomEpoch).catch(error=>alertChat(error.message));}
     if (data.type === 'recall') applyRecall(data.data);
     if (data.type === 'typing' && data.roomId===activeRoom && data.data.userId!==me.id) typingUsers.set(data.data.userId,data.data);
     if (data.type === 'message' || data.type === 'confirmed') {accept(data.message);admin.invalidate();}
     if (data.type === 'error') {
+      ui.scheduleRefresh();
       const item = [...store.pending.values()].find(row => row.clientMsgId === data.clientMsgId);
       if (item) { failItem(item, data.error); alertChat('Chưa gửi được một tin. Xem thông báo và nút Gửi lại cạnh tin đó.'); }
       else $('send-error').textContent = data.error;
@@ -409,6 +428,10 @@ function updateComposer() {
   $('bytes').classList.toggle('error', bytes > 1000);
   $('limit-error').textContent = bytes > 1000 ? 'Tin vượt 1000 byte UTF-8. Hãy rút ngắn hoặc tách thành nhiều tin.' : '';
   input.setAttribute('aria-invalid', String(bytes > 1000));
+  const restriction=$('room-restriction'),currentRoom=ui.room(),muted=currentRoom?.mutedUntil>Date.now();
+  const restrictionText=muted?`Bạn đang bị cấm chat đến ${new Date(currentRoom.mutedUntil).toLocaleString('vi-VN')}.${currentRoom.muteReason?' Lý do: '+currentRoom.muteReason:''} Bạn vẫn có thể đọc tin và giữ bản nháp.`:currentRoom && !currentRoom.open?'Phòng đã đóng. Bạn vẫn có thể đọc lịch sử.':'';
+  if(restriction.textContent!==restrictionText)restriction.textContent=restrictionText;
+  restriction.hidden=!restrictionText;
   const room=ui.room(), writable=!me?.forcePassword && (!room || (room.joined && room.open && room.mutedUntil<Date.now()));
   $('send').disabled = socket?.readyState !== 1 || !writable || !input.value.trim() || bytes > 1000;
   $('sticker').disabled=socket?.readyState!==1 || !writable;
@@ -418,7 +441,10 @@ function updateComposer() {
 }
 $('message').oninput = () => {
   draft = $('message').value; updateComposer();
-  if(socket?.readyState===1 && Date.now()-lastTyping>1500){lastTyping=Date.now();socket.send(JSON.stringify({type:'typing',roomId:activeRoom}));}
+  clearTimeout(typingTimer);
+  const session=generation,epoch=roomEpoch;
+  const emit=()=>{if(session!==generation || epoch!==roomEpoch || socket?.readyState!==1 || !$('message').value.trim() || $('sticker').disabled)return;lastTyping=Date.now();socket.send(JSON.stringify({type:'typing',roomId:activeRoom}));};
+  typingTimer=setTimeout(emit,Math.max(0,1500-(Date.now()-lastTyping)));
 };
 $('message').onkeydown = event => {
   if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {

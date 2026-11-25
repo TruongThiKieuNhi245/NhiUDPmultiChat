@@ -50,7 +50,7 @@ export class AdminUI {
   }
   rows(key) {return this.snapshot?.data.bang[key] || [];}
   field(...args) {return this.ui.field(...args);}
-  async action(name,data) {const result=await this.request('/admin/actions/'+name,{method:'POST',body:JSON.stringify(data)});await this.refresh();return result;}
+  async action(name,data) {const result=await this.request('/admin/actions/'+name,{method:'POST',body:JSON.stringify(data)});this.ui.success(name,data,result);await this.refresh();return result;}
   form(title,fields,action,options={}) {return this.ui.form(title,fields,async data=>{await this.action(action,data);},options);}
   button(parent,text,callback,primary=false) {const button=this.ui.button(parent,text,callback);if(primary)button.className='primary';return button;}
   draw() {
@@ -104,7 +104,7 @@ export class AdminUI {
     this.table(parent,['Phòng','Thành viên','Online','Tin'],this.rows('ROOMS').map(r=>({cells:[r[2],r[6],r[14],r[7]]})));
   }
   users(parent) {
-    const tools=element('div','admin-tools');this.button(tools,'Thêm người dùng',()=>this.userForm(),true);this.button(tools,'Kiểm duyệt tài khoản',()=>this.moderate());parent.append(tools);
+    const tools=element('div','admin-tools');this.button(tools,'Thêm người dùng',()=>this.userForm(),true);this.button(tools,'Kiểm duyệt tài khoản',()=>this.moderate());this.button(tools,'Danh sách cấm toàn hệ thống',()=>this.restrictions('*','Toàn hệ thống'));parent.append(tools);
     this.paged(parent,['Tài khoản','Tên hiển thị','Vai trò','Trạng thái','Số tin'],this.rows('USERS'),r=>['@'+r[1],r[2],r[3]==='ADMIN'?'Quản trị':'Thành viên',r[4],r[6]],(td,row)=>{this.button(td,'Quản lý',()=>this.userDetails(row));});
   }
   userForm(row) {
@@ -143,18 +143,32 @@ export class AdminUI {
     this.button(content,'Sửa phòng',()=>this.roomForm(row));this.button(content,row[4]==='Mở'?'Đóng phòng':'Mở phòng',async()=>{await this.action('room-state',{id:row[0],open:String(row[4]!=='Mở')});this.ui.dialog.close();});
     this.button(content,'Chuyển chủ phòng',()=>this.form('Chuyển chủ phòng',[this.field('id','ID phòng','text',row[0],{readOnly:true}),this.field('userId','Chủ phòng mới','text','',{options:this.rows('USERS').filter(r=>r[4]!=='Bị khóa').map(r=>[r[0],'@'+r[1]])})],'room-transfer'));
     this.button(content,'Kiểm duyệt thành viên',()=>this.moderate('',row[0]));
+    this.button(content,'Danh sách cấm / gỡ cấm',()=>this.restrictions(row[0],row[2]));
     this.button(content,'Xóa nội dung lịch sử',()=>this.ui.form('Xóa nội dung '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(data.confirm!=='XÓA')throw new Error('Hãy nhập XÓA.');await this.action('room-clear',{id:row[0]});},{submitText:'Xóa nội dung'}));
     this.button(content,'Xóa phòng',()=>this.ui.form('Xóa phòng '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(data.confirm!=='XÓA')throw new Error('Hãy nhập XÓA.');await this.action('room-delete',{id:row[0]});},{submitText:'Xóa phòng'}));
     const members=this.rows('MEMBERS').filter(r=>r[0]===row[0]);content.append(element('h3','','Danh sách thành viên'));
-    this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],r[5],r[6]==='true'?'Có':'Không']})));
+    this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],r[5],r[6]==='true'?'Có':'Không'],source:r})),(td,r)=>{if(r[2]!==this.profile.id)this.button(td,'Quản lý',()=>this.moderate(r[2],row[0]));});
+  }
+  async restrictions(roomId,name) {
+    const rules=await this.request('/moderation?roomId='+encodeURIComponent(roomId));
+    const {content}=this.ui.open('Danh sách cấm · '+name);
+    if(!rules.length)content.append(element('p','','Không có lệnh cấm còn hiệu lực.'));
+    for(const rule of rules){
+      const card=element('section','info-card restriction-card');card.dataset.userId=rule.userId;card.dataset.kind=rule.kind;
+      card.append(element('h3','',rule.name+' · @'+rule.login),element('p','moderation-label',`${rule.kind==='MUTE'?'Cấm chat':'Cấm vào phòng'} đến ${new Date(rule.until).toLocaleString('vi-VN')}`),element('p','',rule.reason));
+      this.button(card,rule.kind==='MUTE'?'Gỡ cấm chat':'Gỡ cấm vào phòng',async()=>{await this.action('member-moderate',{roomId,userId:rule.userId,kind:rule.kind,seconds:'-1'});await this.restrictions(roomId,name);});content.append(card);
+    }
+    content.append(element('p','muted','Gỡ cấm vào không tự thêm lại thành viên. Cấm chat toàn hệ thống và từng phòng được áp dụng độc lập.'));
   }
   moderate(userId='',roomId='*') {
-    this.form('Kiểm duyệt tài khoản/phòng',[
-      this.field('userId','Tài khoản','text',userId,{options:this.rows('USERS').map(r=>[r[0],'@'+r[1]])}),
+    const modal=this.ui.form('Kiểm duyệt tài khoản/phòng',[
+      this.field('userId','Tài khoản','text',userId,{options:this.rows('USERS').filter(r=>r[0]!==this.profile.id).map(r=>[r[0],'@'+r[1]])}),
       this.field('roomId','Phạm vi','text',roomId,{options:[['*','Toàn hệ thống (chỉ cấm chat)'],...this.rows('ROOMS').map(r=>[r[0],r[2]])]}),
-      this.field('kind','Thao tác','text','MUTE',{options:[['MUTE','Cấm chat / gỡ cấm chat'],['BAN','Cấm vào / gỡ cấm vào'],['KICK','Đuổi khỏi phòng']]}),
-      this.field('seconds','Thời hạn: giây; -1 để gỡ','number','300',{required:true,min:-1,max:31536000}),this.field('reason','Lý do','text','',{maxLength:200})
-    ],'member-moderate');
+      this.field('kind','Thao tác','text','MUTE',{options:[['MUTE','Cấm chat'],['UNMUTE','Gỡ cấm chat'],['BAN','Cấm vào phòng'],['UNBAN','Gỡ cấm vào phòng'],['KICK','Đuổi khỏi phòng']]}),
+      this.field('seconds','Thời hạn (giây)','number','300',{required:true,min:1,max:31536000}),this.field('reason','Lý do','text','',{maxLength:200})
+    ],async data=>{const remove=data.kind.startsWith('UN');await this.action('member-moderate',{...data,kind:remove?data.kind.slice(2):data.kind,seconds:remove?'-1':data.kind==='KICK'?'0':data.seconds});},{submitText:'Áp dụng'});
+    const kind=modal.form.elements.kind,seconds=modal.form.elements.seconds;
+    kind.onchange=()=>{seconds.disabled=kind.value.startsWith('UN') || kind.value==='KICK';seconds.required=!seconds.disabled;};
   }
   audit(parent) {
     this.button(parent,'Tải nhật ký CSV',()=>this.download('audit'));

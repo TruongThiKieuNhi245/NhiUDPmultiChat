@@ -36,6 +36,21 @@ final class KiemDuyet {
     long den(String scope,String user,String loai) {
         long n=Long.parseLong(p.getProperty(scope+":"+user+":"+loai,"0")); return n>System.currentTimeMillis()?n:0;
     }
+    record Rule(String scope,String userId,String kind,long until,String reason) { }
+    String lyDo(String scope,String user,String kind) { return den(scope,user,kind)>0?p.getProperty(scope+":"+user+":"+kind+":reason",""):""; }
+    String lyDoMute(String room,String user) {
+        return den("*",user,"MUTE")>=den(room,user,"MUTE")?lyDo("*",user,"MUTE"):lyDo(room,user,"MUTE");
+    }
+    List<Rule> danhSach(String scope) {
+        long now=System.currentTimeMillis();var result=new ArrayList<Rule>();
+        for(String key:p.stringPropertyNames()) {
+            String[] parts=key.split(":",-1);
+            if(parts.length!=3 || !parts[0].equals(scope))continue;
+            long until=Long.parseLong(p.getProperty(key));
+            if(until>now)result.add(new Rule(scope,parts[1],parts[2],until,p.getProperty(key+":reason","")));
+        }
+        result.sort(Comparator.comparing(Rule::userId).thenComparing(Rule::kind));return List.copyOf(result);
+    }
     // Mute toan he thong va mute phong cung duoc ap dung cho text/sticker/file/thu hoi.
     long mute(String room,String user) { return Math.max(den("*",user,"MUTE"),den(room,user,"MUTE")); }
     // Server khong tin viec Client da khoa o soan.

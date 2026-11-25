@@ -19,7 +19,27 @@ public final class WebChatService implements AutoCloseable {
     private final NhatKy audit;
     private final WebAdministration admin;
     private volatile java.util.function.Consumer<Event> events=event -> { };
-    public record Event(String type,String roomId,Object data) { }
+    public record Event(String type,String roomId,Object data,String recipientId) {
+        public Event(String type,String roomId,Object data){this(type,roomId,data,"");}
+    }
+    public record MemberNotice(String id,String userId,String targetName,String actorId,String actorName,String roomName,String kind,long until,String reason) { }
+    private MemberNotice memberNotice(QuanLyNguoiDung.Phien actor,String action,Map<String,String> args,boolean administration) {
+        if(!Set.of("member-moderate","room-transfer").contains(action))return null;
+        String room=administration && action.equals("room-transfer")?args.getOrDefault("id",""):args.getOrDefault("roomId","");
+        String user=args.getOrDefault("userId","");
+        String kind=action.equals("room-transfer")?"OWNER":args.getOrDefault("kind","");
+        if(!kind.equals("OWNER") && !kind.equals("KICK") && "-1".equals(args.get("seconds")))kind="UN"+kind;
+        long until=kind.equals("MUTE") || kind.equals("BAN")?moderation.den(room,user,kind):0;
+        String reason=kind.equals("MUTE") || kind.equals("BAN")?moderation.lyDo(room,user,kind):kind.equals("KICK")?args.getOrDefault("reason","").strip():"";
+        String roomName=room.equals("*")?"toàn hệ thống":rooms.lay(room).ten;
+        var notice=new MemberNotice(UUID.randomUUID().toString(),user,users.lay(user).tenHienThi+" (@"+users.lay(user).tenDangNhap+")",actor.nguoi.id,actor.nguoi.tenHienThi+" (@"+actor.nguoi.tenDangNhap+")",roomName,kind,until,reason);
+        events.accept(new Event("member-notice",room,notice,user));
+        if(Set.of("KICK","BAN","OWNER").contains(kind) && !room.equals("*")) {
+            var target=users.lay(user);String detail=kind.equals("OWNER")?" trở thành chủ phòng.":kind.equals("BAN")?" đã bị cấm vào phòng.":" đã được đưa ra khỏi phòng.";
+            events.accept(new Event("room-activity",room,Map.of("id",notice.id(),"actorId",actor.nguoi.id,"userId",user,"text",target.tenHienThi+" (@"+target.tenDangNhap+")"+detail)));
+        }
+        return notice;
+    }
     public void onEvent(java.util.function.Consumer<Event> listener) { events=listener; }
     private void changed() { events.accept(new Event("workspace","",Map.of())); }
     private final Map<String, Session> sessions = new HashMap<>();
@@ -158,6 +178,7 @@ public final class WebChatService implements AutoCloseable {
     }
     public synchronized Map<String,Object> snapshot(String token) { return workspace.snapshot(require(token)); }
     public synchronized List<WebWorkspace.Member> members(String token,String room) { return workspace.members(require(token),room); }
+    public synchronized List<WebWorkspace.Restriction> restrictions(String token,String room) { return workspace.restrictions(require(token),room); }
     public synchronized List<WebWorkspace.Profile> searchUsers(String token,String query) { return workspace.searchUsers(require(token),query); }
     public synchronized Object sentInvites(String token,String room) { return workspace.sent(require(token),room); }
     public synchronized byte[] avatar(String token,String id) throws IOException { return workspace.avatar(require(token),id); }
@@ -166,6 +187,8 @@ public final class WebChatService implements AutoCloseable {
         mutation(token);
         Object result=workspace.action(person,action,args);
         if(action.equals("room-delete"))files.removeRoom(args.get("roomId"));
+        var notice=memberNotice(person,action,args,false);if(notice!=null)result=Map.of("status","ok","notice",notice);
+        if(action.equals("member-moderate"))audit.ghi(person.nguoi.tenDangNhap,"WEB_ROOM_MODERATE",args.getOrDefault("roomId","")+":"+args.getOrDefault("userId",""),args.getOrDefault("kind","")+"; thời hạn giây="+args.getOrDefault("seconds","") );
         changed(); return result;
     }
     private void mutation(String token) {
@@ -290,7 +313,7 @@ public final class WebChatService implements AutoCloseable {
             if(action.equals("user-reset") || (action.equals("user-lock") && "true".equals(args.get("locked"))) ||
                     (action.equals("user-edit") && !oldRole.equals(args.get("role"))))revokeUser(id);
         }
-        changed();return result;
+        var notice=memberNotice(p,action,args,true);if(notice!=null)result=Map.of("status","ok","notice",notice);changed();return result;
     }
     public synchronized String exportHtml(String token,String room) {
         workspace.read(require(token),room);

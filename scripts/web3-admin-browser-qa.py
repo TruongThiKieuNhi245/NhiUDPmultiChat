@@ -106,7 +106,7 @@ try:
         check('Admin creates user and room; online owner can immediately read/send; committed attachment appears in statistics')
         tab(pa,'reports');snapshot=refresh(pa);sid=snapshot['id'];tables=snapshot['data']['bang'];stats=dict(tables['STATS']);assert stats['Tổng tài khoản']=='3' and stats['Đang online']=='2' and stats['Ngoại tuyến']=='1' and stats['Tổng tệp']=='1',stats
         with pa.expect_download() as downloaded:pa.get_by_role('button',name='Tải báo cáo PDF',exact=True).click()
-        first=Path(downloaded.value.path()).read_bytes();out=ROOT/'output/pdf';out.mkdir(parents=True,exist_ok=True)
+        first=Path(downloaded.value.path()).read_bytes();out=ROOT/os.environ.get('CHAT_QA_PDF_DIR','output/pdf');out.mkdir(parents=True,exist_ok=True)
         text=pdf_check(first,out/'bao-cao-mau-web3.pdf');assert 'Lớp học tiếng Việt' in text
         assert b.request.get(BASE+'/api/admin/reports/'+sid+'/pdf').status==403
         send(pb,'Tin mới sau khi đã xem báo cáo.');expect(pa.locator('#admin-stale')).to_be_visible()

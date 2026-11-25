@@ -23,8 +23,8 @@ public final class WebWorkspace {
     public record Profile(String id, String login, String name, String about, String avatarHash, String role, boolean forcePassword) { }
     public record Room(String id, String name, String description, String code, String ownerId, int capacity,
                        boolean publicRoom, boolean password, boolean open, boolean joined, boolean manage,
-                       int memberCount, int onlineCount, long lastMsgId, long mutedUntil, boolean notificationsMuted) { }
-    public record Member(String id, String login, String name, String nickname, String role, boolean online, String avatarHash) { }
+                       int memberCount, int onlineCount, long lastMsgId, long mutedUntil, String muteReason, boolean notificationsMuted) { }
+    public record Member(String id, String login, String name, String nickname, String role, boolean online, String avatarHash, long mutedUntil, String muteReason) { }
     public Profile profile(NguoiDung u) {
         return new Profile(u.id,u.tenDangNhap,u.tenHienThi,u.gioiThieu,u.anhHash,u.vaiTro.name(),u.buocDoiMatKhau);
     }
@@ -34,7 +34,7 @@ public final class WebWorkspace {
             boolean joined=rooms.laThanhVien(p.nguoi.id,r.id), manage=QuanLyPhong.duocQuanLy(p.nguoi,r);
             return new Room(r.id,r.ten,r.moTa,joined||manage?r.maPhong:"",r.chuId,r.gioiHan,r.congKhai,r.coMatKhau,r.dangMo,
                     joined,manage,rooms.soThanhVienBenVung(r.id),rooms.thanhVien(r.id).size(),
-                    joined?rooms.mocTin(r.id):0,moderation.mute(r.id,p.nguoi.id),
+                    joined?rooms.mocTin(r.id):0,moderation.mute(r.id,p.nguoi.id),moderation.lyDoMute(r.id,p.nguoi.id),
                     Boolean.parseBoolean(preferences.getProperty(r.id+"."+p.nguoi.id,"false")));
         }).toList();
         return Map.of("profile",profile(p.nguoi),"rooms",list,"invitations",invites.danhSachLoiMoiCho(p.nguoi.id,rooms,users));
@@ -57,7 +57,14 @@ public final class WebWorkspace {
         read(p,room);
         Set<String> online=new HashSet<>(); rooms.thanhVien(room).forEach(person -> online.add(person.nguoi.id));
         return users.tatCa().stream().filter(u -> rooms.laThanhVien(u.id,room)).map(u -> new Member(u.id,u.tenDangNhap,
-                u.tenHienThi,rooms.layBietDanh(room,u.id),u.vaiTro.name(),online.contains(u.id),u.anhHash)).toList();
+                u.tenHienThi,rooms.layBietDanh(room,u.id),u.vaiTro.name(),online.contains(u.id),u.anhHash,moderation.mute(room,u.id),(u.id.equals(p.nguoi.id) || QuanLyPhong.duocQuanLy(p.nguoi,rooms.lay(room)))?moderation.lyDoMute(room,u.id):"" )).toList();
+    }
+    public record Restriction(String userId,String login,String name,String kind,long until,String reason) { }
+    public List<Restriction> restrictions(Phien p,String room) {
+        users.kiemTraBatBuoc(p,Protocol.GUI_TIN);
+        if(room.equals("*")){if(p.nguoi.vaiTro!=VaiTro.ADMIN)throw new WebAdministration.Forbidden();}
+        else manage(p,room);
+        return moderation.danhSach(room).stream().filter(rule->users.tatCa().stream().anyMatch(u->u.id.equals(rule.userId()))).map(rule->{var user=users.lay(rule.userId());return new Restriction(user.id,user.tenDangNhap,user.tenHienThi,rule.kind(),rule.until(),rule.reason());}).toList();
     }
     public List<Profile> searchUsers(Phien p,String query) {
         users.kiemTraBatBuoc(p,Protocol.GUI_TIN);
@@ -155,15 +162,19 @@ public final class WebWorkspace {
     }
     private void moderate(Phien p,String room,Map<String,String> args) throws IOException {
         read(p,room); var target=users.lay(value(args,"userId")); var r=rooms.lay(room);
+        if(value(args,"reason").strip().length()>200)throw new IllegalArgumentException("Lý do tối đa 200 ký tự.");
         moderation.quyen(p,target,r);
         String kind=value(args,"kind");
         if (kind.equals("KICK")) {
             if (room.equals("sanh")) throw new IllegalArgumentException("Không đuổi khỏi Sảnh chung.");
         } else {
             if (!Set.of("MUTE","BAN").contains(kind)) throw new IllegalArgumentException("Thao tác kiểm duyệt không hợp lệ.");
+            if(kind.equals("BAN") && room.equals("sanh"))throw new IllegalArgumentException("Không cấm vào Sảnh chung; hãy dùng cấm chat.");
             long duration=number(args,"seconds",-1,31536000);
             if (duration==0) throw new IllegalArgumentException("Chọn thời hạn từ 1 giây hoặc gỡ lệnh.");
-            moderation.dat(room,target.id,kind,duration,"Kiểm duyệt phòng trên web");
+            String reason=value(args,"reason").strip();
+            if(reason.length()>200)throw new IllegalArgumentException("Lý do tối đa 200 ký tự.");
+            moderation.dat(room,target.id,kind,duration,reason);
             if (duration<0 || kind.equals("MUTE")) return;
         }
         rooms.goThanhVien(room,target.id);

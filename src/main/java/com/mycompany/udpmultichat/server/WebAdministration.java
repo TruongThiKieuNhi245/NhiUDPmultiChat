@@ -91,15 +91,18 @@ public final class WebAdministration {
     }
     void moderate(QuanLyNguoiDung.Phien p,Map<String,String> a) throws IOException {
         String scope=value(a,"roomId"),id=value(a,"userId"),kind=value(a,"kind");
+        if(value(a,"reason").strip().length()>200)throw new IllegalArgumentException("Lý do tối đa 200 ký tự.");
         var target=users.lay(id);var room=scope.equals("*")?null:rooms.lay(scope);moderation.quyen(p,target,room);
         if(room==null && !kind.equals("MUTE"))throw new IllegalArgumentException("Chọn phòng cho thao tác này.");
         if((kind.equals("BAN") || kind.equals("KICK")) && scope.equals("sanh"))throw new IllegalArgumentException("Không đuổi/cấm vào Sảnh chung; hãy dùng khóa tài khoản hoặc cấm chat.");
         if(kind.equals("MUTE") || kind.equals("BAN")) {
             int duration=number(a,"seconds",-1,31536000);if(duration==0)throw new IllegalArgumentException("Chọn thời hạn ít nhất 1 giây hoặc -1 để gỡ.");
-            moderation.dat(scope,id,kind,duration,value(a,"reason"));if(kind.equals("MUTE") || duration<0)return;
+            String reason=value(a,"reason").strip();if(reason.length()>200)throw new IllegalArgumentException("Lý do tối đa 200 ký tự.");
+            moderation.dat(scope,id,kind,duration,reason);if(kind.equals("MUTE") || duration<0)return;
         }else if(!kind.equals("KICK"))throw new IllegalArgumentException("Chọn cấm chat, cấm vào hoặc đuổi thành viên.");
-        if(room.chuId.equals(id))rooms.ganChu(p,scope,p.nguoi.id);
-        rooms.goThanhVien(scope,id);if(room.chuId.equals(id))connectOwner(p.nguoi.id,scope);for(var session:users.danhSach()){if(session.nguoi.id.equals(id)){session.phong.remove(scope);session.choVao.remove(scope);}}
+        boolean replaceOwner=room.chuId.equals(id);
+        if(replaceOwner){rooms.ganChu(p,scope,p.nguoi.id);connectOwner(p.nguoi.id,scope);}
+        rooms.goThanhVien(scope,id);for(var session:users.danhSach()){if(session.nguoi.id.equals(id)){session.phong.remove(scope);session.choVao.remove(scope);}}
     }
     static String value(Map<String,String> a,String key) { return a.getOrDefault(key,""); }
     static boolean bool(Map<String,String> a,String key) { String v=value(a,key);if(!Set.of("true","false").contains(v))throw new IllegalArgumentException("Giá trị bật/tắt không hợp lệ.");return Boolean.parseBoolean(v); }

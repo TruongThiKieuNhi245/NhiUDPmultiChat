@@ -23,7 +23,7 @@ public class WebSecurity {
     }
     @Bean
     SecurityFilterChain security(HttpSecurity http, WebChatService service) throws Exception {
-        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/admin", "/index.html", "/admin-ui.js", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/file-upload.js", "/app.css", "/error",
+        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/admin", "/index.html", "/admin-ui.js", "/feedback.js", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/file-upload.js", "/app.css", "/error",
                 "/api/csrf", "/api/login", "/api/register").permitAll().anyRequest().authenticated());
         http.exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> res.sendError(401)));
         http.headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(

@@ -61,6 +61,8 @@ public class WebApi {
     }
     @GetMapping("/members")
     Object members(HttpSession session,@RequestParam String roomId) { return service.members(WebSecurity.token(session),roomId); }
+    @GetMapping("/moderation")
+    Object moderation(HttpSession session,@RequestParam String roomId) { return service.restrictions(WebSecurity.token(session),roomId); }
     @GetMapping("/users/search")
     Object users(HttpSession session,@RequestParam String q) { return service.searchUsers(WebSecurity.token(session),q); }
     @GetMapping("/invitations/sent")

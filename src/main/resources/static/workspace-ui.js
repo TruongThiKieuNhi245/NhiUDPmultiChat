@@ -163,7 +163,7 @@ export class WorkspaceUI {
       this.button(content,'Sửa phòng',() => this.roomForm(room));
       this.button(content,room.open?'Đóng phòng':'Mở phòng',async () => { await this.action('room-state',{roomId:room.id,open:String(!room.open)}); await this.refresh(); await this.roomInfo(); });
       this.button(content,'Mời thành viên',() => this.inviteForm(room));
-      this.button(content,'Gỡ cấm thành viên',() => this.findPerson('Gỡ cấm vào phòng',async person => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind:'BAN',seconds:'-1'}); await this.refresh(); }));
+      this.button(content,'Danh sách cấm / gỡ cấm',() => this.restrictions(room));
       this.button(content,'Xóa phòng',() => this.form('Xóa phòng '+room.name,[this.field('confirm','Nhập XÓA để xác nhận')],async data => {
         if (data.confirm!=='XÓA') throw new Error('Hãy nhập XÓA để xác nhận.');
         await this.action('room-delete',{roomId:room.id}); await this.refresh(); await this.selectRoom('sanh');
@@ -175,7 +175,9 @@ export class WorkspaceUI {
     content.append(element('h3','','Thành viên'));
     for (const person of members) {
       const card=element('section','info-card');
+      card.dataset.memberId=person.id;
       card.append(element('strong','',person.nickname||person.name),element('p','muted',`@${person.login} · ${person.online?'Trực tuyến':'Ngoại tuyến'}${person.id===room.ownerId?' · Chủ phòng':''}`));
+      if(person.mutedUntil>Date.now())card.append(element('p','moderation-label',`Cấm chat đến ${new Date(person.mutedUntil).toLocaleString('vi-VN')}`));
       if (person.id===this.snapshot.profile.id || room.manage) this.button(card,'Đổi biệt danh',() => this.form('Biệt danh trong '+room.name,[this.field('nickname','Biệt danh (trống để xóa)','text',person.nickname,{maxLength:30})],async data => { await this.action('member-nickname',{roomId:room.id,userId:person.id,...data}); await this.refresh(); }));
       if (room.manage && person.id!==this.snapshot.profile.id && person.id!==room.ownerId && person.role!=='ADMIN') {
         this.button(card,'Quản lý thành viên',() => this.memberActions(room,person));
@@ -193,11 +195,25 @@ export class WorkspaceUI {
     }
   }
   memberActions(room,person) {
-    const {content}=this.open('Quản lý '+person.name);
-    for (const [title,kind] of [['Cấm chat có thời hạn','MUTE'],['Cấm vào phòng có thời hạn','BAN']]) this.button(content,title,() => this.form(title,[this.field('seconds','Thời hạn (giây)','number','300',{min:1,max:31536000,required:true})],async data => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind,...data}); await this.refresh(); }));
+    const {content}=this.open('Quản lý '+person.name+' · @'+person.login);
+    for (const [title,kind] of [['Cấm chat có thời hạn','MUTE'],['Cấm vào phòng có thời hạn','BAN']]) this.button(content,title,() => this.form(title,[this.field('seconds','Thời hạn (giây)','number','300',{min:1,max:31536000,required:true}),this.field('reason','Lý do (tối đa 200 ký tự)','text','',{maxLength:200})],async data => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind,...data}); await this.refresh(); }));
     this.button(content,'Gỡ cấm chat',async () => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind:'MUTE',seconds:'-1'}); await this.refresh(); this.dialog.close(); });
-    this.button(content,'Đuổi khỏi phòng',() => this.form('Đuổi '+person.name,[],async () => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind:'KICK'}); await this.refresh(); },{submitText:'Đuổi khỏi phòng'}));
+    this.button(content,'Đuổi khỏi phòng',() => this.form('Đuổi '+person.name,[this.field('reason','Lý do (tối đa 200 ký tự)','text','',{maxLength:200})],async data => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind:'KICK',reason:data.reason}); await this.refresh(); },{submitText:'Đuổi khỏi phòng'}));
+    this.button(content,'Trở lại thông tin phòng',()=>this.roomInfo());
     this.button(content,'Chuyển quyền chủ phòng',() => this.form('Chuyển quyền cho '+person.name,[],async () => { await this.action('room-transfer',{roomId:room.id,userId:person.id}); await this.refresh(); },{submitText:'Chuyển quyền'}));
+  }
+  async restrictions(room) {
+    const rules=await this.api('/moderation?roomId='+encodeURIComponent(room.id));
+    const {content}=this.open('Danh sách cấm · '+room.name);
+    content.append(element('p','muted','Lệnh còn hiệu lực trong phòng. Gỡ cấm vào không tự thêm lại thành viên; họ có thể tham gia lại theo quyền và sức chứa.'));
+    if(!rules.length)content.append(element('p','','Không có lệnh cấm còn hiệu lực.'));
+    for(const rule of rules) {
+      const card=element('section','info-card restriction-card');card.dataset.userId=rule.userId;card.dataset.kind=rule.kind;
+      card.append(element('h3','',rule.name+' · @'+rule.login),element('p','moderation-label',`${rule.kind==='MUTE'?'Cấm chat':'Cấm vào phòng'} đến ${new Date(rule.until).toLocaleString('vi-VN')}`));
+      if(rule.reason)card.append(element('p','','Lý do: '+rule.reason));
+      this.button(card,rule.kind==='MUTE'?'Gỡ cấm chat':'Gỡ cấm vào phòng',async()=>{await this.action('member-moderate',{roomId:room.id,userId:rule.userId,kind:rule.kind,seconds:'-1'});await this.refresh();await this.restrictions(room);});content.append(card);
+    }
+    this.button(content,'Trở lại thông tin phòng',()=>this.roomInfo());
   }
   inviteForm(room) {
     this.findPerson('Mời vào '+room.name,async person => { await this.action('invite-send',{roomId:room.id,userId:person.id}); await this.refresh(); },'Gửi lời mời');
