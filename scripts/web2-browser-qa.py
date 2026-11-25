@@ -14,6 +14,7 @@ with socket.socket() as available:
     port = available.getsockname()[1]
 BASE = f'http://127.0.0.1:{port}'
 cp = str(ROOT / 'target/test-classes') + os.pathsep + str(ROOT / 'target/classes') + os.pathsep + (ROOT / 'target/web-classpath.txt').read_text().strip()
+cp = os.environ.get('CHAT_QA_CLASSPATH', cp)
 log = (RUN / 'server.txt').open('w', encoding='utf-8')
 process = subprocess.Popen(['java', '-cp', cp, 'com.mycompany.udpmultichat.web.Web1BrowserFixture',
                             f'--server.port={port}', f'--chat.data-dir={RUN / "data"}',
@@ -156,9 +157,11 @@ try:
         select(pb,rid);expect(row(pb,secret).locator('.message-text')).to_have_text('Tin đã thu hồi')
         pa.locator('#find-messages').click();pa.get_by_label('Từ khóa tin nhắn',exact=True).fill('biệt danh');pa.get_by_role('button',name='Tìm tin',exact=True).click()
         expect(pa.locator('dialog .info-card')).to_have_count(1);pa.get_by_role('button',name='Tới tin nhắn',exact=True).click();expect(row(pa,response)).to_be_focused()
+        pa.locator('#room-info').click()
         with pa.expect_download() as download:
-            pa.locator('#export-chat').click()
+            pa.get_by_role('button',name='Tải văn bản (.txt)',exact=True).click()
         exported=Path(download.value.path()).read_text(encoding='utf-8');assert 'Tin riêng Alpha' not in exported and 'Mình đang trả lời' in exported
+        close(pa)
         check('Copy/reply/toi tin goc/thu hoi khi offline va bu sau reconnect, lich su, tim kiem va xuat TXT khong lo quote da thu hoi')
         # Hai phong, nhap theo phong va badge.
         beta=act(pb,'room-create',{'name':'Phòng Beta','description':'Phòng công khai','publicRoom':'true','password':'','capacity':'10'})['roomId']
@@ -192,14 +195,12 @@ try:
         pa.locator('#message').fill('Tin chờ để thử lại đúng mã.');pa.locator('#send').click()
         expect(pa.locator('.retry').last).to_be_visible(timeout=10000)
         pending_id=pa.locator('.message-row').last.get_attribute('data-client-msg-id')
-        pa.locator('#outbox').click();expect(pa.locator('dialog')).to_contain_text('Tin chờ để thử lại đúng mã.')
-        pa.get_by_role('button',name='Bỏ hàng trên thiết bị',exact=True).click()
-        expect(pa.locator('dialog')).to_contain_text('không thu hồi một tin có thể đã tới server')
-        close(pa);control(pa,True)
+        assert pa.locator('#outbox').count()==0
+        control(pa,True)
         pa.locator(f'[data-client-msg-id="{pending_id}"] .retry').click()
         expect(pa.locator(f'[data-client-msg-id="{pending_id}"] .message-state')).to_have_text('✓ Đã gửi')
-        expect(pa.locator('#outbox-count')).to_have_text('')
-        check('Outbox cac phong, canh bao bo hang cuc bo va retry UDP giu ma khong trung')
+        assert len([r for r in request(pa,'/history?roomId='+rid)['body'] if r['clientMsgId']==pending_id])==1
+        check('Khong con panel tin cho; loi/retry tai hang tin giu ma khong trung')
         # Doi mat khau qua form, thoat va dang nhap lai bang mat khau moi.
         pb.locator('#profile').click();pb.get_by_role('button',name='Đổi mật khẩu',exact=True).click()
         pb.get_by_label('Mật khẩu hiện tại',exact=True).fill('Web2-fixture-password');pb.get_by_label('Mật khẩu mới',exact=True).fill('Web2-new-private-password')

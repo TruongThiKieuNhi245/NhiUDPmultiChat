@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "fixture": "180 rooms, 12 users, synthetic layout data only",
+  "pages": 10,
+  "checks": [
+    "A4 pages render",
+    "all text spans within page bounds",
+    "last room present",
+    "pagination footers on every page"
+  ]
+}

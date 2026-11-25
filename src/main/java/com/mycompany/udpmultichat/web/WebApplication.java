@@ -15,8 +15,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class WebApplication {
     public static void main(String[] args) { SpringApplication.run(WebApplication.class, args); }
     @Bean(destroyMethod = "close")
-    WebChatService chatService(@Value("${chat.data-dir}") String directory) throws IOException {
-        return new WebChatService(Path.of(directory));
+    WebChatService chatService(@Value("${chat.data-dir}") String directory,@Value("${chat.initial-admin-password:}") String password) throws IOException {
+        return new WebChatService(Path.of(directory),password);
     }
     @Bean(destroyMethod = "close")
     UdpChatTransport udpTransport(WebChatService service) throws IOException { return new UdpChatTransport(service); }

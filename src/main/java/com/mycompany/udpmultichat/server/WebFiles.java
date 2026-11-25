@@ -95,6 +95,11 @@ public final class WebFiles {
         try { image=Files.isRegularFile(files.duong(file.room(),file.id(),".jpg")); }catch(IOException ignored) { }
         return new WebFile(file.id(),file.ten(),file.kichThuoc(),file.crc(),file.dongGoi(),image);
     }
+    long[] statistics(String room,String user,Set<String> live) {
+        var list=files.entries().stream().filter(t->live.contains(t.id()))
+                .filter(t->room==null || t.room().equals(room)).filter(t->user==null || t.user().equals(user)).toList();
+        return new long[]{list.size(),list.stream().mapToLong(TepTin::kichThuoc).sum()};
+    }
     TepTin metadata(String id) { return files.lay(id); }
     Download open(String id,boolean thumbnail) throws IOException {
         var file=files.lay(id);Path path=files.duong(file.room(),id,thumbnail?".jpg":".bin");

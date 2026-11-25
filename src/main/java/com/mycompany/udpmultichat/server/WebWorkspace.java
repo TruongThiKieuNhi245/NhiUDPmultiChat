@@ -182,6 +182,17 @@ public final class WebWorkspace {
         try { disk.ghiThuocTinh("web-recall-digests",recallDigests); }
         catch (IOException e) { if(old==null)recallDigests.remove(key);else recallDigests.setProperty(key,old);throw e; }
     }
+    void deleteAsAdmin(Phien p,String room) throws IOException {
+        if(p.nguoi.vaiTro!=VaiTro.ADMIN)throw new WebAdministration.Forbidden();
+        invites.xoaTheoPhong(room);rooms.xoa(p,room);
+        for(var session:users.danhSach()){session.phong.remove(room);session.choVao.remove(room);}
+    }
+    void rememberRecalls(List<TinNhan> list) throws IOException {
+        var old=(Properties)recallDigests.clone();
+        for(var t:list)recallDigests.setProperty(t.roomId+"."+t.userId+"."+t.maClient,digest(t.loai,t.noiDung));
+        try{disk.ghiThuocTinh("web-recall-digests",recallDigests);}
+        catch(IOException e){recallDigests.clear();recallDigests.putAll(old);throw e;}
+    }
     void checkRecalledRetry(TinNhan t,String kind,String text) {
         String expected=recallDigests.getProperty(t.roomId+"."+t.userId+"."+t.maClient);
         if (expected==null || !expected.equals(digest(kind,text))) throw new IllegalArgumentException("Mã tin đã thu hồi không khớp nội dung yêu cầu.");

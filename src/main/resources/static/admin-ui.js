@@ -1,0 +1,185 @@
+import { element, fileSize } from './chat-view.js';
+const $=id=>document.getElementById(id);
+const TITLES={overview:'Tổng quan',users:'Người dùng',rooms:'Phòng',audit:'Nhật ký',reports:'Báo cáo'};
+const ROLES=[['THANH_VIEN','Thành viên'],['ADMIN','Quản trị viên']];
+export class AdminUI {
+  revision=0;active=false;tab='overview';snapshot;timer;loading=false;
+  constructor({api,ui,open,close}) {
+    Object.assign(this,{api,ui,onOpen:open,onClose:close});
+    $('admin-link').onclick=e=>{e.preventDefault();this.open();};
+    $('admin-back').onclick=()=>this.close();$('admin-refresh').onclick=()=>this.refresh().catch(e=>this.error(e));
+    document.querySelectorAll('[data-admin-tab]').forEach(button=>button.onclick=()=>{this.tab=button.dataset.adminTab;if(this.tab==='reports')clearTimeout(this.timer);this.draw();});
+    addEventListener('popstate',()=>location.pathname==='/admin'?this.open(false):this.close(false));
+  }
+  updateProfile(profile) {
+    this.profile=profile;const allowed=profile.role==='ADMIN'&&!profile.forcePassword;
+    $('admin-link').hidden=!allowed;$('admin-account').textContent='@'+profile.login;
+    if(location.pathname==='/admin' && !profile.forcePassword && !this.active)this.open(false);
+    if(this.active && !allowed)this.deny();
+  }
+  reset() {
+    this.revision++;clearTimeout(this.timer);this.loading=false;this.active=false;this.snapshot=null;this.profile=null;this.tab='overview';
+    $('admin-page').hidden=true;$('admin-link').hidden=true;$('admin-content').replaceChildren();$('admin-stale').hidden=true;
+    for(const id of ['admin-error','admin-time','admin-account','admin-status'])$(id).textContent='';
+  }
+  open(push=true) {
+    if(!this.profile)return;
+    this.active=true;this.onOpen();$('admin-page').hidden=false;
+    if(push && location.pathname!=='/admin')history.pushState({},'','/admin');
+    if(this.profile.role!=='ADMIN' || this.profile.forcePassword){this.deny();return;}
+    $('admin-nav').hidden=false;$('admin-refresh').hidden=false;
+    if(!this.snapshot)this.refresh().catch(e=>this.error(e));else this.draw();
+    $('admin-main').focus();
+  }
+  close(push=true) {this.active=false;clearTimeout(this.timer);$('admin-page').hidden=true;this.onClose();if(push && location.pathname==='/admin')history.pushState({},'','/');}
+  deny() {$('admin-nav').hidden=true;$('admin-refresh').hidden=true;$('admin-title').textContent='Không có quyền quản trị';$('admin-time').textContent='';$('admin-content').replaceChildren(element('p','','Hãy đăng nhập bằng tài khoản quản trị viên.'));}
+  error(error) {$('admin-error').textContent=error.message;}
+  async request(path,options) {const revision=this.revision;const result=await this.api(path,options);if(revision!==this.revision)throw new Error('Phiên đã thay đổi.');return result;}
+  invalidate() {
+    if(!this.active || !this.snapshot)return;
+    $('admin-stale').hidden=false;
+    clearTimeout(this.timer);
+    if(this.tab!=='reports')this.timer=setTimeout(()=>this.refresh().catch(e=>this.error(e)),1800);
+  }
+  async refresh() {
+    if(this.loading || !this.active)return;
+    const revision=this.revision;clearTimeout(this.timer);const startedTab=this.tab;this.loading=true;$('admin-refresh').disabled=true;$('admin-error').textContent='';
+    try {const snapshot=await this.request('/admin/snapshot');if(this.tab==='reports' && startedTab!=='reports'){$('admin-stale').hidden=false;return;}this.snapshot=snapshot;$('admin-stale').hidden=true;this.draw();}
+    catch(error){if(revision===this.revision)throw error;}
+    finally{if(revision===this.revision){this.loading=false;$('admin-refresh').disabled=false;}}
+  }
+  rows(key) {return this.snapshot?.data.bang[key] || [];}
+  field(...args) {return this.ui.field(...args);}
+  async action(name,data) {const result=await this.request('/admin/actions/'+name,{method:'POST',body:JSON.stringify(data)});await this.refresh();return result;}
+  form(title,fields,action,options={}) {return this.ui.form(title,fields,async data=>{await this.action(action,data);},options);}
+  button(parent,text,callback,primary=false) {const button=this.ui.button(parent,text,callback);if(primary)button.className='primary';return button;}
+  draw() {
+    if(!this.active || !this.snapshot)return;
+    $('admin-title').textContent=TITLES[this.tab];$('admin-time').textContent='Bản dữ liệu lúc '+new Date(this.snapshot.data.luc).toLocaleString('vi-VN');
+    document.querySelectorAll('[data-admin-tab]').forEach(button=>{button.setAttribute('aria-current',button.dataset.adminTab===this.tab?'page':'false');});
+    const content=$('admin-content');content.replaceChildren();$('admin-error').textContent='';
+    if(this.tab==='overview')this.overview(content);
+    if(this.tab==='users')this.users(content);
+    if(this.tab==='rooms')this.rooms(content);
+    if(this.tab==='audit')this.audit(content);
+    if(this.tab==='reports')this.reports(content);
+  }
+  cards(parent) {
+    const cards=element('div','stat-grid');
+    for(const row of this.rows('STATS')){const card=element('article','stat-card');card.append(element('span','',row[0]),element('strong','',row[0]==='Dung lượng tệp'?fileSize(Number(row[1])):row[1]));cards.append(card);}parent.append(cards);
+  }
+  table(parent,columns,rows,actions=null) {
+    const wrap=element('div','admin-table-wrap'),table=element('table','admin-table');const head=element('thead'),header=element('tr');
+    for(const label of columns)header.append(element('th','',label));if(actions)header.append(element('th','','Thao tác'));head.append(header);table.append(head);
+    const body=element('tbody');
+    for(const row of rows){const tr=element('tr');for(const cell of row.cells)tr.append(element('td','',String(cell)));if(actions){const td=element('td','table-actions');actions(td,row.source);tr.append(td);}body.append(tr);}
+    if(!rows.length){const tr=element('tr'),td=element('td','','Chưa có dữ liệu phù hợp.');td.colSpan=columns.length+(actions?1:0);tr.append(td);body.append(tr);}
+    table.append(body);wrap.append(table);parent.append(wrap);
+  }
+  paged(parent,columns,source,cells,actions,sortColumn=1) {
+    const toolbar=element('div','table-toolbar'),input=element('input'),sort=element('select');
+    input.placeholder='Tìm trong bảng…';input.setAttribute('aria-label','Tìm trong bảng');sort.setAttribute('aria-label','Sắp xếp bảng');
+    for(const [value,label] of [['asc','Tên A–Z'],['desc','Tên Z–A']]){const option=element('option','',label);option.value=value;sort.append(option);}
+    toolbar.append(input,sort);parent.append(toolbar);const target=element('div'),pager=element('div','table-pager');parent.append(target,pager);let page=0;
+    const draw=()=>{
+      const query=input.value.toLocaleLowerCase('vi'),collator=new Intl.Collator('vi');
+      const rows=source.filter(row=>row.join(' ').toLocaleLowerCase('vi').includes(query)).sort((a,b)=>collator.compare(a[sortColumn],b[sortColumn])*(sort.value==='asc'?1:-1));
+      page=Math.min(page,Math.max(0,Math.ceil(rows.length/25)-1));target.replaceChildren();pager.replaceChildren();
+      this.table(target,columns,rows.slice(page*25,page*25+25).map(row=>({cells:cells(row),source:row})),actions);
+      const previous=this.button(pager,'Trang trước',()=>{page--;draw();}),next=this.button(pager,'Trang sau',()=>{page++;draw();});previous.disabled=page===0;next.disabled=(page+1)*25>=rows.length;
+      pager.append(element('span','muted',`${rows.length} dòng · Trang ${page+1}/${Math.max(1,Math.ceil(rows.length/25))}`));
+    };input.oninput=()=>{page=0;draw();};sort.onchange=draw;draw();
+  }
+  chart(parent,title,rows,nameIndex,countIndex) {
+    const card=element('section','admin-chart');card.append(element('h2','',title));
+    const max=Math.max(1,...rows.map(r=>Number(r[countIndex])));
+    if(!rows.length)card.append(element('p','muted','Chưa có dữ liệu.'));
+    for(const row of rows){const label=element('label','chart-line'),meter=element('meter');meter.min=0;meter.max=max;meter.value=Number(row[countIndex]);meter.setAttribute('aria-label',row[nameIndex]+': '+row[countIndex]);label.append(element('span','',row[nameIndex]),meter,element('b','',row[countIndex]));card.append(label);}parent.append(card);
+  }
+  overview(parent) {
+    this.cards(parent);parent.append(element('p','muted report-definition','Tệp/dung lượng: tệp đã gửi còn lưu, không tính upload chờ. Thành viên gồm cả offline; online tính theo phiên đăng nhập.'));
+    const tools=element('div','admin-tools');this.button(tools,'Mở báo cáo',()=>{this.tab='reports';this.draw();},true);this.button(tools,'Gửi thông báo toàn hệ thống',()=>this.broadcast());parent.append(tools);
+    const charts=element('div','admin-charts');this.chart(charts,'Top người chat',[...this.rows('USERS')].sort((a,b)=>Number(b[6])-Number(a[6])).slice(0,5),2,6);this.chart(charts,'Phòng hoạt động',[...this.rows('ROOMS')].sort((a,b)=>Number(b[7])-Number(a[7])).slice(0,5),2,7);parent.append(charts);
+    parent.append(element('h2','','Thành viên theo phòng'));
+    this.table(parent,['Phòng','Thành viên','Online','Tin'],this.rows('ROOMS').map(r=>({cells:[r[2],r[6],r[14],r[7]]})));
+  }
+  users(parent) {
+    const tools=element('div','admin-tools');this.button(tools,'Thêm người dùng',()=>this.userForm(),true);this.button(tools,'Kiểm duyệt tài khoản',()=>this.moderate());parent.append(tools);
+    this.paged(parent,['Tài khoản','Tên hiển thị','Vai trò','Trạng thái','Số tin'],this.rows('USERS'),r=>['@'+r[1],r[2],r[3]==='ADMIN'?'Quản trị':'Thành viên',r[4],r[6]],(td,row)=>{this.button(td,'Quản lý',()=>this.userDetails(row));});
+  }
+  userForm(row) {
+    const fields=row?[this.field('id','ID','text',row[0],{readOnly:true}),this.field('name','Tên hiển thị','text',row[2],{required:true,maxLength:30}),this.field('about','Giới thiệu','text',row[11],{maxLength:100})]
+      :[this.field('login','Tên đăng nhập','text','',{required:true,maxLength:20}),this.field('name','Tên hiển thị','text','',{required:true,maxLength:30}),this.field('password','Mật khẩu tạm','password','',{required:true,maxLength:128})];
+    fields.push(this.field('role','Vai trò','text',row?.[3]||'THANH_VIEN',{options:ROLES}));
+    return this.form(row?'Sửa người dùng':'Thêm người dùng',fields,row?'user-edit':'user-add');
+  }
+  userDetails(row) {
+    const {content}=this.ui.open('Quản lý @'+row[1]);content.append(element('p','muted','ID tài khoản: '+row[0]),element('p','',row[2]+' · '+row[4]));
+    this.button(content,'Sửa hồ sơ và vai trò',()=>this.userForm(row));
+    this.button(content,row[4]==='Bị khóa'?'Mở khóa tài khoản':'Khóa tài khoản',()=>this.form('Xác nhận '+(row[4]==='Bị khóa'?'mở khóa':'khóa'),[this.field('id','ID','text',row[0],{readOnly:true}),this.field('locked','Khóa tài khoản','checkbox',row[4]!=='Bị khóa'),this.field('reason','Lý do','text','',{maxLength:200})],'user-lock'));
+    this.button(content,'Cấp lại mật khẩu tạm',()=>{
+      const revision=this.revision;this.ui.form('Cấp mật khẩu tạm cho @'+row[1],[],async()=>{
+        const result=await this.action('user-reset',{id:row[0]});setTimeout(()=>{
+          if(!this.active || revision!==this.revision)return;const {content}=this.ui.open('Mật khẩu tạm mới');content.append(element('p','','Phiên cũ đã bị thu hồi. Mật khẩu chỉ hiển thị tại đây; người dùng phải đổi sau khi đăng nhập.'),element('code','temporary-password',result.temporaryPassword));
+        },0);
+      },{submitText:'Cấp mật khẩu tạm'});
+    });
+    this.button(content,'Kiểm duyệt',()=>this.moderate(row[0]));
+    this.button(content,'Xóa tài khoản',()=>this.form('Xóa @'+row[1],[this.field('id','ID','text',row[0],{readOnly:true}),this.field('confirm','Nhập tên đăng nhập để xác nhận','text','',{required:true})],'user-delete',{submitText:'Xóa tài khoản'}));
+  }
+  roomForm(row) {
+    const fields=[];if(row)fields.push(this.field('id','ID phòng','text',row[0],{readOnly:true}));
+    fields.push(this.field('name','Tên phòng','text',row?.[2]||'',{required:true,maxLength:30}),this.field('description','Mô tả','text',row?.[11]||'',{maxLength:100}),this.field('publicRoom','Phòng công khai','checkbox',!row || row[3]==='Công khai'),this.field('password','Mật khẩu phòng mới (trống để bỏ)','password','',{maxLength:128}),this.field('capacity','Giới hạn thành viên','number',row?.[13]||'30',{min:2,max:500,required:true}));
+    if(row)fields.push(this.field('keepPassword','Giữ mật khẩu hiện tại','checkbox',true));
+    else fields.push(this.field('ownerId','Chủ phòng','text',this.profile.id,{options:this.rows('USERS').map(r=>[r[0],'@'+r[1]+' · '+r[2]])}));
+    return this.form(row?'Sửa phòng':'Tạo phòng',fields,row?'room-edit':'room-create');
+  }
+  rooms(parent) {
+    const tools=element('div','admin-tools');this.button(tools,'Tạo phòng',()=>this.roomForm(),true);this.button(tools,'Kiểm duyệt thành viên',()=>this.moderate());parent.append(tools);
+    this.paged(parent,['Phòng','Loại','Trạng thái','Thành viên','Online','Tin'],this.rows('ROOMS'),r=>[r[2],r[3],r[4],r[6],r[14],r[7]],(td,row)=>this.button(td,'Quản lý',()=>this.roomDetails(row)),2);
+  }
+  roomDetails(row) {
+    const {content}=this.ui.open('Quản lý '+row[2]);content.append(element('p','muted','Mã phòng: '+row[1]),element('p','',row[6]+' thành viên · '+row[14]+' online · Chủ phòng: '+row[5]));
+    this.button(content,'Sửa phòng',()=>this.roomForm(row));this.button(content,row[4]==='Mở'?'Đóng phòng':'Mở phòng',async()=>{await this.action('room-state',{id:row[0],open:String(row[4]!=='Mở')});this.ui.dialog.close();});
+    this.button(content,'Chuyển chủ phòng',()=>this.form('Chuyển chủ phòng',[this.field('id','ID phòng','text',row[0],{readOnly:true}),this.field('userId','Chủ phòng mới','text','',{options:this.rows('USERS').filter(r=>r[4]!=='Bị khóa').map(r=>[r[0],'@'+r[1]])})],'room-transfer'));
+    this.button(content,'Kiểm duyệt thành viên',()=>this.moderate('',row[0]));
+    this.button(content,'Xóa nội dung lịch sử',()=>this.ui.form('Xóa nội dung '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(data.confirm!=='XÓA')throw new Error('Hãy nhập XÓA.');await this.action('room-clear',{id:row[0]});},{submitText:'Xóa nội dung'}));
+    this.button(content,'Xóa phòng',()=>this.ui.form('Xóa phòng '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(data.confirm!=='XÓA')throw new Error('Hãy nhập XÓA.');await this.action('room-delete',{id:row[0]});},{submitText:'Xóa phòng'}));
+    const members=this.rows('MEMBERS').filter(r=>r[0]===row[0]);content.append(element('h3','','Danh sách thành viên'));
+    this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],r[5],r[6]==='true'?'Có':'Không']})));
+  }
+  moderate(userId='',roomId='*') {
+    this.form('Kiểm duyệt tài khoản/phòng',[
+      this.field('userId','Tài khoản','text',userId,{options:this.rows('USERS').map(r=>[r[0],'@'+r[1]])}),
+      this.field('roomId','Phạm vi','text',roomId,{options:[['*','Toàn hệ thống (chỉ cấm chat)'],...this.rows('ROOMS').map(r=>[r[0],r[2]])]}),
+      this.field('kind','Thao tác','text','MUTE',{options:[['MUTE','Cấm chat / gỡ cấm chat'],['BAN','Cấm vào / gỡ cấm vào'],['KICK','Đuổi khỏi phòng']]}),
+      this.field('seconds','Thời hạn: giây; -1 để gỡ','number','300',{required:true,min:-1,max:31536000}),this.field('reason','Lý do','text','',{maxLength:200})
+    ],'member-moderate');
+  }
+  audit(parent) {
+    this.button(parent,'Tải nhật ký CSV',()=>this.download('audit'));
+    this.paged(parent,['Thời gian','Người thực hiện','Hành động','Đối tượng','Chi tiết'],this.rows('AUDIT'),r=>r,null,0);
+  }
+  reports(parent) {
+    const intro=element('section','report-intro');intro.append(element('h2','','Báo cáo hệ thống'),element('p','','PDF A4 có dấu tiếng Việt, bảng thành viên theo phòng, biểu đồ tin theo ngày và top hoạt động. Số liệu xuất khớp bản đang xem.'));
+    const buttons=element('div','admin-tools');this.button(buttons,'Tải báo cáo PDF',()=>this.download('pdf'),true);this.button(buttons,'Tải 4 CSV + HTML (.zip)',()=>this.download('zip'));this.button(buttons,'Tải bản HTML',()=>this.download('html'));intro.append(buttons);parent.append(intro);
+    this.cards(parent);parent.append(element('h2','','Số người dùng theo từng phòng'));
+    this.table(parent,['Phòng','Thành viên','Online','Tin','Tệp'],this.rows('ROOMS').map(r=>({cells:[r[2],r[6],r[14],r[7],r[8]]})));
+    const days=new Map();for(const r of this.rows('DAYS'))days.set(r[0],(days.get(r[0])||0)+Number(r[2]));this.chart(parent,'Tin nhắn theo ngày',[...days].sort().slice(-14),0,1);
+  }
+  broadcast() {
+    const id=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
+    const {content}=this.ui.form('Thông báo toàn hệ thống',[this.field('text','Nội dung thông báo','textarea','',{required:true,maxLength:200})],async data=>{
+      const result=await this.request('/admin/broadcast',{method:'POST',body:JSON.stringify({id,text:data.text})});await this.refresh();
+      if(result.failed)throw new Error(`Đã lưu ${result.committed} phòng; ${result.failed} phòng chưa được xác nhận. Bấm gửi lại giữ cùng mã yêu cầu.`);
+    },{submitText:'Gửi thông báo'});
+    content.prepend(element('p','muted','Thông báo đến mọi phòng, kể cả phòng riêng/đang đóng. Chỉ ghi nhận đã gửi sau khi backend lưu qua UDP.'));
+  }
+  async download(format) {
+    const revision=this.revision,id=this.snapshot.id;$('admin-status').textContent='Đang tạo tệp…';
+    const response=await fetch('/api/admin/reports/'+id+'/'+format);
+    if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(body.error||'Không tải được báo cáo. Hãy làm mới dữ liệu rồi thử lại.');}
+    const blob=await response.blob();if(revision!==this.revision)return;
+    const url=URL.createObjectURL(blob),link=element('a');link.href=url;link.download=format==='pdf'?'bao-cao.pdf':format==='zip'?'bao-cao-nang-cao.zip':format==='audit'?'nhatky.csv':'tong_hop.html';link.click();setTimeout(()=>URL.revokeObjectURL(url),5000);$('admin-status').textContent='Đã tạo tệp từ bản dữ liệu đang xem.';
+  }
+}

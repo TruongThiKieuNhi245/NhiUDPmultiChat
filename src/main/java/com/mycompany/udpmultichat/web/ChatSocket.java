@@ -25,8 +25,10 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
     private final ObjectMapper json;
     private final Map<String, Peer> peers = new ConcurrentHashMap<>();
     public ChatSocket(WebChatService service, UdpChatTransport udp, ObjectMapper json) {
-        this.service = service; this.udp = udp; this.json = json; udp.onCommitted(this::broadcast); service.onEvent(this::event);
+        this.service = service; this.udp = udp; this.json = json;
     }
+    @jakarta.annotation.PostConstruct
+    void attachEvents() { udp.onCommitted(this::broadcast);service.onEvent(this::event); }
     @Override public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(this, "/ws").addInterceptors(new HandshakeInterceptor() {
             @Override public boolean beforeHandshake(ServerHttpRequest req, ServerHttpResponse res,
@@ -92,6 +94,8 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
                 UdpChatTransport.trace("WS_DELIVER", message.roomId, message.maClient, message.msgId);
             }
         }));
+        // Chi admin nhan invalidation thong ke, khong kem noi dung/ten/ma phong rieng.
+        peers.values().forEach(peer->{if(valid(peer) && service.administrator(peer.token))send(peer.socket,Map.of("type","admin-updated"));});
     }
     private boolean send(WebSocketSession socket, Object value) {
         try {
@@ -121,6 +125,7 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
         peers.remove(session.getId()); session.close(CloseStatus.SERVER_ERROR);
     }
     private void event(WebChatService.Event event) {
+        if(event.type().equals("session-revoked")){closeIdentity((String)event.data());return;}
         peers.values().forEach(peer -> {
             if (valid(peer) && (event.roomId().isEmpty() || service.canRead(peer.token,event.roomId()))) {
                 send(peer.socket,Map.of("type",event.type(),"roomId",event.roomId(),"data",event.data()));

@@ -12,6 +12,7 @@ with socket.socket() as available:
     available.bind(('127.0.0.1',0));port=available.getsockname()[1]
 BASE=f'http://127.0.0.1:{port}'
 cp=str(ROOT/'target/test-classes')+os.pathsep+str(ROOT/'target/classes')+os.pathsep+(ROOT/'target/web-classpath.txt').read_text().strip()
+cp = os.environ.get('CHAT_QA_CLASSPATH', cp)
 process=None;logs=[]
 report={'fixture':str(RUN.relative_to(ROOT)),'browser':'','checks':[],'artifact':JAR}
 if JAR:
@@ -144,8 +145,8 @@ try:
             assert pb.locator('.message-row').count()==0
             clientid=pa.locator('.message-row').get_attribute('data-client-msg-id');snap(pa,'file-retry-error.png')
             geom_pending=pa.locator('.message-row .message-text').bounding_box();assert geom_pending['x']>pa.locator('#timeline').bounding_box()['x']+100
-            pa.locator('#outbox').click();expect(pa.locator('dialog')).to_contain_text(fixture.name)
-            assert fileid not in pa.locator('dialog').text_content();pa.keyboard.press('Escape')
+            assert pa.locator('#outbox').count()==0
+            expect(pa.locator('.file-card')).to_contain_text(fixture.name)
             control(pa,True);pa.get_by_role('button',name='Gửi lại',exact=True).click()
             expect(pa.locator('.message-state')).to_have_text('✓ Đã gửi');assert pa.locator('.message-row').get_attribute('data-client-msg-id')==clientid
         expect(pb.locator('.file-card')).to_have_count(1,timeout=10000)

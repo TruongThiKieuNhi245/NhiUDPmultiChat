@@ -64,10 +64,10 @@ export class ChatView {
   }
 
   updateRow(ref, item, own, grouped) {
-    ref.row.className = `message-row ${own ? 'own' : 'other'}${grouped ? ' grouped' : ''}`;
+    ref.row.className = `message-row ${item.kind==='Y'?'system':own ? 'own' : 'other'}${grouped ? ' grouped' : ''}`;
     ref.row.dataset.userId = item.userId;
     if (item.msgId) ref.row.dataset.msgId = item.msgId;
-    ref.avatar.hidden = own;
+    ref.avatar.hidden = own || item.kind==='Y';
     const avatarKey = item.userId + ':' + (item.avatarHash || '');
     if (ref.avatar.dataset.key !== avatarKey) {
       ref.avatar.dataset.key = avatarKey;
@@ -79,7 +79,7 @@ export class ChatView {
         ref.avatar.replaceChildren(image);
       }
     }
-    ref.meta.hidden = own || grouped;
+    ref.meta.hidden = own || grouped || item.kind==='Y';
     ref.identity.textContent = item.nickname || item.name;
     // Khong gan lai textContent neu khong doi, de giu selection khi co tin moi.
     const content = item.recalled ? 'Tin đã thu hồi' : item.text;
@@ -110,7 +110,7 @@ export class ChatView {
     ref.quote.hidden = !item.replyTo || item.recalled;
     ref.quote.textContent = `${item.replyName || 'Tin gốc'}: ${item.replyText || 'Xem tin được trả lời'}`;
     ref.quote.onclick = () => this.actions.jump?.(item.replyTo);
-    ref.menu.hidden = !item.msgId || item.recalled;
+    ref.menu.hidden = !item.msgId || item.recalled || item.kind==='Y';
     ref.copy.hidden = item.kind !== 'T';
     ref.copy.onclick = async () => {
       try { await navigator.clipboard.writeText(item.text); ref.copy.textContent = 'Đã sao chép'; }
@@ -123,7 +123,7 @@ export class ChatView {
     ref.time.textContent = date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     ref.time.dateTime = date.toISOString();
     ref.time.title = date.toLocaleString('vi-VN');
-    ref.state.hidden = !own;
+    ref.state.hidden = !own || item.kind==='Y';
     const failed = !item.msgId && item.state === 'failed';
     const state = item.msgId ? '✓ Đã gửi' : failed ? item.error : 'Đang gửi…';
     if (ref.state.textContent !== state) ref.state.textContent = state;
@@ -149,7 +149,7 @@ export class ChatView {
       const id = key(item), own = item.userId === currentUser.id;
       let ref = this.rows.get(id);
       if (!ref) { ref = this.createRow(item, own); this.rows.set(id, ref); }
-      const grouped = previous && previous.userId === item.userId && previous.roomId === item.roomId
+      const grouped = item.kind!=='Y' && previous?.kind!=='Y' && previous && previous.userId === item.userId && previous.roomId === item.roomId
         && !previous.recalled && !item.recalled && dateKey(previous) === day && item.timestamp - previous.timestamp >= 0 && item.timestamp - previous.timestamp < 120000;
       this.updateRow(ref, item, own, grouped);
       active.add(id);

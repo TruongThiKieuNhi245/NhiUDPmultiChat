@@ -14,6 +14,7 @@ with socket.socket() as available:
     port = available.getsockname()[1]
 BASE = f'http://127.0.0.1:{port}'
 cp = str(ROOT / 'target/test-classes') + os.pathsep + str(ROOT / 'target/classes') + os.pathsep + (ROOT / 'target/web-classpath.txt').read_text().strip()
+cp = os.environ.get('CHAT_QA_CLASSPATH', cp)
 log = (RUN / 'server.txt').open('w', encoding='utf-8')
 process = subprocess.Popen(['java', '-cp', cp, 'com.mycompany.udpmultichat.web.Web1BrowserFixture',
                             f'--server.port={port}', f'--chat.data-dir={RUN / "data"}',

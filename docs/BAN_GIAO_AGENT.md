@@ -1,3 +1,11 @@
+## Cập nhật Web 3.2 — Quản trị, thống kê và PDF
+
+Tiếp quản `4e02c11`, giữ nguyên dữ liệu và sáu tài liệu đã sửa trước đó. Hoàn thành `/admin` năm mục, CRUD/kiểm duyệt/broadcast qua UDP thật, revoke HTTP/WS, thống kê và PDF A4 tiếng Việt cùng snapshot với CSV/HTML. Bỏ panel Tin chờ/lỗi, đưa xuất HTML/TXT vào thông tin phòng; lỗi/retry còn tại hàng tin.
+
+[Bàn giao Web 3.2](WEB3_2_NGHIEM_THU.md) chứa bản đồ source/API, giới hạn, ảnh, hash JAR, bằng chứng 26 JUnit + 16 desktop và các lượt browser source/JAR/hồi quy. Bản xem thử riêng `127.0.0.1:8084`, cookie riêng, mật khẩu admin ngẫu nhiên chỉ ở file local ignored. Không sửa dữ liệu preview cũ. Backup/nhập bản sao/rollback và QA/host Web 4 còn lại; dừng để người dùng xem, chưa push/public.
+
+---
+
 ## Cập nhật Web 3.1 — 25/11/2026
 
 Tiếp quản `be607ec`. Mốc này hoàn thiện tệp/ảnh HTTP + metadata F qua UDP CHAT2 và giao diện gradient; giữ dữ liệu vận hành cùng các sửa đổi tài liệu có sẵn. Chi tiết source/API, quota/cleanup, QA browser/JAR và phần còn lại: [WEB3_1_NGHIEM_THU.md](WEB3_1_NGHIEM_THU.md). Đây chưa phải nghiệm thu toàn bộ Web 3; dừng sau mốc để xem kết quả, chưa push/public.

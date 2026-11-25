@@ -1,0 +1,6 @@
+Noto Sans - regular and bold for embedded Vietnamese PDF text.
+Source: https://github.com/notofonts/noto-fonts
+Commit: ffebf8c1ee449e544955a7e813c54f9b73848eac
+Files: hinted/ttf/NotoSans/NotoSans-Regular.ttf, NotoSans-Bold.ttf
+License: SIL Open Font License 1.1; see LICENSE.txt.
+No modifications.

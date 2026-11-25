@@ -25,7 +25,9 @@ public class WebApi {
     Map<String, String> login(@RequestBody Credentials body, HttpServletRequest request) throws IOException {
         validate(body);
         HttpSession session = request.getSession();
-        if (!WebSecurity.token(session).isEmpty()) { throw new IllegalArgumentException("Hãy đăng xuất trước."); }
+        String previous=WebSecurity.token(session);
+        if (!previous.isEmpty() && service.active(previous)) { throw new IllegalArgumentException("Hãy đăng xuất trước."); }
+        session.removeAttribute(WebSecurity.TOKEN);
         var identity = service.login(body.login(), body.password());
         request.changeSessionId(); session.setAttribute(WebSecurity.TOKEN, identity.token());
         return publicIdentity(identity);
@@ -97,10 +99,11 @@ public class WebApi {
     }
     public record Recall(String roomId,long msgId) { }
     @GetMapping("/export")
-    ResponseEntity<byte[]> export(HttpSession session,@RequestParam String roomId) {
-        String text=service.export(WebSecurity.token(session),roomId);
-        return ResponseEntity.ok().contentType(new MediaType("text","plain",java.nio.charset.StandardCharsets.UTF_8))
-                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=lich-su.txt")
+    ResponseEntity<byte[]> export(HttpSession session,@RequestParam String roomId,@RequestParam(defaultValue="txt") String format) {
+        if(!Set.of("txt","html").contains(format))throw new IllegalArgumentException("Chọn HTML hoặc TXT.");
+        boolean html=format.equals("html");String text=html?service.exportHtml(WebSecurity.token(session),roomId):service.export(WebSecurity.token(session),roomId);
+        return ResponseEntity.ok().contentType(new MediaType("text",html?"html":"plain",java.nio.charset.StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=lich-su."+format)
                 .body(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
     }
     private static void validate(Credentials body) {
@@ -116,6 +119,8 @@ public class WebApi {
     }
     @RestControllerAdvice
     static class Errors {
+        @ExceptionHandler(com.mycompany.udpmultichat.server.WebAdministration.Forbidden.class)
+        ResponseEntity<Map<String,String>> forbidden(com.mycompany.udpmultichat.server.WebAdministration.Forbidden e){return ResponseEntity.status(403).body(Map.of("error",e.getMessage()));}
         @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
         ResponseEntity<Map<String,String>> uploadTooLarge() {
             return ResponseEntity.status(413).body(Map.of("error","Tệp vượt 10 MB. Hãy chọn tệp nhỏ hơn hoặc chia tệp trước khi gửi."));

@@ -23,7 +23,7 @@ public class WebSecurity {
     }
     @Bean
     SecurityFilterChain security(HttpSecurity http, WebChatService service) throws Exception {
-        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/index.html", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/file-upload.js", "/app.css", "/error",
+        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/admin", "/index.html", "/admin-ui.js", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/file-upload.js", "/app.css", "/error",
                 "/api/csrf", "/api/login", "/api/register").permitAll().anyRequest().authenticated());
         http.exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> res.sendError(401)));
         http.headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
@@ -53,7 +53,12 @@ public class WebSecurity {
                         var identity = service.identity(key);
                         var auth = UsernamePasswordAuthenticationToken.authenticated(identity.id(), null, java.util.List.of());
                         SecurityContextHolder.getContext().setAuthentication(auth);
-                    } catch (IllegalArgumentException e) { SecurityContextHolder.clearContext(); }
+                    } catch (IllegalArgumentException e) {
+                        SecurityContextHolder.clearContext();
+                        // Xoa danh tinh da thu hoi, de cung cookie co the dang nhap lai.
+                        HttpSession stale=req.getSession(false);
+                        if(stale!=null)try{stale.removeAttribute(TOKEN);}catch(IllegalStateException ignored){ }
+                    }
                 }
                 chain.doFilter(upload?req:new BoundedJsonRequest(req,req.getRequestURI().equals("/api/actions/profile-save")?96000:8192),res);
             }

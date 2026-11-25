@@ -1,3 +1,4 @@
+import { AdminUI } from './admin-ui.js';
 import { FileUpload } from './file-upload.js';
 import { WorkspaceUI } from './workspace-ui.js';
 import { ChatStore, ROOM, CACHE_LIMIT } from './chat-store.js';
@@ -17,17 +18,19 @@ let activeRoom = ROOM, roomEpoch = 0, replying = null, recallCursor = 0, lastTyp
 const drafts = new Map(), roomUnread = new Map(), typingUsers = new Map();
 const ui = new WorkspaceUI({ api, action, selectRoom, currentRoom: () => activeRoom,
   jump: jumpTo, sendSticker: code => enqueue(code,'S'), updateProfile });
+const admin = new AdminUI({ api, ui,
+  open: () => { drawer(false);$('workspace').hidden=true; },
+  close: () => { if(me){$('workspace').hidden=false;updateComposer();render();} }
+});
 const fileUpload = new FileUpload({ ui, csrf: () => csrf, api, currentRoom: () => ui.room(),
   send: (file,room) => room===activeRoom ? enqueue(file.text,'F',{file}) : false });
 ui.unread = roomUnread;
 ui.pending = () => [...store.pending.values()];
-ui.retry = async item => { await selectRoom(item.roomId); sendItem(item); };
-ui.discard = item => { clearItemTimer(item);store.pending.delete(store.key(item));render();ui.renderRooms(); };
 async function action(name,data) { return api('/actions/'+name,{method:'POST',body:JSON.stringify(data)}); }
 function updateProfile(profile) {
   if (!me) return;
   const forced = me.forcePassword;
-  Object.assign(me,profile);
+  Object.assign(me,profile);admin.updateProfile(profile);
   $('account-name').textContent = me.name;
   $('account-login').textContent = '@'+me.login;
   const avatar = $('account-avatar'); avatar.textContent = me.name.slice(0,1).toUpperCase();
@@ -145,7 +148,7 @@ function showAuth(reason = '') {
   stopSession();
   drawer(false);
   me = null;
-  fileUpload.reset();ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
+  fileUpload.reset();admin.reset();ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
   draft = '';
   $('message').value = '';
   store.clear();
@@ -154,11 +157,11 @@ function showAuth(reason = '') {
   historyFailed = false;
   $('workspace').hidden = true;
   $('auth').hidden = false;
-  $('auth-error').textContent = reason;
+  setAuthMode(false);$('auth-error').textContent = reason;
   $('login').focus();
 }
-$('switch-mode').onclick = () => {
-  registering = !registering;
+function setAuthMode(value) {
+  registering = value;
   $('form-title').textContent = registering ? 'Bắt đầu câu chuyện mới.' : 'Rất vui được gặp lại.';
   $('form-description').textContent = registering ? 'Tạo tài khoản để gặp mọi người trong Sảnh chung.' : 'Đăng nhập để tiếp tục cuộc trò chuyện.';
   $('submit-login').textContent = registering ? 'Tạo tài khoản →' : 'Đăng nhập →';
@@ -166,7 +169,8 @@ $('switch-mode').onclick = () => {
   $('switch-mode').textContent = registering ? 'Đăng nhập' : 'Tạo tài khoản';
   $('password').autocomplete = registering ? 'new-password' : 'current-password';
   $('auth-error').textContent = '';
-};
+}
+$('switch-mode').onclick = () => setAuthMode(!registering);
 $('login-form').onsubmit = async event => {
   event.preventDefault();
   $('submit-login').disabled = true;
@@ -265,13 +269,15 @@ function connect() {
       catch (error) { if (valid()) { historyFailed = true; alertChat('Chưa tải được lịch sử. Bấm Về tin mới để thử lại. ' + error.message); $('new-messages').hidden = false; } }
     }
     if (data.type === 'ping' && current.readyState === 1) current.send(JSON.stringify({ type: 'ping' }));
-    if (data.type === 'workspace') ui.scheduleRefresh();
+    if (data.type === 'admin-updated') admin.invalidate();
+    if (data.type === 'workspace') {ui.scheduleRefresh();admin.invalidate();}
+    if (data.type === 'history-cleared' && data.roomId===activeRoom){recallCursor=0;syncRecalls(generation,roomEpoch).catch(error=>alertChat(error.message));}
     if (data.type === 'recall') applyRecall(data.data);
     if (data.type === 'typing' && data.roomId===activeRoom && data.data.userId!==me.id) typingUsers.set(data.data.userId,data.data);
-    if (data.type === 'message' || data.type === 'confirmed') accept(data.message);
+    if (data.type === 'message' || data.type === 'confirmed') {accept(data.message);admin.invalidate();}
     if (data.type === 'error') {
       const item = [...store.pending.values()].find(row => row.clientMsgId === data.clientMsgId);
-      if (item) { failItem(item, data.error); alertChat('Một tin chưa được xác nhận lưu. Xem lỗi cạnh tin và dùng Gửi lại.'); }
+      if (item) { failItem(item, data.error); alertChat('Chưa gửi được một tin. Xem thông báo và nút Gửi lại cạnh tin đó.'); }
       else $('send-error').textContent = data.error;
     }
   };

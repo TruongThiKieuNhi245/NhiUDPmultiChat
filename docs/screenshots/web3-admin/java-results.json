@@ -1,0 +1,88 @@
+{
+  "status": "PASS",
+  "junit": [
+    {
+      "suite": "com.mycompany.udpmultichat.transport.UdpChatTransportTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "reorderedPacketsUseServerOrderAndUntrustedSourceIsRejected(Path)",
+        "lostDatagramRetriesAndDuplicateDatagramsCommitOnce(Path)"
+      ]
+    },
+    {
+      "suite": "com.mycompany.udpmultichat.web.Web1IntegrationTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "historyPagesAreBoundedOrderedAndAuthorized(Path)",
+        "webLoginUpgradesLegacyPasswordInSameStore(Path)",
+        "chunkedBodiesCannotBypassRequestLimit",
+        "persistentIdempotencyAndDiskFailure(Path)",
+        "authenticatedChatMustReceiveUdpBeforePersistenceAndWebSocket"
+      ]
+    },
+    {
+      "suite": "com.mycompany.udpmultichat.web.Web2ServiceTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "searchPaginationAndLatestHistoryStayBounded(Path)",
+        "stickerReplyRecallRetryAndRestartDoNotLeakQuote(Path)",
+        "roomsPermissionsCountsModerationAndNickname(Path)",
+        "invitationsExpireAndFormerOwnerCannotGrantAccess(Path)",
+        "profileAvatarPasswordAndForcedPassword(Path)",
+        "nicknameAndInvitationDiskFailuresDoNotChangeMemory(Path)",
+        "offlineInvitationsRecheckCapacityClosedBanAndPersist(Path)"
+      ]
+    },
+    {
+      "suite": "com.mycompany.udpmultichat.web.Web3AdminTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "snapshotNumbersExportsAndHistoryEscaping(Path)",
+        "assignedOwnerIsOnlineAndTransferRespectsCapacityBanLock(Path)",
+        "broadcastUsesUdpAndRoomClearKeepsRecallDigest(Path)",
+        "guardsSnapshotOwnershipRolesAndRevocation(Path)",
+        "paginatedVietnamesePdfForManyRooms(Path)",
+        "resetTemporaryPasswordLockAndCrud(Path)"
+      ]
+    },
+    {
+      "suite": "com.mycompany.udpmultichat.web.Web3FileServiceTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        "expiredStagingAndDeletedRoomRemoveBinary(Path)",
+        "restartStagingRecallAndCleanupArePersistent(Path)",
+        "limitsReservationInvalidImagesAndCancelledStreams(Path)",
+        "fiveMegabytesRequiresUdpCommitAndSameRetryKey(Path)",
+        "diskFailureDoesNotConfirmAndRightsRecheckedAtFinish(Path)",
+        "cleanupFailureDoesNotMisreportCommittedRecall(Path)"
+      ]
+    }
+  ],
+  "junitTotal": 26,
+  "desktop": {
+    "suite": "AdminSelfTest",
+    "passed": 16,
+    "failed": 0
+  },
+  "artifact": "target\\web3-admin-preview\\UDPmultiChat-1.0-SNAPSHOT.jar",
+  "sha256": "efe63532f5a35a320a49e30aef6e4385482c83166bef200b6cbddbc99d0b462a",
+  "productionClassesCompared": 220,
+  "mainJavaMatchesIsolatedBuild": true,
+  "resourcesMatchWorkspace": true,
+  "testFixtureAbsentFromJar": true
+}

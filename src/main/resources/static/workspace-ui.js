@@ -21,13 +21,11 @@ export class WorkspaceUI {
       const result = await this.action('room-join',data); await this.refresh(); await this.selectRoom(result.roomId);
     });
     $('profile').onclick = () => this.profileForm();
-    $('outbox').onclick=()=>this.outbox();
     $('invitations').onclick = () => this.invitationList();
     $('room-info').onclick = () => this.roomInfo();
     $('room-search').oninput = () => this.renderRooms();
     $('find-messages').onclick = () => this.searchDialog();
     $('sticker').onclick = () => this.stickers();
-    $('export-chat').onclick = () => this.exportHistory();
   }
   room() { return this.snapshot?.rooms.find(room => room.id === this.currentRoom()); }
   clear() { this.revision++; clearTimeout(this.refreshTimer); this.dialog?.close(); this.snapshot = null; $('room-list').replaceChildren(); }
@@ -66,7 +64,6 @@ export class WorkspaceUI {
       return button;
     });
     if (!nodes.length) nodes.push(element('p','muted','Không có phòng phù hợp.'));
-    $('outbox-count').textContent=this.pending?.().length || '';
     $('room-list').replaceChildren(...nodes);
     if(focused)$('room-list').querySelector(`[data-room-id="${focused}"]`)?.focus({preventScroll:true});
   }
@@ -80,7 +77,7 @@ export class WorkspaceUI {
     heading.id = 'dialog-title-'+(++this.dialogNumber); dialog.setAttribute('aria-labelledby',heading.id);
     header.append(heading,close); dialog.append(header);
     const content = element('div','dialog-content'); dialog.append(content);
-    dialog.onclose = () => { dialog.remove(); if (this.dialog === dialog) this.dialog = null; if(previous?.isConnected && !previous.closest('[inert]') && previous.getClientRects().length)previous.focus();else if(!$('workspace').hidden)$('message').focus();else $('login').focus(); };
+    dialog.onclose = () => { dialog.remove(); if (this.dialog === dialog) this.dialog = null; if(previous?.isConnected && !previous.closest('[inert]') && previous.getClientRects().length)previous.focus();else if(!$('admin-page').hidden)$('admin-refresh').focus();else if(!$('workspace').hidden)$('message').focus();else $('login').focus(); };
     document.body.append(dialog); this.dialog = dialog; dialog.showModal();
     return { dialog, content, close };
   }
@@ -89,9 +86,10 @@ export class WorkspaceUI {
     const { dialog,content,close } = this.open(title);
     const form = element('form','dialog-form');
     for (const field of fields) {
-      const label = element('label','',field.label), input = element(field.type === 'textarea' ? 'textarea' : 'input');
+      const label = element('label','',field.label), input = element(field.options?'select':field.type === 'textarea' ? 'textarea' : 'input');
       input.id = 'field-'+field.name; input.name = field.name; label.htmlFor = input.id;
-      if (field.type !== 'textarea') input.type = field.type;
+      if(field.options)for(const [value,text] of field.options){const option=element('option','',text);option.value=value;input.append(option);}
+      else if (field.type !== 'textarea') input.type = field.type;
       if (field.type === 'checkbox') input.checked = Boolean(field.value); else input.value = field.value;
       input.required = Boolean(field.required); input.readOnly = Boolean(field.readOnly);
       if (field.min !== undefined) input.min = field.min;
@@ -101,7 +99,7 @@ export class WorkspaceUI {
       form.append(label,input);
     }
     const error = element('p','error'); error.id = 'dialog-error'; error.setAttribute('role','alert');
-    form.querySelectorAll('input,textarea').forEach(input => input.setAttribute('aria-describedby','dialog-error'));
+    form.querySelectorAll('input,textarea,select').forEach(input => input.setAttribute('aria-describedby','dialog-error'));
     const send = element('button','primary',options.submitText || 'Lưu'); send.type = 'submit';
     form.append(error,send); content.append(form);
     if (options.forced) { close.hidden = true; dialog.oncancel = event => event.preventDefault(); }
@@ -127,22 +125,6 @@ export class WorkspaceUI {
       const result = await this.action(room?'room-edit':'room-create',{...data,roomId:room?.id || ''});
       await this.refresh(); if (!room) await this.selectRoom(result.roomId);
     });
-  }
-  outbox() {
-    const {content}=this.open('Tin đang chờ hoặc chưa gửi được');
-    const pending=this.pending?.() || [];
-    if(!pending.length)content.append(element('p','muted','Không có tin đang chờ.'));
-    for(const item of pending) {
-      const card=element('section','info-card');
-      const room=this.snapshot.rooms.find(room=>room.id===item.roomId);
-      card.append(element('strong','',room?.name || 'Phòng không còn truy cập được'),element('p','',item.kind==='S'?'[Sticker '+item.text+']':item.kind==='F'?'[Tệp] '+(item.file?.name || 'Tệp đính kèm')+' · '+fileSize(item.file?.size || 0):item.text),element('p','error',item.error || 'Đang gửi…'));
-      if(room?.joined)this.button(card,'Tới phòng và gửi lại',async()=>{this.dialog.close();await this.retry(item);});
-      this.button(card,'Bỏ hàng trên thiết bị',()=>{
-        const {content:explanation}=this.form('Bỏ hàng chờ trên thiết bị',[],async()=>{this.discard(item);},{submitText:'Bỏ hàng chờ'});
-        explanation.prepend(element('p','','Thao tác này chỉ bỏ hàng khỏi tab hiện tại, không thu hồi một tin có thể đã tới server. Hãy sao chép nội dung nếu còn cần dùng.'));
-      });
-      content.append(card);
-    }
   }
   async invitationList() {
     await this.refresh();
@@ -173,6 +155,9 @@ export class WorkspaceUI {
     const members=await this.api('/members?roomId='+room.id);
     const {content}=this.open('Thông tin · '+room.name);
     content.append(element('p','',room.description),element('p','',`${room.memberCount} thành viên · ${room.onlineCount} đang trực tuyến`),element('p','room-code','Mã phòng: '+room.code));
+    const exports=element('section','room-export info-card');exports.append(element('h3','','Xuất lịch sử trò chuyện'),element('p','muted','Bản HTML giữ bố cục hội thoại, dễ đọc và in. Tệp và ảnh được ghi bằng tên; không nhúng dữ liệu nhị phân.'));
+    this.button(exports,'Tải bản dễ đọc (.html)',()=>this.exportHistory(room.id,'html'));
+    this.button(exports,'Tải văn bản (.txt)',()=>this.exportHistory(room.id,'txt'));content.append(exports);
     this.button(content,room.notificationsMuted?'Bật thông báo phòng':'Tắt thông báo phòng',async () => { await this.action('notifications',{roomId:room.id,muted:String(!room.notificationsMuted)}); await this.refresh(); await this.roomInfo(); });
     if (room.manage && room.id!=='sanh') {
       this.button(content,'Sửa phòng',() => this.roomForm(room));
@@ -302,10 +287,10 @@ export class WorkspaceUI {
     };
     form.onsubmit=async event=>{event.preventDefault();query=input.value;cursor=0;search.disabled=true;try{await load();}catch(error){results.textContent=error.message;}finally{search.disabled=false;}};
   }
-  async exportHistory() {
+  async exportHistory(roomId,format) {
     try {
-      const response=await fetch('/api/export?roomId='+this.currentRoom());if(!response.ok)throw new Error('Không thể xuất lịch sử.');
-      const url=URL.createObjectURL(await response.blob());const link=element('a');link.href=url;link.download='lich-su.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const response=await fetch('/api/export?roomId='+roomId+'&format='+format);if(!response.ok)throw new Error('Không thể xuất lịch sử.');
+      const url=URL.createObjectURL(await response.blob());const link=element('a');link.href=url;link.download='lich-su.'+format;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     }catch(error){const {content}=this.open('Xuất lịch sử');content.append(element('p','error',error.message));}
   }
 }

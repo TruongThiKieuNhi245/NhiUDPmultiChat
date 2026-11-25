@@ -1,3 +1,11 @@
+## Web 3.2 — Quản trị, thống kê và báo cáo PDF
+
+Đã có trang `/admin` với **Tổng quan, Người dùng, Phòng, Nhật ký, Báo cáo**; CRUD/kiểm duyệt/thu hồi phiên, thống kê cùng snapshot, tải **PDF A4 có dấu tiếng Việt** và ZIP 4 CSV + 1 HTML. Sidebar bỏ panel Tin chờ/lỗi; xuất lịch sử chuyển vào **Thông tin phòng**, có HTML dễ đọc và TXT. Giữ trạng thái lỗi/gửi lại tại tin để phản ánh đúng kết quả gửi qua UDP.
+
+Xem [bàn giao Web 3.2, ảnh thật, kiểm thử, giới hạn và 5 bước thử](docs/WEB3_2_NGHIEM_THU.md). Bản thử riêng: **http://127.0.0.1:8084/admin**; thông tin đăng nhập ngẫu nhiên chỉ lưu local trong file ignored được chỉ ra ở bàn giao. JUnit 26 test; browser admin JAR 12 nhóm, UX 12, Web 2 11, tệp 8 đều PASS trong phạm vi đã chạy. Backup/nhập bản sao/rollback và Web 4 tiếp tục ở mốc sau; chưa push/public.
+
+---
+
 ## Web 3.1 — Tệp/ảnh và giao diện gradient (25/11/2026)
 
 Bổ sung upload/download HTTP có xác thực (tối đa 10 MB), progress/hủy/thử lại, thẻ tệp/thumbnail và metadata qua UDP thật. Giao diện tím–indigo có gradient, nút rõ hơn, sáng/tối và composer mobile. Bản đồ file/API, bằng chứng QA, giới hạn và bước thử tay: [nghiệm thu Web 3.1](docs/WEB3_1_NGHIEM_THU.md). Quản trị/PDF/backup thuộc mốc tiếp theo; chưa push/public.
