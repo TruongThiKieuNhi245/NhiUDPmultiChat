@@ -1,9 +1,112 @@
+import { WorkspaceUI } from './workspace-ui.js';
 import { ChatStore, ROOM, CACHE_LIMIT } from './chat-store.js';
 import { ChatView, nearBottom } from './chat-view.js';
 
 const $ = id => document.getElementById(id);
 const store = new ChatStore(), encoder = new TextEncoder(), timers = new Map();
-const view = new ChatView($('messages'), item => sendItem(item));
+const view = new ChatView($('messages'), item => sendItem(item), {
+  reply: item => { replying = item; showReply(); $('message').focus(); },
+  jump: id => jumpTo(id),
+  canRecall: item => ui.room()?.manage || (item.userId === me?.id && Date.now()-item.timestamp <= 600000),
+  recall: item => ui.form('Thu hồi tin nhắn',[],async () => {
+    await api('/recall',{method:'POST',body:JSON.stringify({roomId:item.roomId,msgId:item.msgId})});
+  },{submitText:'Thu hồi'})
+});
+let activeRoom = ROOM, roomEpoch = 0, replying = null, recallCursor = 0, lastTyping = 0;
+const drafts = new Map(), roomUnread = new Map(), typingUsers = new Map();
+const ui = new WorkspaceUI({ api, action, selectRoom, currentRoom: () => activeRoom,
+  jump: jumpTo, sendSticker: code => enqueue(code,'S'), updateProfile });
+ui.unread = roomUnread;
+ui.pending = () => [...store.pending.values()];
+ui.retry = async item => { await selectRoom(item.roomId); sendItem(item); };
+ui.discard = item => { clearItemTimer(item);store.pending.delete(store.key(item));render();ui.renderRooms(); };
+async function action(name,data) { return api('/actions/'+name,{method:'POST',body:JSON.stringify(data)}); }
+function updateProfile(profile) {
+  if (!me) return;
+  const forced = me.forcePassword;
+  Object.assign(me,profile);
+  $('account-name').textContent = me.name;
+  $('account-login').textContent = '@'+me.login;
+  const avatar = $('account-avatar'); avatar.textContent = me.name.slice(0,1).toUpperCase();
+  if (me.avatarHash) { const img=document.createElement('img'); img.alt='';img.width=34;img.height=34;img.src='/api/avatars/'+me.id+'?v='+me.avatarHash;avatar.replaceChildren(img); }
+  if (!profile.forcePassword && ui.snapshot?.rooms.length && !ui.room()?.joined) { ui.dialog?.close();selectRoom('sanh',true); }
+  updateRoomHeader();
+  if(ui.room()?.joined)refreshNames();
+  if (forced && !profile.forcePassword) selectRoom('sanh',true);
+}
+async function refreshNames() {
+  const session=generation,epoch=roomEpoch;
+  try {
+    const members=await api('/members?roomId='+activeRoom);
+    if(session!==generation || epoch!==roomEpoch || !me)return;
+    const byId=new Map(members.map(member=>[member.id,member]));
+    for(const [key,item] of store.saved){const member=byId.get(item.userId);store.saved.set(key,{...item,nickname:member?.nickname || '',avatarHash:member?.avatarHash || item.avatarHash});}
+    render({anchor:readingAnchor()});
+  }catch { /* Phong vua roi hoac da bi khoa quyen se duoc snapshot xu ly. */ }
+}
+function updateRoomHeader() {
+  const room = ui.room();
+  $('room-name').textContent = room?.name || 'Sảnh chung';
+  $('room-description').textContent = room ? `${room.memberCount} thành viên · ${room.onlineCount} đang trực tuyến${room.open?'':' · Đã đóng'}` : 'Phòng trò chuyện chung';
+  const label = 'Nhắn vào '+(room?.name || 'Sảnh chung');
+  document.querySelector('label[for=message]').textContent = label;
+  $('message').placeholder = 'Nhắn tin…';
+  $('timeline').setAttribute('aria-label','Tin nhắn trong '+(room?.name || 'Sảnh chung'));
+  document.querySelector('#room-welcome h2').textContent = 'Xin chào, '+(room?.name || 'Sảnh chung')+'!';
+  document.title = 'UDPmultiChat · '+(room?.name || 'Sảnh chung');
+  updateComposer();
+}
+function showReply() {
+  $('replying').hidden = !replying;
+  $('replying-text').textContent = replying ? `Trả lời ${replying.nickname || replying.name}: ${replying.kind==='S'?'[Sticker]':replying.text.slice(0,100)}` : '';
+  updateComposer();
+}
+$('cancel-reply').onclick = () => { replying=null; showReply(); $('message').focus(); };
+async function selectRoom(id,force=false) {
+  if(id!=='sanh' && !ui.snapshot?.rooms.some(room=>room.id===id && room.joined))return;
+  if (!me || (activeRoom===id && !force)) { drawer(false); return; }
+  drafts.delete(activeRoom); drafts.set(activeRoom,{text:$('message').value,reply:replying?{...replying,text:''}:null});
+  if (drafts.size>20) drafts.delete(drafts.keys().next().value);
+  roomEpoch++; activeRoom=id; store.roomId=id; store.saved.clear(); store.cursor=0;store.initialized=false;store.latest=true;
+  recallCursor=0;unread=0;roomUnread.delete(id);view.clear();typingUsers.clear();$('typing').textContent='';
+  const entry=drafts.get(id);$('message').value=entry?.text || '';replying=entry?.reply || null;
+  updateRoomHeader();showReply();ui.renderRooms();drawer(false);
+  if (socket?.readyState===1) {
+    try { await syncHistory(generation,roomEpoch); } catch (error) { alertChat(error.message); }
+  }
+}
+async function jumpTo(id) {
+  const existing = $('messages').querySelector(`[data-msg-id="${id}"]`);
+  if (existing) { existing.scrollIntoView({block:'center'}); existing.tabIndex=-1; existing.focus({preventScroll:true}); return; }
+  const epoch=roomEpoch, session=generation;
+  try {
+    const page=await api('/history/around?roomId='+activeRoom+'&msgId='+id);
+    if(epoch!==roomEpoch || session!==generation)return;
+    store.saved.clear();store.latest=false;
+    for(const item of page)store.saved.set(store.key(item),store.sanitize(item));
+    render();const target=$('messages').querySelector(`[data-msg-id="${id}"]`);target?.scrollIntoView({block:'center'});target?.setAttribute('tabindex','-1');target?.focus({preventScroll:true});
+  }catch(error){alertChat(error.message);}
+}
+function applyRecall(message) {
+  store.markRecall(message.roomId,message.msgId);
+  for(const item of store.pending.values())if(item.roomId===message.roomId && item.replyTo===message.msgId)item.replyText='Tin đã thu hồi';
+  for(const card of document.querySelectorAll('[data-search-msg-id]'))if(card.dataset.roomId===message.roomId && card.dataset.searchMsgId===String(message.msgId))card.textContent='Tin đã thu hồi';
+  const update=item=>item.msgId===message.msgId ? {...item,text:'',kind:'D',recalled:true,replyTo:0,replyText:''}
+    : item.replyTo===message.msgId ? {...item,replyText:'Tin đã thu hồi'} : item;
+  if(message.roomId!==activeRoom)return;
+  for(const [key,item] of store.saved)store.saved.set(key,update(item));
+  if(replying?.msgId===message.msgId){replying=null;showReply();}
+  render({anchor:readingAnchor()});
+}
+async function syncRecalls(session,epoch) {
+  let page;
+  do {
+    page=await api('/recalls?roomId='+activeRoom+'&after='+recallCursor);
+    if(session!==generation || epoch!==roomEpoch)return;
+    for(const id of page.ids)applyRecall({roomId:activeRoom,msgId:id});
+    recallCursor=page.cursor;
+  } while(page.more);
+}
 let csrf, me, socket, registering = false, generation = 0, reconnectTimer, reconnectAttempt = 0;
 let unread = 0, loadingOlder = false, draft = '', drawerFocus, historyFailed = false;
 const setTheme = theme => {
@@ -39,6 +142,7 @@ function showAuth(reason = '') {
   stopSession();
   drawer(false);
   me = null;
+  ui.clear();drafts.clear();roomUnread.clear();typingUsers.clear();replying=null;roomEpoch++;activeRoom=ROOM;store.roomId=ROOM;
   draft = '';
   $('message').value = '';
   store.clear();
@@ -99,7 +203,7 @@ function drawer(open) {
 $('menu').onclick = () => drawer(true);
 $('close-drawer').onclick = () => drawer(false);
 $('shade').onclick = () => drawer(false);
-$('room').onclick = () => drawer(false);
+
 document.addEventListener('keydown', event => {
   if (!$('sidebar').classList.contains('open')) return;
   if (event.key === 'Escape') drawer(false);
@@ -112,8 +216,9 @@ document.addEventListener('keydown', event => {
 });
 matchMedia('(max-width: 760px)').addEventListener('change', () => drawer(false));
 
-function enterChat() {
+async function enterChat() {
   stopSession();
+  const session=generation;
   reconnectAttempt = 0;
   $('auth').hidden = true;
   $('workspace').hidden = false;
@@ -122,7 +227,7 @@ function enterChat() {
   $('account-avatar').textContent = me.name.slice(0, 1).toUpperCase();
   $('message').value = draft;
   drawer(false);
-  connect();
+  try { await ui.refresh(); if(me && session===generation) connect(); } catch(error) { if(session===generation)alertChat(error.message); }
 }
 function status(text, online) {
   $('connection').textContent = text;
@@ -148,13 +253,18 @@ function connect() {
     let data;
     try { data = JSON.parse(event.data); } catch { return; }
     if (data.type === 'ready') {
+      // Cursor ID tin khong the dai dien cho lan thu hoi moi cua tin cu.
+      recallCursor=0;
       reconnectAttempt = 0;
       status('Đã kết nối', true);
       alertChat();
-      try { await syncHistory(session); }
+      try { if (!me.forcePassword) await syncHistory(session,roomEpoch); }
       catch (error) { if (valid()) { historyFailed = true; alertChat('Chưa tải được lịch sử. Bấm Về tin mới để thử lại. ' + error.message); $('new-messages').hidden = false; } }
     }
     if (data.type === 'ping' && current.readyState === 1) current.send(JSON.stringify({ type: 'ping' }));
+    if (data.type === 'workspace') ui.scheduleRefresh();
+    if (data.type === 'recall') applyRecall(data.data);
+    if (data.type === 'typing' && data.roomId===activeRoom && data.data.userId!==me.id) typingUsers.set(data.data.userId,data.data);
     if (data.type === 'message' || data.type === 'confirmed') accept(data.message);
     if (data.type === 'error') {
       const item = [...store.pending.values()].find(row => row.clientMsgId === data.clientMsgId);
@@ -165,6 +275,7 @@ function connect() {
   current.onclose = () => {
     if (!valid()) return;
     socket = null;
+    roomEpoch++;
     status('Mất kết nối', false);
     alertChat('Mất kết nối. Bản nháp vẫn được giữ; tin đã lưu sẽ được đồng bộ khi nối lại.');
     for (const item of store.pending.values()) failItem(item, 'Chưa nhận xác nhận. Hãy gửi lại.');
@@ -197,7 +308,7 @@ function render({ bottom = false, anchor } = {}) {
   if (!me) return;
   const timeline = $('timeline');
   view.render(store.list(), me, item => store.key(item));
-  $('room-welcome').hidden = store.saved.size > 0 || store.pending.size > 0;
+  $('room-welcome').hidden = store.saved.size > 0 || [...store.pending.values()].some(item=>item.roomId===activeRoom);
   const oldest = Math.min(...[...store.saved.values()].map(item => item.msgId));
   $('load-older').hidden = !store.saved.size || oldest <= 1;
   if (anchor?.node.isConnected) timeline.scrollTop += anchor.node.getBoundingClientRect().top - anchor.top;
@@ -210,9 +321,9 @@ function readingAnchor() {
   const node = [...$('messages').querySelectorAll('.message-row')].find(item => item.getBoundingClientRect().bottom > top);
   return node ? { node, top: node.getBoundingClientRect().top } : undefined;
 }
-async function latestPage(session = generation) {
-  const page = await api('/history/page');
-  if (session !== generation || !me) return;
+async function latestPage(session = generation,epoch = roomEpoch) {
+  const page = await api('/history/page?roomId='+activeRoom);
+  if (session !== generation || epoch !== roomEpoch || !me) return;
   store.saved.clear();
   store.latest = true;
   for (const item of page) { store.put(item); clearItemTimer(item); }
@@ -223,13 +334,13 @@ async function latestPage(session = generation) {
   unread = 0;
   render({ bottom: true });
 }
-async function syncHistory(session) {
-  if (!store.initialized) await latestPage(session);
-  if (session !== generation || !me) return;
+async function syncHistory(session,epoch = roomEpoch) {
+  if (!store.initialized) await latestPage(session,epoch);
+  if (session !== generation || epoch !== roomEpoch || !me) return;
   let page;
   do {
-    page = await api('/history?after=' + store.cursor);
-    if (session !== generation || !me) return;
+    page = await api('/history?roomId='+activeRoom+'&after=' + store.cursor);
+    if (session !== generation || epoch !== roomEpoch || !me) return;
     const bottom = nearBottom($('timeline')) && store.latest, anchor = readingAnchor();
     for (const message of page) {
       if (!bottom && store.saved.size >= CACHE_LIMIT && !store.saved.has(store.key(message))) store.latest = false;
@@ -240,34 +351,40 @@ async function syncHistory(session) {
     store.trim();
     render({ bottom, anchor });
   } while (page.length === 50);
+  await syncRecalls(session,epoch);
 }
 $('load-older').onclick = async () => {
   if (loadingOlder) return;
   loadingOlder = true;
   $('load-older').disabled = true;
-  const session = generation;
+  const session = generation, epoch = roomEpoch;
   try {
     const oldest = Math.min(...[...store.saved.values()].map(item => item.msgId));
-    const page = await api('/history/page?before=' + oldest);
-    if (session !== generation || !me) return;
+    const page = await api('/history/page?roomId='+activeRoom+'&before=' + oldest);
+    if (session !== generation || epoch !== roomEpoch || !me) return;
     const anchor = readingAnchor();
-    for (const item of page) store.saved.set(store.key(item), item);
+    for (const item of page) store.saved.set(store.key(item),store.sanitize(item));
     store.trim(true);
     render({ anchor });
   } catch (error) { if (session === generation) alertChat(error.message); }
   finally { loadingOlder = false; $('load-older').disabled = false; }
 };
 function accept(message) {
-  if (message.roomId !== ROOM) return;
+  if (message.roomId !== activeRoom) {
+    clearItemTimer(message);store.pending.delete(store.key(message));ui.renderRooms();
+    if(message.userId!==me.id){roomUnread.set(message.roomId,(roomUnread.get(message.roomId)||0)+1);ui.renderRooms();}
+    return;
+  }
   const bottom = nearBottom($('timeline')) && store.latest, anchor = readingAnchor();
   clearItemTimer(message);
   if (!bottom && store.saved.size >= CACHE_LIMIT && !store.saved.has(store.key(message))) store.latest = false;
   const fresh = store.put(message);
+  ui.renderRooms();
   if (fresh && !bottom && message.userId !== me.id) unread++;
   store.trim();
   render({ bottom, anchor });
   if (!historyFailed && ![...store.pending.values()].some(item => item.state === 'failed') && socket?.readyState === 1) alertChat();
-  if (fresh && message.userId !== me.id) $('announcer').textContent = `Tin mới từ ${message.name}`;
+  if (fresh && message.userId !== me.id && !ui.room()?.notificationsMuted) $('announcer').textContent = `Tin mới từ ${message.name}`;
 }
 $('new-messages').onclick = async () => {
   try { await latestPage(); } catch (error) { alertChat(error.message); }
@@ -277,17 +394,22 @@ $('timeline').onscroll = () => {
 };
 
 function updateComposer() {
-  const input = $('message'), bytes = encoder.encode(input.value).length;
+  const input = $('message'), bytes = encoder.encode((replying?'«reply:'+replying.msgId+'::»':'')+input.value).length;
   $('bytes').textContent = `${bytes} / 1000 byte`;
   $('bytes').hidden = bytes < 800;
   $('bytes').classList.toggle('error', bytes > 1000);
   $('limit-error').textContent = bytes > 1000 ? 'Tin vượt 1000 byte UTF-8. Hãy rút ngắn hoặc tách thành nhiều tin.' : '';
   input.setAttribute('aria-invalid', String(bytes > 1000));
-  $('send').disabled = socket?.readyState !== 1 || !input.value.trim() || bytes > 1000;
+  const room=ui.room(), writable=!me?.forcePassword && (!room || (room.joined && room.open && room.mutedUntil<Date.now()));
+  $('send').disabled = socket?.readyState !== 1 || !writable || !input.value.trim() || bytes > 1000;
+  $('sticker').disabled=socket?.readyState!==1 || !writable;
   input.style.height = 'auto';
   input.style.height = Math.min(130, input.scrollHeight) + 'px';
 }
-$('message').oninput = () => { draft = $('message').value; updateComposer(); };
+$('message').oninput = () => {
+  draft = $('message').value; updateComposer();
+  if(socket?.readyState===1 && Date.now()-lastTyping>1500){lastTyping=Date.now();socket.send(JSON.stringify({type:'typing',roomId:activeRoom}));}
+};
 $('message').onkeydown = event => {
   if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
     event.preventDefault();
@@ -306,6 +428,7 @@ function failItem(item, error) {
   clearItemTimer(item);
   item.state = 'failed';
   item.error = error;
+  ui.renderRooms();
   render({ anchor: readingAnchor() });
 }
 function sendItem(item) {
@@ -315,31 +438,32 @@ function sendItem(item) {
   item.state = 'pending';
   item.error = '';
   store.pending.set(key, item);
+  ui.renderRooms();
   render({ bottom: true });
-  try { socket.send(JSON.stringify({ type: 'send', roomId: item.roomId, clientMsgId: item.clientMsgId, text: item.text })); }
+  try { socket.send(JSON.stringify({ type: 'send', roomId: item.roomId, clientMsgId: item.clientMsgId, text: item.text,kind:item.kind || 'T',replyTo:item.replyTo || 0 })); }
   catch { failItem(item, 'Chưa gửi được. Hãy thử lại khi có kết nối.'); return; }
   timers.set(key, setTimeout(() => {
     timers.delete(key);
     if (session === generation && store.pending.get(key)?.state === 'pending') failItem(item, 'Chưa nhận xác nhận. Hãy gửi lại.');
   }, 5000));
 }
-$('compose-form').onsubmit = async event => {
-  event.preventDefault();
-  if ($('send').disabled) return;
+async function enqueue(text,kind='T') {
+  if (socket?.readyState!==1 || me?.forcePassword) return;
   if (store.pending.size >= 100) { $('send-error').textContent = 'Hãy xử lý các tin chưa gửi trước.'; return; }
-  const item = { roomId: ROOM, text: $('message').value, clientMsgId: messageId(), timestamp: Date.now(), name: me.name, userId: me.id };
-  const session = generation;
+  const room=ui.room();
+  if (room && (!room.open || room.mutedUntil>Date.now())) { $('send-error').textContent='Phòng đang đóng hoặc bạn đang bị cấm chat.'; return; }
+  const quote=kind==='T'?replying:null;
+  const item = { roomId: activeRoom,text,kind,replyTo:quote?.msgId || 0,replyName:quote?.name || '',replyText:'',clientMsgId:messageId(),timestamp:Date.now(),name:me.name,userId:me.id };
+  const session=generation,epoch=roomEpoch;
   if (!store.latest) {
-    try { await latestPage(session); } catch (error) { $('send-error').textContent = error.message; return; }
-    if (session !== generation) return;
+    try { await latestPage(session,epoch); } catch(error) { $('send-error').textContent=error.message; return; }
+    if(session!==generation || epoch!==roomEpoch)return;
   }
-  $('send-error').textContent = '';
-  sendItem(item);
-  $('message').value = '';
-  draft = '';
-  updateComposer();
-  $('message').focus();
-};
+  $('send-error').textContent='';sendItem(item);
+  if(kind==='T'){$('message').value='';draft='';replying=null;showReply();drafts.delete(activeRoom);}
+  updateComposer();$('message').focus();
+}
+$('compose-form').onsubmit = event => { event.preventDefault(); if(!$('send').disabled)enqueue($('message').value); };
 addEventListener('offline', () => socket?.close());
 addEventListener('online', () => { if (me && !socket) { reconnectAttempt = 0; connect(); } });
 setInterval(async () => {
@@ -347,7 +471,13 @@ setInterval(async () => {
   const session = generation;
   try { await api('/me'); }
   catch (error) { if (session === generation && error.status === 401) showAuth(error.message); }
+  if(me)ui.scheduleRefresh();
 }, 25000);
+setInterval(()=>{
+  const now=Date.now();for(const [id,item] of typingUsers)if(item.expires<=now)typingUsers.delete(id);
+  $('typing').textContent=[...typingUsers.values()].slice(0,3).map(item=>item.name).join(', ')+(typingUsers.size?' đang nhập…':'');
+  if(me)updateComposer();
+},1000);
 // VisualViewport giup composer theo phan man hinh con lai khi ban phim ao mo.
 function viewportHeight() {
   const zoom = Number.parseFloat(getComputedStyle(document.body).zoom) || 1;

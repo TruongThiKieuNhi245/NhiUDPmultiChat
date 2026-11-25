@@ -52,7 +52,7 @@ class Web1IntegrationTest {
             String paused = TinNhan.taoMa();
             wa.command(paused, "sanh", "Tin khi UDP dừng"); wa.await("error");
             assertEquals(1, a.history().size());
-            assertNull(wb.events.poll(300, TimeUnit.MILLISECONDS));
+            assertNull(wb.nextBusiness(300));
             System.out.println("PASS Web1: receiver dong, WS van pong, khong luu / khong broadcast");
             udp.resumeReceiver();
             wa.command(paused, "sanh", "Tin khi UDP dừng");
@@ -63,7 +63,7 @@ class Web1IntegrationTest {
             assertEquals(2, a.history().size());
             wa.command(paused, "sanh", "Nội dung bị thay đổi"); wa.await("error");
             assertEquals(2, a.history().size());
-            assertNull(wb.events.poll(300, TimeUnit.MILLISECONDS));
+            assertNull(wb.nextBusiness(300));
             System.out.println("PASS Web1: retry sau khoi phuc / replay cung ma / payload khac bi chan");
 
             wa.command(TinNhan.taoMa(), "0123456789abcdef01234567", "Không thuộc phòng"); wa.await("error");
@@ -146,6 +146,18 @@ class Web1IntegrationTest {
         assertEquals(401, anonymous.get("/api/history/page").statusCode());
     }
 
+    @Test void chunkedBodiesCannotBypassRequestLimit() throws Exception {
+        Client client=new Client();
+        client.csrf=json.readTree(client.get("/api/csrf").body()).path("token").asText();
+        byte[] content=("{\"login\":\"bodylimit\",\"password\":\"sample-password\"}"+" ".repeat(20000))
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var request=HttpRequest.newBuilder(uri("/api/register")).header("Content-Type","application/json")
+                .header("X-CSRF-TOKEN",client.csrf).POST(HttpRequest.BodyPublishers.ofInputStream(()->new java.io.ByteArrayInputStream(content))).build();
+        assertEquals(413,client.http.send(request,HttpResponse.BodyHandlers.ofString()).statusCode());
+        assertEquals(413,client.request("/api/register",new String(content,java.nio.charset.StandardCharsets.UTF_8),true).statusCode());
+        assertEquals(200,client.request("/api/register","{\"login\":\"bodylimit\",\"password\":\"sample-password\"}",true).statusCode());
+    }
+
     private final class Client {
         final CookieManager cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         final HttpClient http = HttpClient.newBuilder().cookieHandler(cookies).connectTimeout(Duration.ofSeconds(3)).build();
@@ -189,6 +201,15 @@ class Web1IntegrationTest {
         @Override public CompletionStage<?> onClose(WebSocket socket, int status, String reason) { closed.countDown(); return null; }
         void command(String id, String room, String text) throws Exception {
             ws.sendText(json.writeValueAsString(Map.of("type", "send", "roomId", room, "clientMsgId", id, "text", text)), true).join();
+        }
+        JsonNode nextBusiness(long millis) throws InterruptedException {
+            long until=System.nanoTime()+TimeUnit.MILLISECONDS.toNanos(millis);
+            while(System.nanoTime()<until) {
+                JsonNode event=events.poll(Math.max(1,TimeUnit.NANOSECONDS.toMillis(until-System.nanoTime())),TimeUnit.MILLISECONDS);
+                if(event==null)return null;
+                if(!Set.of("ping","pong","workspace").contains(event.path("type").asText()))return event;
+            }
+            return null;
         }
         JsonNode await(String type) throws Exception {
             long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(6);

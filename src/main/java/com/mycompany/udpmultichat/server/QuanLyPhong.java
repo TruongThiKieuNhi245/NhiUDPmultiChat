@@ -243,6 +243,17 @@ public final class QuanLyPhong {
     public void themThanhVienTrucTiep(String user,String room) throws IOException {
         ghiThanhVien(user,room,true);
     }
+    // Chap nhan moi khong dat cho truoc; kiem lai ban, phong va suc chua tai cung khoa nghiep vu.
+    public void chapNhanLoiMoi(Phien p,String room) throws IOException {
+        Phong r=lay(room); truocVao.accept(p,room);
+        if (!r.dangMo) { throw new IllegalArgumentException("Phòng đã đóng."); }
+        if (!laThanhVien(p.nguoi.id,room)) {
+            if (soThanhVienBenVung(room)>=r.gioiHan || soChoDaDung(room)>=r.gioiHan) {
+                throw new IllegalArgumentException("Phòng đã đầy. Hãy thử lại sau.");
+            }
+            ghiThanhVien(p.nguoi.id,room,true);
+        }
+    }
     // Lay biet danh thanh vien theo phong.
     public String layBietDanh(String roomId,String userId) {
         return bietDanh.getProperty(roomId+"."+userId,"");
@@ -269,6 +280,7 @@ public final class QuanLyPhong {
             throw new IllegalArgumentException("Chủ phòng không được đổi biệt danh của quản trị viên.");
         }
 
+        java.util.Properties banCu=(java.util.Properties)bietDanh.clone();
         String khoa=roomId+"."+targetUserId;
         String nickMoi=(nickname==null)?"":nickname.strip();
         if (nickMoi.isEmpty()) {
@@ -280,7 +292,8 @@ public final class QuanLyPhong {
             }
             bietDanh.setProperty(khoa,nickMoi);
         }
-        kho.ghiBietDanh(bietDanh);
+        try { kho.ghiBietDanh(bietDanh); }
+        catch (IOException e) { bietDanh.clear(); bietDanh.putAll(banCu); throw e; }
         return nickMoi;
     }
     // Ngay vao duoc luu lan dau; du lieu cu dung ngay tao phong lam du phong.

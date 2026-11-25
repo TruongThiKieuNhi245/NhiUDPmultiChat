@@ -1,3 +1,7 @@
+> **Web 2 (25/11/2026):** đã có phòng/thành viên/lời mời offline, hồ sơ/avatar/mật khẩu, 36 sticker Noto, reply/thu hồi/search/TXT, typing và bản nháp theo phòng. Chat mới vẫn qua UDP thật. Xem [bàn giao Web 2, ảnh và 5 bước thử](docs/WEB2_NGHIEM_THU.md).
+>
+> QA: `python -X utf8 scripts/web2-browser-qa.py`; kiểm artifact/restart: `python -X utf8 scripts/web2-package-smoke.py` (biến `CHAT_QA_JAR` chọn JAR riêng). Chạy `test-compile dependency:build-classpath` như bên dưới trước browser QA. Dùng fixture riêng, không dùng dữ liệu vận hành. Bản xem thử Web 2 dùng cổng/data dir riêng; URL và lệnh ở báo cáo Web 2.
+
 > **Chặng UX Web 1 (25/11/2026):** tin của mình bên phải theo `userId`, bong bóng hai phía, composer gọn, drawer có focus, tải lịch sử gần nhất và cache 300 tin. Xem [bàn giao UX, ảnh thật và 5 bước thử](docs/WEB1_UX_NGHIEM_THU.md). Web 2–4 tiếp tục sau khi người dùng xem chặng này.
 >
 > QA mới: `python -X utf8 scripts/web1-ux-browser-qa.py` sau `test-compile dependency:build-classpath` như bên dưới. Hai tài khoản trùng tên, fixture 680 tin; dữ liệu riêng trong `.selftest/`. Bản nháp chỉ giữ trong RAM của tab; đóng tab sẽ mất bản nháp và hàng chưa xác nhận.

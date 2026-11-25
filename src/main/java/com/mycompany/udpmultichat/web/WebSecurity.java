@@ -23,7 +23,7 @@ public class WebSecurity {
     }
     @Bean
     SecurityFilterChain security(HttpSecurity http, WebChatService service) throws Exception {
-        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/index.html", "/app.js", "/chat-view.js", "/chat-store.js", "/app.css", "/error",
+        http.authorizeHttpRequests(a -> a.requestMatchers("/", "/index.html", "/app.js", "/chat-view.js", "/chat-store.js", "/workspace-ui.js", "/app.css", "/error",
                 "/api/csrf", "/api/login", "/api/register").permitAll().anyRequest().authenticated());
         http.exceptionHandling(e -> e.authenticationEntryPoint((req, res, ex) -> res.sendError(401)));
         http.headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(
@@ -41,7 +41,7 @@ public class WebSecurity {
             }
             @Override protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
                     throws ServletException, IOException {
-                if (req.getContentLengthLong() > 8192) { res.sendError(413); return; }
+                if (req.getContentLengthLong() > (req.getRequestURI().equals("/api/actions/profile-save")?96000:8192)) { res.sendError(413); return; }
                 if ("POST".equals(req.getMethod()) && java.util.Set.of("/api/login", "/api/register").contains(req.getRequestURI())
                         && !allow(req.getRemoteAddr())) { res.sendError(429); return; }
                 String key = token(req.getSession(false));
@@ -52,15 +52,18 @@ public class WebSecurity {
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     } catch (IllegalArgumentException e) { SecurityContextHolder.clearContext(); }
                 }
-                chain.doFilter(req, res);
+                chain.doFilter(new BoundedJsonRequest(req,req.getRequestURI().equals("/api/actions/profile-save")?96000:8192),res);
             }
         }, SecurityContextHolderFilter.class);
         return http.build();
     }
     @Bean
     org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer jsonLimits() {
-        return builder -> builder.postConfigurer(mapper -> mapper.getFactory().setStreamReadConstraints(
-                com.fasterxml.jackson.core.StreamReadConstraints.builder().maxStringLength(4096).maxNestingDepth(10).build()));
+        return builder -> {
+            builder.featuresToEnable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+            builder.postConfigurer(mapper -> mapper.getFactory().setStreamReadConstraints(
+                com.fasterxml.jackson.core.StreamReadConstraints.builder().maxStringLength(88000).maxNestingDepth(10).build()));
+        };
     }
     @Bean
     ServletListenerRegistrationBean<HttpSessionListener> sessionLifecycle(WebChatService service, ChatSocket socket) {

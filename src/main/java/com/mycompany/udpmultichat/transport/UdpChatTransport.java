@@ -49,7 +49,10 @@ public final class UdpChatTransport implements AutoCloseable {
     }
     public void onCommitted(Consumer<TinNhan> listener) { committed = listener; }
 
-    public CompletableFuture<WebChatService.Accepted> send(String token, String room, String id, String text) {
+    public CompletableFuture<WebChatService.Accepted> send(String token,String room,String id,String text) {
+        return send(token,room,id,text,"T",0);
+    }
+    public CompletableFuture<WebChatService.Accepted> send(String token,String room,String id,String text,String kind,long replyTo) {
         if (closed) { return CompletableFuture.failedFuture(new IOException("UDP đã dừng.")); }
         if (id == null || !id.matches("[A-Za-z0-9_-]{22}")) {
             return CompletableFuture.failedFuture(new IllegalArgumentException("Mã tin không hợp lệ."));
@@ -57,9 +60,12 @@ public final class UdpChatTransport implements AutoCloseable {
         try {
             if (room == null || !room.matches("sanh|[a-f0-9]{24}")) { throw new IllegalArgumentException("Phòng không hợp lệ."); }
             if (text == null) { throw new IllegalArgumentException("Hãy nhập nội dung tin nhắn."); }
-            Goi.kiemTraTin(new TinNhan(1, room, "x".repeat(24), "Tên người dùng", text, 0, id, "T"));
+            if (!Set.of("T","S").contains(kind) || replyTo<0) throw new IllegalArgumentException("Loại tin không hợp lệ.");
+            if (kind.equals("S") && (replyTo!=0 || !Protocol.stickerHopLe(text))) throw new IllegalArgumentException("Sticker không hợp lệ.");
+            String payload=kind.equals("T")?WebReply.encode(text,replyTo):text;
+            Goi.kiemTraTin(new TinNhan(1,room,"x".repeat(24),"Tên người dùng",payload,0,id,kind));
             String nonce = BaoMat.ngauNhien(16);
-            byte[] bytes = Goi.thanhByte(Goi.ghep("CHAT1", nonce, token, room, id, text));
+            byte[] bytes = Goi.thanhByte(Goi.ghep("CHAT2", nonce, token, room, id, text,kind,Long.toString(replyTo)));
             Pending p = new Pending(token, room, id, bytes);
             synchronized (pending) {
                 if (pending.size() >= 256) { throw new IllegalArgumentException("Hàng gửi đang đầy. Hãy thử lại."); }
@@ -102,13 +108,13 @@ public final class UdpChatTransport implements AutoCloseable {
                 String wire = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
                         .decode(ByteBuffer.wrap(packet.getData(), 0, packet.getLength())).toString();
                 String[] fields = Goi.tach(wire);
-                if (fields.length != 6 || !fields[0].equals("CHAT1")) { continue; }
+                if (fields.length != 8 || !fields[0].equals("CHAT2")) { continue; }
                 Pending p = pending.get(fields[1]);
                 if (p == null || !Arrays.equals(p.bytes, Arrays.copyOf(packet.getData(), packet.getLength()))) { continue; }
                 lastReceived = System.currentTimeMillis();
                 synchronized (wireOrder) { trace("UDP_RECEIVE", fields[3], fields[4], 0); }
                 try {
-                    var accepted = service.receive(fields[2], fields[3], fields[4], fields[5]);
+                    var accepted = service.receive(fields[2],fields[3],fields[4],fields[5],fields[6],Long.parseLong(fields[7]));
                     TinNhan message = accepted.message();
                     trace(accepted.duplicate() ? "MESSAGE_REPLAY" : "MESSAGE_COMMITTED", message.roomId, message.maClient, message.msgId);
                     if (!accepted.duplicate()) { committed.accept(message); }

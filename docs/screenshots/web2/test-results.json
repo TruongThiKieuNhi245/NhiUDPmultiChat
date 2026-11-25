@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-25",
+  "baseline": "939662b",
+  "status": "PASS",
+  "junit": [
+    {
+      "name": "com.mycompany.udpmultichat.transport.UdpChatTransportTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.mycompany.udpmultichat.web.Web1IntegrationTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "com.mycompany.udpmultichat.web.Web2ServiceTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "browserAndArtifact": {
+    "web2": {
+      "status": "PASS",
+      "groups": 11
+    },
+    "ux": {
+      "status": "PASS",
+      "groups": 12
+    },
+    "web1": {
+      "status": "PASS",
+      "groups": 11
+    },
+    "package": {
+      "status": "PASS",
+      "groups": 7
+    }
+  },
+  "historyFixture": {
+    "messages": 680,
+    "maxCache": 300,
+    "anchorErrorPx": 0
+  },
+  "desktop": {
+    "SelfTest": "75 PASS / 0 FAIL, exit 0",
+    "M3cChatSelfTest": "2 PASS / 0 FAIL, exit 0",
+    "M3cThanhVienSelfTest": "3 PASS / 0 FAIL, exit 0"
+  },
+  "artifactSha256": "8c6e607de7b04aca3440dd64582538cb9cf03efd4a2681c9808ee04ade1058c5",
+  "limits": [
+    "Edge headless only",
+    "Mobile/tablet are viewport simulation",
+    "125/150% are CSS zoom, not browser UI zoom",
+    "No physical keyboard or screen-reader QA",
+    "File storage remains single instance, no operational import"
+  ],
+  "offlineRecallReconnect": "PASS: old msgId recall and reply quote updated after reconnect"
+}

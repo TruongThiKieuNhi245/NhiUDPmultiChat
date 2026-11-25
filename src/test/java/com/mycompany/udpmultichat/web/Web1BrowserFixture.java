@@ -14,6 +14,11 @@ public final class Web1BrowserFixture {
     private Web1BrowserFixture() { }
     public static void main(String[] args) throws java.io.IOException {
         if (java.util.Arrays.asList(args).contains("--fixture.ux=true")) { seedUx(args); }
+        if (java.util.Arrays.asList(args).contains("--fixture.force-password=true")) {
+            String directory=java.util.Arrays.stream(args).filter(a->a.startsWith("--chat.data-dir=")).findFirst().orElseThrow().substring("--chat.data-dir=".length());
+            var path=java.nio.file.Path.of(directory);java.nio.file.Files.createDirectories(path);
+            java.nio.file.Files.writeString(path.resolve("config.properties"),"admin.password=admin123\n",java.nio.file.StandardOpenOption.CREATE_NEW);
+        }
         SpringApplication app = new SpringApplication(WebApplication.class, FixtureConfig.class);
         app.run(args);
     }

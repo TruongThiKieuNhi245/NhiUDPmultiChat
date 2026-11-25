@@ -382,3 +382,78 @@ textarea { display: block; width: 100%; min-width: 0; resize: none; max-height: 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+/* Web 2: phong, ho so va cong cu chat. */
+.secondary {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+.secondary:hover { background: var(--tint); }
+.room-tools { display: flex; gap: 8px; margin-bottom: 14px; }
+.room-tools > button { flex: 1; }
+#room-search { margin-bottom: 12px; padding: 11px; }
+#room-list { min-height: 80px; flex: 1; overflow-y: auto; margin: 0 -6px 12px; padding: 3px 6px; }
+#room-list .room { margin-bottom: 8px; background: transparent; }
+#room-list .room.selected { background: var(--tint); }
+#room-list .room-title { min-width: 0; flex: 1; }
+#room-list strong { overflow-wrap: anywhere; }
+#room-list small { line-height: 1.5; }
+.room-badge { display: inline-block; background: var(--primary); color: var(--surface); border-radius: 12px; padding: 2px 7px; font-size: 12px; }
+.room-badge:empty { display: none; }
+.sidebar-note { display: none; }
+.invitations { margin-bottom: 8px; }
+#profile img, .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.chat-header .heading { flex: 1; }
+.chat-header .connection { margin-left: 6px; }
+.typing { min-height: 0; flex-shrink: 0; padding: 0 26px; color: var(--muted); font-size: 12px; line-height: 24px; }
+.typing:empty { display: none; }
+.replying { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 26px; background: var(--tint); font-size: 13px; }
+.replying > span { overflow-wrap: anywhere; min-width: 0; }
+.reply-preview { max-width: 100%; padding: 8px 12px; border: 0; border-left: 3px solid var(--primary); background: var(--tint); color: var(--text); border-radius: 8px; text-align: left; font: inherit; font-size: 13px; margin-bottom: 5px; overflow-wrap: anywhere; cursor: pointer; }
+.message-body { position: relative; }
+.message-sticker { width: 128px; height: 128px; max-width: 100%; object-fit: contain; display: block; }
+.recalled .message-text { background: var(--bubble); color: var(--muted); font-style: italic; }
+.message-actions { position: absolute; left: calc(100% + 3px); top: 0; z-index: 1; }
+.own .message-actions { left: auto; right: calc(100% + 3px); }
+.message-actions summary { list-style: none; display: grid; place-items: center; width: 38px; min-height: 44px; border-radius: 10px; background: var(--surface); color: var(--muted); cursor: pointer; opacity: 0; }
+.message-actions summary::-webkit-details-marker { display: none; }
+.message-row:hover summary, .message-row:focus-within summary, .message-actions[open] summary { opacity: 1; }
+.message-menu { position: absolute; top: 40px; left: -80px; min-width: 145px; max-width: 175px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 5px; box-shadow: 0 5px 20px #0002; }
+.own .message-menu { left: 0; }
+.message-menu button { display: block; text-align: left; width: 100%; min-height: 44px; border: 0; background: transparent; color: var(--text); padding: 8px; border-radius: 6px; font: inherit; font-size: 13px; }
+.message-menu button:hover { background: var(--tint); }
+.app-dialog { width: min(600px, calc(100vw - 24px)); max-height: min(88dvh, 900px); border: 1px solid var(--border); border-radius: 18px; padding: 0; background: var(--surface); color: var(--text); box-shadow: 0 16px 70px #0004; }
+.app-dialog::backdrop { background: #090b2166; }
+.dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 2; }
+.dialog-header h2 { margin: 0; font-size: 19px; overflow-wrap: anywhere; }
+.dialog-content { padding: 18px; }
+.dialog-form input, .dialog-form textarea, .dialog-content select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 9px; }
+.dialog-form input[type=checkbox] { width: 22px; height: 22px; margin: 0 0 16px; accent-color: var(--primary); }
+.dialog-content label { font-size: 14px; }
+.dialog-content form > .primary { margin-bottom: 12px; }
+.dialog-content select { padding: 10px; min-height: 44px; max-width: 100%; margin-bottom: 16px; font: inherit; }
+.dialog-content .secondary { margin: 4px 6px 4px 0; }
+.info-card { border: 1px solid var(--border); border-radius: 12px; margin: 12px 0; padding: 12px; overflow-wrap: anywhere; font-size: 14px; }
+.info-card p { white-space: pre-wrap; line-height: 1.6; }
+.profile-preview { display: block; object-fit: cover; border-radius: 18px; margin: 10px 0 20px; }
+.sticker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.sticker-choice { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 10px 4px; gap: 8px; min-height: 106px; font-size: 12px; }
+.sticker-choice:hover { background: var(--tint); }
+@media (max-width: 760px) {
+  .chat-header { flex-wrap: wrap; }
+  .chat-header .heading { min-width: 115px; }
+  .chat-header .connection { order: 8; margin: -5px 8px 0 auto; }
+  .chat-header .icon-button { width: 44px; min-width: 44px; }
+  .heading p { font-size: 10px; }
+  .message-actions summary { opacity: 1; width: 34px; }
+  .message-body { max-width: 83%; }
+  .own .message-body { max-width: 83%; }
+  .replying { padding: 5px 12px; }
+  .composer-bottom { flex-direction: row; flex-wrap: wrap; max-width: 140px; }
+  .composer-bottom #bytes { flex-basis: 100%; order: -1; }
+  .typing { padding: 0 12px; }
+}

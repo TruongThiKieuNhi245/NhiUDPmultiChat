@@ -1,3 +1,11 @@
+## Cập nhật Web 2 — 25/11/2026
+
+Tiếp quản `939662b`; giữ các sửa đổi tài liệu có trước. Web 2 nối nhiều phòng, thành viên/lời mời/biệt danh, hồ sơ/avatar/đổi mật khẩu, sticker/reply/thu hồi/search/TXT và các trạng thái chat. Bản đồ file/API, kết quả QA, ảnh, artifact riêng và giới hạn nằm trong [WEB2_NGHIEM_THU.md](WEB2_NGHIEM_THU.md).
+
+Đường chat là WS xác thực → UDP CHAT2 thật → kiểm quyền/chống trùng → lưu → phát WS đúng phòng. Tách quyền đọc với gửi; mute/đóng phòng không làm mất kênh đọc. Chưa làm Web 3–4, chưa push/public. Dừng sau mốc này để xem kết quả.
+
+---
+
 ## Cập nhật chặng UX Web 1 — 25/11/2026
 
 Source tiếp quản đã là Web 1 tại `c3ed958`, khác baseline desktop trong phần lịch sử bên dưới. Giữ nguyên sáu file tài liệu có sửa đổi của người dùng. Bàn giao mới, bảng vấn đề/nguyên nhân, bản đồ file/hàm, lệnh QA, ảnh và giới hạn nằm tại [WEB1_UX_NGHIEM_THU.md](WEB1_UX_NGHIEM_THU.md).

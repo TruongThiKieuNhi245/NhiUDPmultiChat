@@ -1,0 +1,27 @@
+2026-11-25T13:31:12.542+07:00  INFO 6504 --- [UDPmultiChat] [.1-63350-exec-4] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=yBYGIqRjvh3Q4Bi4Uvv_og msgId=0
+2026-11-25T13:31:12.552+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=yBYGIqRjvh3Q4Bi4Uvv_og msgId=0
+2026-11-25T13:31:12.562+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=yBYGIqRjvh3Q4Bi4Uvv_og msgId=1
+2026-11-25T13:31:12.571+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=yBYGIqRjvh3Q4Bi4Uvv_og msgId=1
+2026-11-25T13:31:12.573+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=yBYGIqRjvh3Q4Bi4Uvv_og msgId=1
+2026-11-25T13:31:13.039+07:00  INFO 6504 --- [UDPmultiChat] [.1-63350-exec-5] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=ulMTborwpXsyzgptXGV07Q msgId=0
+2026-11-25T13:31:13.040+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=ulMTborwpXsyzgptXGV07Q msgId=0
+2026-11-25T13:31:13.051+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=ulMTborwpXsyzgptXGV07Q msgId=2
+2026-11-25T13:31:13.054+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=ulMTborwpXsyzgptXGV07Q msgId=2
+2026-11-25T13:31:13.056+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=ulMTborwpXsyzgptXGV07Q msgId=2
+2026-11-25T13:31:13.364+07:00  INFO 6504 --- [UDPmultiChat] [.1-63350-exec-7] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=3O9z5pvJGHtaC0hzl0sSiA msgId=0
+2026-11-25T13:31:13.364+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=3O9z5pvJGHtaC0hzl0sSiA msgId=0
+2026-11-25T13:31:13.372+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=3O9z5pvJGHtaC0hzl0sSiA msgId=3
+2026-11-25T13:31:13.373+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=3O9z5pvJGHtaC0hzl0sSiA msgId=3
+2026-11-25T13:31:13.375+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=3O9z5pvJGHtaC0hzl0sSiA msgId=3
+2026-11-25T13:31:13.773+07:00  INFO 6504 --- [UDPmultiChat] [.1-63350-exec-2] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=0
+2026-11-25T13:31:14.584+07:00  INFO 6504 --- [UDPmultiChat] [  web-udp-retry] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=0
+2026-11-25T13:31:15.409+07:00  INFO 6504 --- [UDPmultiChat] [  web-udp-retry] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=0
+2026-11-25T13:31:17.185+07:00  INFO 6504 --- [UDPmultiChat] [.1-63350-exec-8] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=0
+2026-11-25T13:31:17.186+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=0
+2026-11-25T13:31:17.195+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=4
+2026-11-25T13:31:17.197+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=4
+2026-11-25T13:31:17.199+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=WEVL9sm5Rl5uWlA2l9c9wA msgId=4
+2026-11-25T13:31:17.826+07:00  INFO 6504 --- [UDPmultiChat] [.1-63350-exec-6] c.m.u.transport.UdpChatTransport         : UDP_SEND roomId=sanh clientMsgId=KZojJAzFsI3MEoJdfAsqxQ msgId=0
+2026-11-25T13:31:17.832+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : UDP_RECEIVE roomId=sanh clientMsgId=KZojJAzFsI3MEoJdfAsqxQ msgId=0
+2026-11-25T13:31:17.839+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : MESSAGE_COMMITTED roomId=sanh clientMsgId=KZojJAzFsI3MEoJdfAsqxQ msgId=5
+2026-11-25T13:31:17.841+07:00  INFO 6504 --- [UDPmultiChat] [web-udp-receive] c.m.u.transport.UdpChatTransport         : WS_DELIVER roomId=sanh clientMsgId=KZojJAzFsI3MEoJdfAsqxQ msgId=5

@@ -104,13 +104,13 @@ public final class KhoLuuTru {
 
     // Doc trang thai tai khoan/kiem duyet rieng, khong doi dinh dang CSV cu.
     synchronized Properties docThuocTinh(String ten) throws IOException {
-        if (!ten.matches("accounts|moderation")) { throw new IOException("Tên kho không hợp lệ."); }
+        if (!ten.matches("accounts|moderation|web-preferences|web-recall-digests")) { throw new IOException("Tên kho không hợp lệ."); }
         Properties p=new Properties(); Path f=thuMuc.resolve(ten+".properties");
         if (Files.exists(f)) { try (Reader d=Files.newBufferedReader(f,StandardCharsets.UTF_8)) { p.load(d); } } return p;
     }
     // Ghi nguyen tu tren khoa cua kho.
     synchronized void ghiThuocTinh(String ten,Properties p) throws IOException {
-        if (!ten.matches("accounts|moderation")) { throw new IOException("Tên kho không hợp lệ."); }
+        if (!ten.matches("accounts|moderation|web-preferences|web-recall-digests")) { throw new IOException("Tên kho không hợp lệ."); }
         StringWriter w=new StringWriter(); p.store(w,"UDP Chat UTF-8"); ghiAnToan(thuMuc.resolve(ten+".properties"),w.toString());
     }
     // Cap nhat config admin sau khi doi mat khau; khong luu mat khau tho.

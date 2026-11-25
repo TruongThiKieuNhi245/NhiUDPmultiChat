@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 ROOT = Path(__file__).resolve().parents[1]
 RUN = ROOT / '.selftest' / ('web1-ux-' + uuid.uuid4().hex[:12])
 RUN.mkdir(parents=True)
-OUT = ROOT / 'docs/screenshots/web1-ux'
+OUT = ROOT / os.environ.get('CHAT_QA_OUTPUT', 'docs/screenshots/web1-ux')
 OUT.mkdir(parents=True, exist_ok=True)
 with socket.socket() as available:
     available.bind(('127.0.0.1', 0))
@@ -151,7 +151,7 @@ try:
         expect(pa.locator('#new-messages')).to_be_visible()
         check('Tin moi khong keo nguoi doc tin cu xuong day, giu selection')
         pa.locator('#new-messages').click()
-        pa.wait_for_timeout(150)
+        pa.wait_for_function("() => {const e=document.querySelector('#timeline');return e.scrollHeight-e.scrollTop-e.clientHeight<3;}",timeout=10000)
         assert pa.locator('#timeline').evaluate('e=>e.scrollHeight-e.scrollTop-e.clientHeight')<3
         own=send(pa,'Tin do mình chủ động gửi được đưa vào tầm nhìn.')
         expect(row(pa,own)).to_be_in_viewport()
@@ -165,7 +165,7 @@ try:
             mid=first_row.get_attribute('data-msg-id')
             old_top=first_row.bounding_box()['y']
             pa.locator('#load-older').click()
-            pa.wait_for_timeout(100)
+            pa.wait_for_function("old => document.querySelector('.message-row')?.dataset.msgId!==old",arg=mid,timeout=10000)
             if row(pa,mid).count():
                 delta=abs(row(pa,mid).bounding_box()['y']-old_top)
                 anchor_errors.append(delta)
@@ -245,7 +245,7 @@ try:
             snap(pa,f'07-zoom-{zoom}.png')
         pa.evaluate("document.body.style.zoom='1'")
         check('Zoom CSS 125/150% khong tran va nut gui trong viewport')
-        pa.route('**/api/history/page',lambda route:route.fulfill(status=503,content_type='application/json',body='{}'),times=1)
+        pa.route('**/api/history/page*',lambda route:route.fulfill(status=503,content_type='application/json',body='{}'),times=1)
         pa.reload()
         expect(pa.locator('#new-messages')).to_be_visible(timeout=15000)
         pa.get_by_role('button',name='Về tin mới ↓',exact=True).click()

@@ -125,8 +125,10 @@ public final class QuanLyLoiMoi {
         // Tạo mã lời mời ngẫu nhiên
         String inviteId = "inv_" + BaoMat.ngauNhien(10);
         BanGhiLoiMoi moi = new BanGhiLoiMoi(inviteId, roomId, actor.nguoi.id, targetUserId, System.currentTimeMillis());
+        if (duLieuLoiMoi.size()>=4096) { throw new IllegalArgumentException("Đã đủ lời mời đang chờ."); }
         duLieuLoiMoi.setProperty(inviteId, moi.dongGoi());
-        kho.ghiLoiMoi(duLieuLoiMoi);
+        try { kho.ghiLoiMoi(duLieuLoiMoi); }
+        catch (IOException e) { duLieuLoiMoi.remove(inviteId); throw e; }
         return moi;
     }
 
@@ -149,20 +151,17 @@ public final class QuanLyLoiMoi {
             throw new IllegalArgumentException("Lời mời này không dành cho bạn.");
         }
 
-        // Luôn xóa lời mời sau khi trả lời
+        boolean daLaThanhVien=quanLyPhong.laThanhVien(target.nguoi.id,bg.roomId);
+        if (dongY) { quanLyPhong.chapNhanLoiMoi(target,bg.roomId); }
         duLieuLoiMoi.remove(inviteId);
-        kho.ghiLoiMoi(duLieuLoiMoi);
-
-        if (dongY) {
-            Phong phong = quanLyPhong.lay(bg.roomId);
-            if (!phong.dangMo) {
-                throw new IllegalArgumentException("Phòng đã đóng, không thể tham gia.");
+        try { kho.ghiLoiMoi(duLieuLoiMoi); }
+        catch (IOException e) {
+            duLieuLoiMoi.setProperty(inviteId,val);
+            if (dongY && !daLaThanhVien) {
+                try { quanLyPhong.goThanhVien(bg.roomId,target.nguoi.id); }
+                catch (IOException rollback) { e.addSuppressed(rollback); }
             }
-            if (quanLyPhong.soThanhVienBenVung(bg.roomId) >= phong.gioiHan) {
-                throw new IllegalArgumentException("Phòng đã đầy (" + phong.gioiHan + " người), không thể tham gia.");
-            }
-            // Thêm người dùng vào danh sách thành viên bền vững của phòng
-            quanLyPhong.themThanhVienTrucTiep(target.nguoi.id, bg.roomId);
+            throw e;
         }
         return bg;
     }
@@ -189,7 +188,8 @@ public final class QuanLyLoiMoi {
             throw new IllegalArgumentException("Bạn không có quyền hủy lời mời này.");
         }
         duLieuLoiMoi.remove(inviteId);
-        kho.ghiLoiMoi(duLieuLoiMoi);
+        try { kho.ghiLoiMoi(duLieuLoiMoi); }
+        catch (IOException e) { duLieuLoiMoi.setProperty(inviteId,val); throw e; }
     }
 
     /**

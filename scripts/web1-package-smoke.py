@@ -35,7 +35,7 @@ try:
         browser=p.chromium.launch(channel='msedge',headless=True)
         start(1)
         page=browser.new_page();page.goto(BASE)
-        page.route('**/api/history/page',lambda route:route.fulfill(status=503,content_type='application/json',body='{}'),times=1)
+        page.route('**/api/history/page*',lambda route:route.fulfill(status=503,content_type='application/json',body='{}'),times=1)
         page.get_by_role('button',name='Tạo tài khoản',exact=True).click()
         page.get_by_label('Tên đăng nhập',exact=True).fill('jar_demo')
         page.get_by_label('Mật khẩu',exact=True).fill('Web1-fixture-password')

@@ -25,7 +25,7 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
     private final ObjectMapper json;
     private final Map<String, Peer> peers = new ConcurrentHashMap<>();
     public ChatSocket(WebChatService service, UdpChatTransport udp, ObjectMapper json) {
-        this.service = service; this.udp = udp; this.json = json; udp.onCommitted(this::broadcast);
+        this.service = service; this.udp = udp; this.json = json; udp.onCommitted(this::broadcast); service.onEvent(this::event);
     }
     @Override public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(this, "/ws").addInterceptors(new HandshakeInterceptor() {
@@ -37,7 +37,7 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
                 if (!expected.equals(req.getHeaders().getOrigin())) { return false; }
                 HttpSession session = servlet.getServletRequest().getSession(false);
                 String token = WebSecurity.token(session);
-                if (!service.allowed(token, "sanh")) { return false; }
+                if (!service.active(token)) { return false; }
                 attributes.put("httpSession", session); attributes.put("token", token); return true;
             }
             @Override public void afterHandshake(ServerHttpRequest req, ServerHttpResponse res, WebSocketHandler handler, Exception e) { }
@@ -56,37 +56,42 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
     @Override protected void handleTextMessage(WebSocketSession raw, TextMessage incoming) throws IOException {
         Peer peer = peers.get(raw.getId());
         if (peer == null || !valid(peer) || !peer.allowFrame()) { raw.close(CloseStatus.POLICY_VIOLATION); return; }
+        service.identity(peer.token);
         Command command;
         try { command = json.readValue(incoming.getPayload(), Command.class); }
         catch (IOException e) { send(peer.socket, Map.of("type", "error", "error", "Yêu cầu không hợp lệ.")); return; }
         if ("ping".equals(command.type())) { send(peer.socket, Map.of("type", "pong")); return; }
+        if ("typing".equals(command.type())) {
+            try { service.typing(peer.token,command.roomId()); } catch (IllegalArgumentException ignored) { }
+            return;
+        }
         if (!"send".equals(command.type()) || command.clientMsgId() == null || !command.clientMsgId().matches("[A-Za-z0-9_-]{22}")) {
             send(peer.socket, Map.of("type", "error", "error", "Yêu cầu không hợp lệ.")); return;
         }
         send(peer.socket, Map.of("type", "pending", "clientMsgId", command.clientMsgId()));
-        udp.send(peer.token, command.roomId(), command.clientMsgId(), command.text()).whenComplete((accepted, error) -> {
+        udp.send(peer.token, command.roomId(), command.clientMsgId(),command.text(),command.kind()==null?"T":command.kind(),command.replyTo()).whenComplete((accepted, error) -> {
             if (error != null) {
                 String reason = error instanceof IllegalArgumentException ? error.getMessage() : "Chưa nhận xác nhận lưu tin. Hãy thử lại.";
                 send(peer.socket, Map.of("type", "error", "clientMsgId", command.clientMsgId(), "error", reason));
             } else {
                 TinNhan t = accepted.message();
-                if (valid(peer) && service.allowed(peer.token, t.roomId)) {
-                    send(peer.socket, Map.of("type", "confirmed", "message", ChatMessage.from(t)));
-                }
+                service.deliver(t,message -> {
+                    if (valid(peer) && service.canRead(peer.token,t.roomId)) send(peer.socket,Map.of("type","confirmed","message",message));
+                });
             }
         });
     }
     private boolean valid(Peer peer) {
-        return WebSecurity.token(peer.httpSession).equals(peer.token) && service.allowed(peer.token, "sanh");
+        return WebSecurity.token(peer.httpSession).equals(peer.token) && service.active(peer.token);
     }
     // Diem duy nhat phat tin moi: callback sau receive/commit UDP.
     private void broadcast(TinNhan message) {
-        peers.values().forEach(peer -> {
-            if (valid(peer) && service.allowed(peer.token, message.roomId) && send(peer.socket,
-                    Map.of("type", "message", "message", ChatMessage.from(message)))) {
+        service.deliver(message,dto -> peers.values().forEach(peer -> {
+            if (valid(peer) && service.canRead(peer.token, message.roomId) && send(peer.socket,
+                    Map.of("type", "message", "message", dto))) {
                 UdpChatTransport.trace("WS_DELIVER", message.roomId, message.maClient, message.msgId);
             }
-        });
+        }));
     }
     private boolean send(WebSocketSession socket, Object value) {
         try {
@@ -115,7 +120,14 @@ public class ChatSocket extends TextWebSocketHandler implements WebSocketConfigu
     @Override public void handleTransportError(WebSocketSession session, Throwable exception) throws IOException {
         peers.remove(session.getId()); session.close(CloseStatus.SERVER_ERROR);
     }
-    public record Command(String type, String roomId, String clientMsgId, String text) { }
+    private void event(WebChatService.Event event) {
+        peers.values().forEach(peer -> {
+            if (valid(peer) && (event.roomId().isEmpty() || service.canRead(peer.token,event.roomId()))) {
+                send(peer.socket,Map.of("type",event.type(),"roomId",event.roomId(),"data",event.data()));
+            }
+        });
+    }
+    public record Command(String type,String roomId,String clientMsgId,String text,String kind,long replyTo) { }
     private record Peer(String token, HttpSession httpSession, WebSocketSession socket, ArrayDeque<Long> frames) {
         boolean allowFrame() {
             synchronized (frames) {
