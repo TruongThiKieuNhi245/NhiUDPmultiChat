@@ -355,7 +355,7 @@ export class WorkspaceUI {
       }
       if (room.manage) {
         this.panelAction(danger, 'Xóa phòng', () => this.form('Xóa phòng ' + room.name, [this.field('confirm', 'Nhập XÓA để xác nhận')], async data => {
-          if (data.confirm !== 'XÓA') throw new Error('Hãy nhập XÓA để xác nhận.');
+          if (!['XÓA', 'XOÁ'].includes(data.confirm.trim().toUpperCase())) throw new Error('Hãy nhập XÓA để xác nhận.');
           await this.action('room-delete', { roomId: room.id }); this.closePanel(); await this.refresh(); await this.selectRoom('sanh');
         }, { submitText: 'Xóa phòng' }), 'rp-danger');
       }

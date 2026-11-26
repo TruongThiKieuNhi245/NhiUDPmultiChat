@@ -144,8 +144,8 @@ export class AdminUI {
     this.button(content,'Chuyển chủ phòng',()=>this.form('Chuyển chủ phòng',[this.field('id','ID phòng','text',row[0],{readOnly:true}),this.field('userId','Chủ phòng mới','text','',{options:this.rows('USERS').filter(r=>r[4]!=='Bị khóa').map(r=>[r[0],'@'+r[1]])})],'room-transfer'));
     this.button(content,'Kiểm duyệt thành viên',()=>this.moderate('',row[0]));
     this.button(content,'Danh sách cấm / gỡ cấm',()=>this.restrictions(row[0],row[2]));
-    this.button(content,'Xóa nội dung lịch sử',()=>this.ui.form('Xóa nội dung '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(data.confirm!=='XÓA')throw new Error('Hãy nhập XÓA.');await this.action('room-clear',{id:row[0]});},{submitText:'Xóa nội dung'}));
-    this.button(content,'Xóa phòng',()=>this.ui.form('Xóa phòng '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(data.confirm!=='XÓA')throw new Error('Hãy nhập XÓA.');await this.action('room-delete',{id:row[0]});},{submitText:'Xóa phòng'}));
+    this.button(content,'Xóa nội dung lịch sử',()=>this.ui.form('Xóa nội dung '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(!['XÓA','XOÁ'].includes(data.confirm.trim().toUpperCase()))throw new Error('Hãy nhập XÓA.');await this.action('room-clear',{id:row[0]});},{submitText:'Xóa nội dung'}));
+    this.button(content,'Xóa phòng',()=>this.ui.form('Xóa phòng '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(!['XÓA','XOÁ'].includes(data.confirm.trim().toUpperCase()))throw new Error('Hãy nhập XÓA.');await this.action('room-delete',{id:row[0]});},{submitText:'Xóa phòng'}));
     const members=this.rows('MEMBERS').filter(r=>r[0]===row[0]);content.append(element('h3','','Danh sách thành viên'));
     this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],r[5],r[6]==='true'?'Có':'Không'],source:r})),(td,r)=>{if(r[2]!==this.profile.id)this.button(td,'Quản lý',()=>this.moderate(r[2],row[0]));});
   }
