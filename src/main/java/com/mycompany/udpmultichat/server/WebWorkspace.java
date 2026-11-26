@@ -71,8 +71,13 @@ public final class WebWorkspace {
         if (query.length()<2 || query.length()>100) return List.of();
         return users.timKiem(query).stream().map(this::profile).toList();
     }
-    public List<QuanLyLoiMoi.BanGhiLoiMoi> sent(Phien p,String room) {
-        read(p,room); manage(p,room); return invites.danhSachTheoPhong(room);
+    public record SentInvite(String id, String nguoiDuocMoiId, String name, String login, boolean hetHan) { }
+    public List<SentInvite> sent(Phien p,String room) {
+        read(p,room); manage(p,room);
+        return invites.danhSachTheoPhong(room).stream().map(b -> {
+            var u=users.timTheoId(b.nguoiDuocMoiId());
+            return new SentInvite(b.id(),b.nguoiDuocMoiId(),u==null?"Tài khoản đã xóa":u.tenHienThi,u==null?"":u.tenDangNhap,b.hetHan());
+        }).toList();
     }
     private void manage(Phien p,String room) {
         if (!QuanLyPhong.duocQuanLy(p.nguoi,rooms.lay(room))) throw new IllegalArgumentException("Bạn không có quyền quản lý phòng.");

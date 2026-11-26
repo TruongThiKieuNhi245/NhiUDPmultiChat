@@ -335,7 +335,10 @@ export class WorkspaceUI {
         invGroup.append(element('div', 'rp-group-title', `Lời mời đã gửi (${sent.length})`));
         for (const invitation of sent) {
           const item = element('div', 'rp-member');
-          item.append(element('span', 'rp-mem-info', invitation.nguoiDuocMoiId));
+          const info = element('div', 'rp-mem-info');
+          info.append(element('strong', '', invitation.name || 'Người dùng'));
+          if (invitation.login) info.append(element('small', 'muted', '@' + invitation.login));
+          item.append(info);
           const cancel = element('button', 'rp-mini', 'Hủy'); cancel.type = 'button';
           cancel.onclick = async () => { await this.action('invite-cancel', { inviteId: invitation.id }); await this.roomInfo(); };
           item.append(cancel);
