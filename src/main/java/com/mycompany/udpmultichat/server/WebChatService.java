@@ -44,7 +44,7 @@ public final class WebChatService implements AutoCloseable {
                 case "UNMUTE" -> " đã được gỡ cấm chat.";
                 default -> " đã được đưa ra khỏi phòng.";
             };
-            events.accept(new Event("room-activity",room,Map.of("id",notice.id(),"actorId",actor.nguoi.id,"userId",user,"text",target.tenHienThi+" (@"+target.tenDangNhap+")"+detail)));
+            events.accept(new Event("room-activity",room,Map.of("id",notice.id(),"actorId",actor.nguoi.id,"userId",user,"timestamp",System.currentTimeMillis(),"text",target.tenHienThi+" (@"+target.tenDangNhap+")"+detail)));
         }
         return notice;
     }
@@ -201,7 +201,7 @@ public final class WebChatService implements AutoCloseable {
             String r=args.getOrDefault("roomId",""), u=args.getOrDefault("userId",""), nick=args.getOrDefault("nickname","").strip();
             var target=users.lay(u);
             String text=nick.isEmpty()?target.tenHienThi+" đã được xóa biệt danh.":target.tenHienThi+" đã được đổi biệt danh thành \""+nick+"\".";
-            events.accept(new Event("room-activity",r,Map.of("id",UUID.randomUUID().toString(),"actorId",person.nguoi.id,"userId",u,"text",text)));
+            events.accept(new Event("room-activity",r,Map.of("id",UUID.randomUUID().toString(),"actorId",person.nguoi.id,"userId",u,"timestamp",System.currentTimeMillis(),"text",text)));
         }
         changed(); return result;
     }

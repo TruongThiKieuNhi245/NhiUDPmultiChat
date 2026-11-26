@@ -300,18 +300,16 @@ function connect() {
           ui.closePanel?.();
           await ui.refresh().catch(()=>{});
           await selectRoom('sanh',true);
-          view.appendNotice(moderationText(notice),notice.id);
-          $('timeline').scrollTop=$('timeline').scrollHeight;
+          alertChat(moderationText(notice));
         } else {
           ui.scheduleRefresh();
-          if(data.roomId!==activeRoom){view.appendNotice(moderationText(notice),notice.id);}
+          if(data.roomId!==activeRoom) alertChat(moderationText(notice));
         }
       }
     }
-    if(data.type==='room-activity' && data.roomId===activeRoom){
-      const stick=nearBottom($('timeline'));
-      view.appendNotice(data.data.text,data.data.id);
-      if(stick)$('timeline').scrollTop=$('timeline').scrollHeight;
+    if(data.type==='room-activity'){
+      store.putNotice(data.roomId,data.data.id,data.data.text,data.data.timestamp || Date.now());
+      if(data.roomId===activeRoom) render({ bottom: nearBottom($('timeline')) });
     }
     if (data.type === 'workspace') {ui.scheduleRefresh();admin.invalidate();}
     if (data.type === 'history-cleared' && data.roomId===activeRoom){recallCursor=0;syncRecalls(generation,roomEpoch).catch(error=>alertChat(error.message));}
@@ -361,7 +359,7 @@ function render({ bottom = false, anchor } = {}) {
   if (!me) return;
   const timeline = $('timeline');
   view.render(store.list(), me, item => store.key(item));
-  $('room-welcome').hidden = store.saved.size > 0 || [...store.pending.values()].some(item=>item.roomId===activeRoom);
+  $('room-welcome').hidden = store.saved.size > 0 || (store.notices.get(activeRoom)?.length || 0) > 0 || [...store.pending.values()].some(item=>item.roomId===activeRoom);
   const oldest = Math.min(...[...store.saved.values()].map(item => item.msgId));
   $('load-older').hidden = !store.saved.size || oldest <= 1;
   if (anchor?.node.isConnected) timeline.scrollTop += anchor.node.getBoundingClientRect().top - anchor.top;

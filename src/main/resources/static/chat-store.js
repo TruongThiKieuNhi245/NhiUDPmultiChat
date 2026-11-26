@@ -6,6 +6,7 @@ export class ChatStore {
   roomId = ROOM;
   saved = new Map();
   pending = new Map();
+  notices = new Map();
   recalled = new Set();
   cursor = 0;
   latest = true;
@@ -13,6 +14,15 @@ export class ChatStore {
 
   key(message) {
     return `${message.roomId}:${message.userId}:${message.clientMsgId || message.msgId}`;
+  }
+
+  putNotice(roomId, id, text, timestamp = Date.now()) {
+    if (!roomId || !text) return;
+    let list = this.notices.get(roomId);
+    if (!list) { list = []; this.notices.set(roomId, list); }
+    if (id && list.some(n => n.id === id)) return;
+    list.push({ id: id || String(timestamp), roomId, userId: '', clientMsgId: 'n-' + (id || timestamp), kind: 'N', text, timestamp });
+    if (list.length > 50) list.shift();
   }
 
   put(message) {
@@ -42,12 +52,22 @@ export class ChatStore {
   }
 
   list() {
-    return [...[...this.saved.values()].sort((a, b) => a.msgId - b.msgId), ...[...this.pending.values()].filter(item => item.roomId === this.roomId)];
+    const saved = [...this.saved.values()].sort((a, b) => a.msgId - b.msgId);
+    const notices = [...(this.notices.get(this.roomId) || [])].sort((a, b) => a.timestamp - b.timestamp);
+    const merged = [];
+    let ni = 0;
+    for (const msg of saved) {
+      while (ni < notices.length && notices[ni].timestamp <= msg.timestamp) merged.push(notices[ni++]);
+      merged.push(msg);
+    }
+    while (ni < notices.length) merged.push(notices[ni++]);
+    return [...merged, ...[...this.pending.values()].filter(item => item.roomId === this.roomId)];
   }
 
   clear() {
     this.saved.clear();
     this.pending.clear();
+    this.notices.clear();
     this.recalled.clear();
     this.cursor = 0;
     this.latest = true;

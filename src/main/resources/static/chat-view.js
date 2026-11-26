@@ -26,16 +26,12 @@ export class ChatView {
     this.container.replaceChildren();
   }
 
-  appendNotice(text, id) {
-    if (!text) return;
-    if (id && this.container.querySelector(`[data-notice-id="${id}"]`)) return;
-    const node = element('div', 'chat-notice', text);
-    node.setAttribute('role', 'status');
-    if (id) node.dataset.noticeId = id;
-    this.container.append(node);
-  }
-
   createRow(item, own) {
+    if (item.kind === 'N') {
+      const row = element('div', 'chat-notice', item.text);
+      row.setAttribute('role', 'status');
+      return { row, notice: true };
+    }
     const row = element('article', 'message-row');
     row.dataset.clientMsgId = item.clientMsgId;
     const avatar = element('span', 'avatar');
@@ -73,6 +69,7 @@ export class ChatView {
   }
 
   updateRow(ref, item, own, grouped) {
+    if (ref.notice) { if (ref.row.textContent !== item.text) ref.row.textContent = item.text; return; }
     ref.row.className = `message-row ${item.kind==='Y'?'system':own ? 'own' : 'other'}${grouped ? ' grouped' : ''}`;
     ref.row.dataset.userId = item.userId;
     if (item.msgId) ref.row.dataset.msgId = item.msgId;
@@ -158,7 +155,7 @@ export class ChatView {
       const id = key(item), own = item.userId === currentUser.id;
       let ref = this.rows.get(id);
       if (!ref) { ref = this.createRow(item, own); this.rows.set(id, ref); }
-      const grouped = item.kind!=='Y' && previous?.kind!=='Y' && previous && previous.userId === item.userId && previous.roomId === item.roomId
+      const grouped = item.kind!=='Y' && item.kind!=='N' && previous?.kind!=='Y' && previous?.kind!=='N' && previous && previous.userId === item.userId && previous.roomId === item.roomId
         && !previous.recalled && !item.recalled && dateKey(previous) === day && item.timestamp - previous.timestamp >= 0 && item.timestamp - previous.timestamp < 120000;
       this.updateRow(ref, item, own, grouped);
       active.add(id);

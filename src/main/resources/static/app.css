@@ -536,6 +536,7 @@ textarea { display: block; width: 100%; min-width: 0; resize: none; max-height: 
 }
 .rp-mini:hover { background: var(--tint); color: var(--primary); }
 .chat-notice {
+  width: fit-content;
   margin: 10px auto; padding: 5px 14px; max-width: min(88%, 520px);
   border-radius: 99px; background: var(--tint); color: var(--muted);
   font-size: 12px; line-height: 1.5; text-align: center;
