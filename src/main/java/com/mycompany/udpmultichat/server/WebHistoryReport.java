@@ -22,6 +22,6 @@ public final class WebHistoryReport {
             String content=item.recalled()?"Tin đã thu hồi":item.file()!=null?"[Tệp] "+item.file().name()+" ("+TepTin.dungLuong(item.file().size())+")":item.kind().equals("S")?"[Sticker] "+item.text():item.text();
             out.append(XuatBaoCao.e(content)).append("</div></article>");
         }
-        return out.append("<footer>UDPmultiChat · Bản sao tại thời điểm xuất; tệp nhị phân không được nhúng.</footer></main></html>").toString();
+        return out.append("<footer>UDPmultiChat · Bản lưu lịch sử trò chuyện.</footer></main></html>").toString();
     }
 }

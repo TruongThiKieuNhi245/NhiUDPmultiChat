@@ -101,7 +101,7 @@ export class AdminUI {
     for(const row of rows){const label=element('label','chart-line'),meter=element('meter');meter.min=0;meter.max=max;meter.value=Number(row[countIndex]);meter.setAttribute('aria-label',row[nameIndex]+': '+row[countIndex]);label.append(element('span','',row[nameIndex]),meter,element('b','',row[countIndex]));card.append(label);}parent.append(card);
   }
   overview(parent) {
-    this.cards(parent);parent.append(element('p','muted report-definition','Tệp/dung lượng: tệp đã gửi còn lưu, không tính upload chờ. Thành viên gồm cả offline; online tính theo phiên đăng nhập.'));
+    this.cards(parent);parent.append(element('p','muted report-definition','Thống kê tệp tính theo các tệp đã gửi còn lưu trong hệ thống. Số thành viên gồm cả ngoại tuyến và trực tuyến.'));
     const tools=element('div','admin-tools');this.button(tools,'Mở báo cáo',()=>{this.tab='reports';this.draw();},true);this.button(tools,'Gửi thông báo toàn hệ thống',()=>this.broadcast());this.button(tools,'Xuất PDF tổng quan',()=>this.download('pdf-overview'));parent.append(tools);
     const charts=element('div','admin-charts');this.chart(charts,'Top người chat',[...this.rows('USERS')].sort((a,b)=>Number(b[6])-Number(a[6])).slice(0,5),2,6);this.chart(charts,'Phòng hoạt động',[...this.rows('ROOMS')].sort((a,b)=>Number(b[7])-Number(a[7])).slice(0,5),2,7);parent.append(charts);
     parent.append(element('h2','','Thành viên theo phòng'));
@@ -260,7 +260,7 @@ export class AdminUI {
       const result=await this.request('/admin/broadcast',{method:'POST',body:JSON.stringify({id,text:data.text})});await this.refresh();
       if(result.failed)throw new Error(`Đã lưu ${result.committed} phòng; ${result.failed} phòng chưa được xác nhận. Bấm gửi lại giữ cùng mã yêu cầu.`);
     },{submitText:'Gửi thông báo'});
-    content.prepend(element('p','muted','Thông báo đến mọi phòng, kể cả phòng riêng/đang đóng. Chỉ ghi nhận đã gửi sau khi backend lưu qua UDP.'));
+    content.prepend(element('p','muted','Thông báo được gửi qua UDP đến tất cả các phòng trong hệ thống (kể cả phòng riêng và phòng đang đóng).'));
   }
   async download(format) {
     const revision=this.revision,id=this.snapshot.id;$('admin-status').textContent='Đang tạo tệp…';

@@ -51,7 +51,7 @@ public final class WebReports {
                 if("all".equals(section) || "overview".equals(section)) {
                     writer.cards(a.lay("STATS"));
                     writer.paragraph("Số tin gồm văn bản, sticker, tệp, thông báo và tin đã thu hồi trong các phòng còn tồn tại. Thành viên gồm cả offline; online tính theo phiên nghiệp vụ.");
-                    writer.paragraph("Tệp và dung lượng chỉ tính tệp đã gửi còn lưu, không gồm upload chờ. Báo cáo không chứa mật khẩu, token hoặc nội dung chat.");
+                    writer.paragraph("Thống kê tệp chỉ tính các tệp đã gửi còn lưu. Báo cáo không chứa mật khẩu hay nội dung tin nhắn.");
                     var roomRows=a.lay("ROOMS").stream().map(r->List.of(r.get(2),r.get(6),r.size()>14?r.get(14):"0",r.get(7),r.get(8))).toList();
                     writer.table("Số người dùng theo từng phòng",List.of("Phòng","Thành viên","Online","Số tin","Số tệp"),new float[]{211,80,64,80,80},roomRows);
                 }
