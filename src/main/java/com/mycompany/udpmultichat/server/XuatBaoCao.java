@@ -108,7 +108,7 @@ public final class XuatBaoCao {
         StringBuilder s=new StringBuilder("<!doctype html><html lang='vi'><meta charset='utf-8'><title>Báo cáo UDP Chat</title>");
         s.append(css()).append("<main><div class='header'><span class='badge-pill'>HỆ THỐNG UDP CHAT</span><h1>Báo cáo Quản trị Hệ thống</h1>");
         s.append("<p class='meta'>Thời điểm xuất báo cáo: <b>").append(thoiDiem(a)).append("</b></p></div><div class='cards'>");
-        for (var r:a.lay("STATS")) { s.append("<div class='card'>").append(e(r.get(0))).append("<b>").append(e(r.get(1))).append("</b></div>"); } s.append("</div>");
+        for (var r:a.lay("STATS")) { String v=r.get(0).equals("Dung lượng tệp")?TepTin.dungLuong(Long.parseLong(r.get(1))):r.get(1); s.append("<div class='card'>").append(e(r.get(0))).append("<b>").append(e(v)).append("</b></div>"); } s.append("</div>");
         s.append("<p style='font-size:13px;color:#64748b;'>Số tin gồm văn bản, sticker, tệp, tin hệ thống và tombstone thu hồi trong các phòng còn tồn tại. Số tệp/sticker theo ngày chỉ tính tin còn nội dung; tin thu hồi được đếm riêng. Tệp và dung lượng là dữ liệu hiện còn lưu, không phải tổng đã truyền.</p>");
         bang(s,"Số người dùng theo từng phòng",List.of("Mã","Phòng","Số người dùng"),chon(a.lay("ROOMS"),1,2,6));
         var top=a.lay("USERS").stream().sorted(Comparator.comparingLong((List<String> r) -> Long.parseLong(r.get(6))).reversed()).limit(10).toList();
@@ -126,7 +126,7 @@ public final class XuatBaoCao {
         s.append("<p class='meta'>Thời điểm xuất báo cáo: <b>").append(thoiDiem(a)).append("</b></p></div>");
         if (coStats) {
             s.append("<div class='cards'>");
-            for (var r:a.lay("STATS")) { s.append("<div class='card'>").append(e(r.get(0))).append("<b>").append(e(r.get(1))).append("</b></div>"); } s.append("</div>");
+            for (var r:a.lay("STATS")) { String v=r.get(0).equals("Dung lượng tệp")?TepTin.dungLuong(Long.parseLong(r.get(1))):r.get(1); s.append("<div class='card'>").append(e(r.get(0))).append("<b>").append(e(v)).append("</b></div>"); } s.append("</div>");
             s.append("<p style='font-size:13px;color:#64748b;'>Số liệu thống kê thời gian thực từ Server UDP Chat.</p>");
         }
         if (coUsers) {

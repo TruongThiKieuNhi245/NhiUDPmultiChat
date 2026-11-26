@@ -28,7 +28,7 @@ public final class WebReports {
         items.put("tong_hop.html",html(a).getBytes(StandardCharsets.UTF_8));
         var out=new ByteArrayOutputStream();try(var zip=new ZipOutputStream(out,StandardCharsets.UTF_8)){for(var item:items.entrySet()){zip.putNextEntry(new ZipEntry(item.getKey()));zip.write(item.getValue());zip.closeEntry();}}return out.toByteArray();
     }
-    public static String html(AnhChupQuanTri a) { return XuatBaoCao.html(a).replace("<h1>Báo cáo Quản trị Hệ thống</h1>","<h1>Báo cáo Quản trị Hệ thống</h1><p>Tệp/dung lượng chỉ tính tệp đã gửi còn lưu; không tính upload chờ. Snapshot bất biến trong 5 phút.</p>"); }
+    public static String html(AnhChupQuanTri a) { return XuatBaoCao.html(a); }
     public static byte[] pdf(WebAdministration.Snapshot snapshot) throws IOException {
         return pdf(snapshot,"all");
     }
