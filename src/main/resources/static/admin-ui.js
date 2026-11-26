@@ -113,19 +113,31 @@ export class AdminUI {
     fields.push(this.field('role','Vai trò','text',row?.[3]||'THANH_VIEN',{options:ROLES}));
     return this.form(row?'Sửa người dùng':'Thêm người dùng',fields,row?'user-edit':'user-add');
   }
+  dlgAction(parent,text,callback,extraClass='') {
+    const btn=element('button','rp-item'+(extraClass?' '+extraClass:''));btn.type='button';
+    btn.append(element('span','',text),element('span','rp-arrow','›'));
+    btn.onclick=async()=>{btn.disabled=true;try{await callback();}catch(error){this.error(error);}finally{if(btn.isConnected)btn.disabled=false;}};
+    parent.append(btn);return btn;
+  }
   userDetails(row) {
-    const {content}=this.ui.open('Quản lý @'+row[1]);content.append(element('p','muted','ID tài khoản: '+row[0]),element('p','',row[2]+' · '+row[4]));
-    this.button(content,'Sửa hồ sơ và vai trò',()=>this.userForm(row));
-    this.button(content,row[4]==='Bị khóa'?'Mở khóa tài khoản':'Khóa tài khoản',()=>this.form('Xác nhận '+(row[4]==='Bị khóa'?'mở khóa':'khóa'),[this.field('id','ID','text',row[0],{readOnly:true}),this.field('locked','Khóa tài khoản','checkbox',row[4]!=='Bị khóa'),this.field('reason','Lý do','text','',{maxLength:200})],'user-lock'));
-    this.button(content,'Cấp lại mật khẩu tạm',()=>{
+    const {content}=this.ui.open('Quản lý @'+row[1]);
+    const summary=element('div','dlg-summary');
+    summary.append(element('strong','',row[2]),element('p','muted',`@${row[1]} · ${row[3]==='ADMIN'?'Quản trị':'Thành viên'} · ${row[4]}`));
+    content.append(summary);
+    const manage=element('section','rp-group');manage.append(element('div','rp-group-title','Tài khoản & Bảo mật'));
+    this.dlgAction(manage,'Sửa hồ sơ và vai trò',()=>this.userForm(row));
+    this.dlgAction(manage,'Cấp lại mật khẩu tạm',()=>{
       const revision=this.revision;this.ui.form('Cấp mật khẩu tạm cho @'+row[1],[],async()=>{
         const result=await this.action('user-reset',{id:row[0]});setTimeout(()=>{
           if(!this.active || revision!==this.revision)return;const {content}=this.ui.open('Mật khẩu tạm mới');content.append(element('p','','Phiên cũ đã bị thu hồi. Mật khẩu chỉ hiển thị tại đây; người dùng phải đổi sau khi đăng nhập.'),element('code','temporary-password',result.temporaryPassword));
         },0);
       },{submitText:'Cấp mật khẩu tạm'});
     });
-    this.button(content,'Kiểm duyệt',()=>this.moderate(row[0]));
-    this.button(content,'Xóa tài khoản',()=>this.form('Xóa @'+row[1],[this.field('id','ID','text',row[0],{readOnly:true}),this.field('confirm','Nhập tên đăng nhập để xác nhận','text','',{required:true})],'user-delete',{submitText:'Xóa tài khoản'}));
+    this.dlgAction(manage,'Kiểm duyệt tài khoản',()=>this.moderate(row[0]));
+    const danger=element('section','rp-group');danger.append(element('div','rp-group-title','Hạn chế & Xóa'));
+    this.dlgAction(danger,row[4]==='Bị khóa'?'Mở khóa tài khoản':'Khóa tài khoản',()=>this.form('Xác nhận '+(row[4]==='Bị khóa'?'mở khóa':'khóa'),[this.field('id','ID','text',row[0],{readOnly:true}),this.field('locked','Khóa tài khoản','checkbox',row[4]!=='Bị khóa'),this.field('reason','Lý do','text','',{maxLength:200})],'user-lock'),row[4]==='Bị khóa'?'':'rp-danger');
+    this.dlgAction(danger,'Xóa tài khoản',()=>this.form('Xóa @'+row[1],[this.field('id','ID','text',row[0],{readOnly:true}),this.field('confirm','Nhập tên đăng nhập để xác nhận','text','',{required:true})],'user-delete',{submitText:'Xóa tài khoản'}),'rp-danger');
+    content.append(manage,danger);
   }
   roomForm(row) {
     const fields=[];if(row)fields.push(this.field('id','ID phòng','text',row[0],{readOnly:true}));
@@ -139,15 +151,23 @@ export class AdminUI {
     this.paged(parent,['Phòng','Loại','Trạng thái','Thành viên','Online','Tin'],this.rows('ROOMS'),r=>[r[2],r[3],r[4],r[6],r[14],r[7]],(td,row)=>this.button(td,'Quản lý',()=>this.roomDetails(row)),2);
   }
   roomDetails(row) {
-    const {content}=this.ui.open('Quản lý '+row[2]);content.append(element('p','muted','Mã phòng: '+row[1]),element('p','',row[6]+' thành viên · '+row[14]+' online · Chủ phòng: '+row[5]));
-    this.button(content,'Sửa phòng',()=>this.roomForm(row));this.button(content,row[4]==='Mở'?'Đóng phòng':'Mở phòng',async()=>{await this.action('room-state',{id:row[0],open:String(row[4]!=='Mở')});this.ui.dialog.close();});
-    this.button(content,'Chuyển chủ phòng',()=>this.form('Chuyển chủ phòng',[this.field('id','ID phòng','text',row[0],{readOnly:true}),this.field('userId','Chủ phòng mới','text','',{options:this.rows('USERS').filter(r=>r[4]!=='Bị khóa').map(r=>[r[0],'@'+r[1]])})],'room-transfer'));
-    this.button(content,'Kiểm duyệt thành viên',()=>this.moderate('',row[0]));
-    this.button(content,'Danh sách cấm / gỡ cấm',()=>this.restrictions(row[0],row[2]));
-    this.button(content,'Xóa nội dung lịch sử',()=>this.ui.form('Xóa nội dung '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(!['XÓA','XOÁ'].includes(data.confirm.trim().toUpperCase()))throw new Error('Hãy nhập XÓA.');await this.action('room-clear',{id:row[0]});},{submitText:'Xóa nội dung'}));
-    this.button(content,'Xóa phòng',()=>this.ui.form('Xóa phòng '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(!['XÓA','XOÁ'].includes(data.confirm.trim().toUpperCase()))throw new Error('Hãy nhập XÓA.');await this.action('room-delete',{id:row[0]});},{submitText:'Xóa phòng'}));
-    const members=this.rows('MEMBERS').filter(r=>r[0]===row[0]);content.append(element('h3','','Danh sách thành viên'));
-    this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],r[5],r[6]==='true'?'Có':'Không'],source:r})),(td,r)=>{if(r[2]!==this.profile.id)this.button(td,'Quản lý',()=>this.moderate(r[2],row[0]));});
+    const {content}=this.ui.open('Quản lý '+row[2]);
+    const summary=element('div','dlg-summary');
+    summary.append(element('strong','',`${row[2]} · Mã: ${row[1]}`),element('p','muted',`${row[6]} thành viên · ${row[14]} trực tuyến · Chủ phòng: ${row[5]}`));
+    content.append(summary);
+    const manage=element('section','rp-group');manage.append(element('div','rp-group-title','Quản lý phòng'));
+    this.dlgAction(manage,'Sửa thông tin phòng',()=>this.roomForm(row));
+    this.dlgAction(manage,row[4]==='Mở'?'Đóng phòng':'Mở phòng',async()=>{await this.action('room-state',{id:row[0],open:String(row[4]!=='Mở')});this.ui.dialog.close();});
+    this.dlgAction(manage,'Chuyển chủ phòng',()=>this.form('Chuyển chủ phòng',[this.field('id','ID phòng','text',row[0],{readOnly:true}),this.field('userId','Chủ phòng mới','text','',{options:this.rows('USERS').filter(r=>r[4]!=='Bị khóa').map(r=>[r[0],'@'+r[1]])})],'room-transfer'));
+    this.dlgAction(manage,'Kiểm duyệt thành viên',()=>this.moderate('',row[0]));
+    this.dlgAction(manage,'Danh sách cấm / gỡ cấm',()=>this.restrictions(row[0],row[2]));
+    const danger=element('section','rp-group');danger.append(element('div','rp-group-title','Vùng nguy hiểm'));
+    this.dlgAction(danger,'Xóa nội dung lịch sử',()=>this.ui.form('Xóa nội dung '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(!['XÓA','XOÁ'].includes(data.confirm.trim().toUpperCase()))throw new Error('Hãy nhập XÓA.');await this.action('room-clear',{id:row[0]});},{submitText:'Xóa nội dung'}),'rp-danger');
+    this.dlgAction(danger,'Xóa phòng',()=>this.ui.form('Xóa phòng '+row[2],[this.field('confirm','Nhập XÓA để xác nhận')],async data=>{if(!['XÓA','XOÁ'].includes(data.confirm.trim().toUpperCase()))throw new Error('Hãy nhập XÓA.');await this.action('room-delete',{id:row[0]});},{submitText:'Xóa phòng'}),'rp-danger');
+    content.append(manage,danger);
+    const members=this.rows('MEMBERS').filter(r=>r[0]===row[0]);content.append(element('h3','dlg-subheading',`Danh sách thành viên (${members.length})`));
+    const roleLabel=v=>v==='ADMIN'?'Quản trị':v==='CHU_PHONG'?'Chủ phòng':'Thành viên';
+    this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],roleLabel(r[5]),r[6]==='true'?'Có':'Không'],source:r})),(td,r)=>{if(r[2]!==this.profile.id)this.button(td,'Quản lý',()=>this.moderate(r[2],row[0]));});
   }
   async restrictions(roomId,name) {
     const previous=this.ui.dialog;

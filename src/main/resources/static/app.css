@@ -571,7 +571,11 @@ textarea { display: block; width: 100%; min-width: 0; resize: none; max-height: 
 .app-dialog::backdrop { background: #090b2166; }
 .dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; position: sticky; top: 0; background: var(--surface); border-bottom: 1px solid var(--border); z-index: 2; }
 .dialog-header h2 { margin: 0; font-size: 19px; overflow-wrap: anywhere; }
-.dialog-content { padding: 18px; }
+.dialog-content { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.dlg-summary { padding: 12px 14px; border-radius: 12px; background: var(--tint); border: 1px solid var(--border); }
+.dlg-summary strong { display: block; font-size: 15px; margin-bottom: 4px; }
+.dlg-summary p { margin: 0; font-size: 13px; }
+.dlg-subheading { margin: 6px 0 0; font-size: 15px; }
 .dialog-form input, .dialog-form textarea, .dialog-content select { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 9px; }
 .dialog-form input[type=checkbox] { width: 22px; height: 22px; margin: 0 0 16px; accent-color: var(--primary); }
 .dialog-content label { font-size: 14px; }
