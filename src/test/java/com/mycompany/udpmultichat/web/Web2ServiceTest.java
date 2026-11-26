@@ -139,6 +139,12 @@ class Web2ServiceTest {
             s.action(token,"password-change",args("current","admin123","next","private-new-password"));
             assertFalse(snapshot(s,token).path("profile").path("forcePassword").asBoolean());assertTrue(s.canRead(token,"sanh"));
         }
+        Path customAdmin=dir.resolve("custom-admin");
+        try(var s=new WebChatService(customAdmin,"123456")) {
+            String token=s.login("admin","123456").token();
+            assertFalse(snapshot(s,token).path("profile").path("forcePassword").asBoolean());
+            assertTrue(s.canRead(token,"sanh"));
+        }
     }
     @Test void nicknameAndInvitationDiskFailuresDoNotChangeMemory(@TempDir Path dir) throws Exception {
         try(var s=new WebChatService(dir)) {

@@ -78,7 +78,7 @@ Mở trình duyệt tại: **http://127.0.0.1:8080**
 - `PORT`: Cổng HTTP/WebSocket (mặc định `8080`).
 - `BIND_ADDRESS`: Địa chỉ bind (mặc định `127.0.0.1`, đặt `0.0.0.0` nếu muốn mở trong mạng LAN).
 - `CHAT_DATA_DIR`: Thư mục lưu dữ liệu (mặc định `./web-data`).
-- `CHAT_INITIAL_ADMIN_PASSWORD`: Mật khẩu admin khởi tạo lần đầu cho kho mới (12–128 ký tự).
+- `CHAT_INITIAL_ADMIN_PASSWORD`: Mật khẩu admin khởi tạo lần đầu cho kho mới (6–128 ký tự).
 - `COOKIE_SECURE`: Đặt `true` khi chạy sau reverse proxy HTTPS (`--spring.profiles.active=proxy`, xem mẫu trong thư mục `deploy/`).
 
 ### Công cụ sao lưu dữ liệu offline (`WebDataTool`)

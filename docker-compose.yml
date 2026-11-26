@@ -9,7 +9,7 @@ services:
       CHAT_DATA_DIR: "/app/data"
       COOKIE_SECURE: "false"
       SERVER_FORWARD_HEADERS_STRATEGY: "none"
-      CHAT_INITIAL_ADMIN_PASSWORD: "${CHAT_INITIAL_ADMIN_PASSWORD:-Admin12345678}"
+      CHAT_INITIAL_ADMIN_PASSWORD: "${CHAT_INITIAL_ADMIN_PASSWORD:-123456}"
     volumes:
       - udpchat_data:/app/data
 

@@ -66,7 +66,7 @@ public final class WebChatService implements AutoCloseable {
             // Khong tao admin co mat khau mac dinh cho kho web moi.
             Path config = directory.resolve("config.properties");
             if (!Files.exists(config)) {
-                if(!initialAdminPassword.isEmpty() && (initialAdminPassword.length()<12 || initialAdminPassword.length()>128))throw new IllegalArgumentException("Mật khẩu quản trị ban đầu cần 12–128 ký tự.");
+                if(!initialAdminPassword.isEmpty() && (initialAdminPassword.length()<6 || initialAdminPassword.length()>128))throw new IllegalArgumentException("Mật khẩu quản trị ban đầu cần 6–128 ký tự.");
                 var properties=new Properties();properties.setProperty("admin.password",initialAdminPassword.isEmpty()?BaoMat.ngauNhien(32):initialAdminPassword);
                 try(var out=Files.newBufferedWriter(config,StandardOpenOption.CREATE_NEW)){properties.store(out,"One-time admin initialization");}
             }
