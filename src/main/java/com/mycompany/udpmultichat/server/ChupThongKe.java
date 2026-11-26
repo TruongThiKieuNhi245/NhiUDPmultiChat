@@ -5,14 +5,11 @@ import com.mycompany.udpmultichat.common.model.*;
 import java.time.*;
 import java.util.*;
 
-/** Vai tro: Chup du lieu nhat quan tren khoa ServerCore, khong ghi dia. Ai goi: QuanTriServer. Goi: QuanLyNguoiDung, QuanLyPhong, QuanLyTep. */
+/** Vai tro: Chup du lieu nhat quan khong ghi dia. Ai goi: WebAdministration. Goi: QuanLyNguoiDung, QuanLyPhong, NhatKy. */
 final class ChupThongKe {
     // Khong khoi tao lop tien ich.
     private ChupThongKe() { }
     // ===== SNAPSHOT BANG =====
-    static AnhChupQuanTri chup(QuanLyNguoiDung users,QuanLyPhong rooms,QuanLyTep tep,NhatKy audit) throws java.io.IOException {
-        return chup(users,rooms,tep::thongKe,audit);
-    }
     static AnhChupQuanTri chup(QuanLyNguoiDung users,QuanLyPhong rooms,java.util.function.BiFunction<String,String,long[]> tep,NhatKy audit) throws java.io.IOException {
         Map<String,List<List<String>>> bang=new LinkedHashMap<>(); var nguoi=users.tatCa(); var phong=rooms.tatCa();
         var tin=rooms.tinNhan().tatCa(); var online=users.danhSach().stream().map(p -> p.nguoi.id).toList();
