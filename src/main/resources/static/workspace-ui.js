@@ -227,9 +227,9 @@ export class WorkspaceUI {
   async roomInfo() {
     const room = this.room(); if (!room?.joined) return;
     this.panelView = { name: 'info', roomId: room.id };
-    const members = await this.api('/members?roomId=' + room.id);
-    if (!this.panelOpen() || this.currentRoom() !== room.id) return;
     const body = this.panelBody('Thông tin phòng');
+    const members = await this.api('/members?roomId=' + room.id);
+    if (!this.panelOpen() || this.currentRoom() !== room.id || this.panelView?.name !== 'info') return;
 
     // Hero summary
     const hero = element('section', 'rp-hero');
