@@ -47,7 +47,7 @@ public final class WebReports {
                 };
                 writer.banner(title,"UDPmultiChat");
                 writer.paragraph("Thời điểm: "+DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZoneId.of("Asia/Ho_Chi_Minh")).format(Instant.ofEpochMilli(a.luc()))+" (UTC+07)");
-                writer.paragraph("Phạm vi: "+("all".equals(section)?"toàn bộ tài khoản và phòng hiện có.":title.toLowerCase(Locale.ROOT)+".")+" Mã snapshot: "+snapshot.id());
+                writer.paragraph("Phạm vi: "+("all".equals(section)?"toàn bộ tài khoản và phòng hiện có.":title.toLowerCase(Locale.ROOT)+".")+" Mã báo cáo: "+snapshot.id());
                 if("all".equals(section) || "overview".equals(section)) {
                     writer.cards(a.lay("STATS"));
                     writer.paragraph("Số tin gồm văn bản, sticker, tệp, thông báo và tin đã thu hồi trong các phòng còn tồn tại. Thành viên gồm cả offline; online tính theo phiên nghiệp vụ.");
