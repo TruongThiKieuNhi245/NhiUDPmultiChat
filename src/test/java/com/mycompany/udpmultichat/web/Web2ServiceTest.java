@@ -210,5 +210,28 @@ class Web2ServiceTest {
             assertEquals(sent.msgId,service.messages(b,dm1,0,false).getFirst().msgId());
         }
     }
+    @Test void ownerCanClearConversationWhileMemberAndSanhAreRejected(@TempDir Path dir) throws Exception {
+        try(var service=new WebChatService(dir,"123456");var udp=new UdpChatTransport(service)) {
+            String owner=account(service,"clearowner"),member=account(service,"clearmember"),root=service.login("admin","123456").token();
+            String room=create(service,owner,"Phòng xóa lịch sử",true,10);join(service,member,room);
+            List<WebChatService.Event> events=new ArrayList<>();service.onEvent(events::add);
+            String msgId=TinNhan.taoMa();
+            udp.send(member,room,msgId,"Tin sẽ bị xóa").get(5,TimeUnit.SECONDS);
+            var ticket=service.beginUpload(member,room,"tep.txt",3);
+            var file=service.finishUpload(member,ticket,service.writeUpload(ticket,new ByteArrayInputStream(new byte[]{1,2,3})));
+            service.abortUpload(ticket);
+            udp.send(member,room,TinNhan.taoMa(),file.text(),"F",0).get(5,TimeUnit.SECONDS);
+            assertThrows(IllegalArgumentException.class,()->service.action(member,"room-clear",args("roomId",room)));
+            assertThrows(IllegalArgumentException.class,()->service.action(root,"room-clear",args("roomId","sanh")));
+            service.action(owner,"room-clear",args("roomId",room));
+            assertTrue(events.stream().anyMatch(e->e.type().equals("history-cleared") && e.roomId().equals(room)));
+            var msgs=service.messages(member,room,0,true);
+            assertEquals(2,msgs.size());
+            assertTrue(msgs.stream().allMatch(m->m.recalled()));
+            assertThrows(IllegalArgumentException.class,()->service.download(member,file.id(),false));
+            assertTrue(udp.send(member,room,msgId,"Tin sẽ bị xóa").get(5,TimeUnit.SECONDS).duplicate());
+            assertThrows(ExecutionException.class,()->udp.send(member,room,msgId,"Tin bị sửa").get(5,TimeUnit.SECONDS));
+        }
+    }
 
 }

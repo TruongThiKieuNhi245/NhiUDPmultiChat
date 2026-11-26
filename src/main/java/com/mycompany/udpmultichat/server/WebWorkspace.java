@@ -105,6 +105,10 @@ public final class WebWorkspace {
                 rooms.sua(p,room,value(args,"name"),value(args,"description"),bool(args,"publicRoom"),
                         bool(args,"keepPassword")?null:value(args,"password"),number(args,"capacity",2,500)); break;
             case "room-state": read(p,room); rooms.dongMo(p,room,bool(args,"open")); break;
+            case "room-clear":
+                read(p,room); manage(p,room);
+                if (Protocol.SANH_ID.equals(room)) throw new IllegalArgumentException("Không thể xóa cuộc trò chuyện ở Sảnh chung.");
+                break;
             case "room-delete":
                 read(p,room); manage(p,room); invites.xoaTheoPhong(room); rooms.xoa(p,room);
                 for (var session:users.danhSach()) { session.phong.remove(room); session.choVao.remove(room); }

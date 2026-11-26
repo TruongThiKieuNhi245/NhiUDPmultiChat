@@ -312,7 +312,13 @@ function connect() {
       if(data.roomId===activeRoom) render({ bottom: nearBottom($('timeline')) });
     }
     if (data.type === 'workspace') {ui.scheduleRefresh();admin.invalidate();}
-    if (data.type === 'history-cleared' && data.roomId===activeRoom){recallCursor=0;syncRecalls(generation,roomEpoch).catch(error=>alertChat(error.message));}
+    if (data.type === 'history-cleared') {
+      store.notices.delete(data.roomId);
+      if (data.roomId === activeRoom) {
+        recallCursor = 0;
+        syncRecalls(generation, roomEpoch).then(() => render({ anchor: readingAnchor() })).catch(error => alertChat(error.message));
+      }
+    }
     if (data.type === 'recall') applyRecall(data.data);
     if (data.type === 'typing' && data.roomId===activeRoom && data.data.userId!==me.id) typingUsers.set(data.data.userId,data.data);
     if (data.type === 'message' || data.type === 'confirmed') {accept(data.message);admin.invalidate();}

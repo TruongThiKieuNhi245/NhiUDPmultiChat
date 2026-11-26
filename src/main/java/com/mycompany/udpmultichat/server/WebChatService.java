@@ -195,6 +195,7 @@ public final class WebChatService implements AutoCloseable {
         mutation(token);
         String deletedRoom=action.equals("room-delete")?rooms.lay(args.getOrDefault("roomId","")).ten:"";
         Object result=workspace.action(person,action,args);
+        if(action.equals("room-clear"))clearRoomHistory(person,args.get("roomId"));
         if(action.equals("room-delete")){files.removeRoom(args.get("roomId"));audit.ghi(person.nguoi.tenDangNhap,"WEB_ROOM_DELETE",args.getOrDefault("roomId",""),"Phòng: "+deletedRoom);}
         var notice=memberNotice(person,action,args,false);if(notice!=null)result=Map.of("status","ok","notice",notice);
         if(action.equals("member-moderate"))audit.ghi(person.nguoi.tenDangNhap,"WEB_ROOM_MODERATE",args.getOrDefault("roomId","")+":"+args.getOrDefault("userId",""),args.getOrDefault("kind","")+"; thời hạn giây="+args.getOrDefault("seconds","") );
@@ -297,6 +298,13 @@ public final class WebChatService implements AutoCloseable {
         var p=requireAdmin(token);mutation(token);var plan=admin.broadcast(token,id,text);
         audit.ghi(p.nguoi.tenDangNhap,"WEB_BROADCAST",id,"Yêu cầu gửi qua UDP tới "+plan.rooms().size()+" phòng");return plan;
     }
+    private void clearRoomHistory(QuanLyNguoiDung.Phien actor,String roomId) throws IOException {
+        rooms.lay(roomId);
+        workspace.rememberRecalls(rooms.tinNhan().tatCa().stream().filter(t->t.roomId.equals(roomId) && !t.thuHoi).toList());
+        rooms.tinNhan().xoaLichSu(roomId);files.removeRoom(roomId);
+        events.accept(new Event("history-cleared",roomId,Map.of()));
+        audit.ghi(actor.nguoi.tenDangNhap,"WEB_ROOM_CLEAR",roomId,"Thành công");
+    }
     private void revokeUser(String id) {
         var keys=sessions.entrySet().stream().filter(e->e.getValue().person.nguoi.id.equals(id)).map(Map.Entry::getKey).toList();
         for(String key:keys){logout(key);events.accept(new Event("session-revoked","",key));}
@@ -320,9 +328,7 @@ public final class WebChatService implements AutoCloseable {
             String deletedRoom=rooms.lay(id).ten;
             workspace.deleteAsAdmin(p,id);files.removeRoom(id);audit.ghi(p.nguoi.tenDangNhap,"WEB_ROOM_DELETE",id,"Phòng: "+deletedRoom);result=Map.of("status","ok");
         }else if(action.equals("room-clear")) {
-            rooms.lay(id);workspace.rememberRecalls(rooms.tinNhan().tatCa().stream().filter(t->t.roomId.equals(id) && !t.thuHoi).toList());
-            rooms.tinNhan().xoaLichSu(id);files.removeRoom(id);events.accept(new Event("history-cleared",id,Map.of()));
-            audit.ghi(p.nguoi.tenDangNhap,"WEB_ROOM_CLEAR",id,"Thành công");result=Map.of("status","ok");
+            clearRoomHistory(p,id);result=Map.of("status","ok");
         }else {
             String oldRole=action.equals("user-edit")?users.lay(id).vaiTro.name():"";
             result=admin.action(p,action,args);

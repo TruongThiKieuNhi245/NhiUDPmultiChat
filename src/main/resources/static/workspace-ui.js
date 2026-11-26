@@ -357,10 +357,16 @@ export class WorkspaceUI {
         }, { submitText: 'Rời phòng' }), 'rp-danger');
       }
       if (room.manage) {
-        this.panelAction(danger, 'Xóa phòng', () => this.form('Xóa phòng ' + room.name, [this.field('confirm', 'Nhập XÓA để xác nhận')], async data => {
+        const confirmDanger = (label, title, run) => this.panelAction(danger, label, () => this.form(title, [this.field('confirm', 'Nhập XÓA để xác nhận')], async data => {
           if (!['XÓA', 'XOÁ'].includes(data.confirm.trim().toUpperCase())) throw new Error('Hãy nhập XÓA để xác nhận.');
+          await run();
+        }, { submitText: label }), 'rp-danger');
+        confirmDanger('Xóa cuộc trò chuyện', 'Xóa cuộc trò chuyện trong ' + room.name, async () => {
+          await this.action('room-clear', { roomId: room.id }); this.closePanel(); await this.refresh();
+        });
+        confirmDanger('Xóa phòng', 'Xóa phòng ' + room.name, async () => {
           await this.action('room-delete', { roomId: room.id }); this.closePanel(); await this.refresh(); await this.selectRoom('sanh');
-        }, { submitText: 'Xóa phòng' }), 'rp-danger');
+        });
       }
       body.append(danger);
     }
