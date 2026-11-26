@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class Web1IntegrationTest {
-    private static final Path DATA = Path.of(".selftest/web1-integration-" + UUID.randomUUID());
+    @TempDir static Path DATA;
     @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {
         registry.add("chat.data-dir", () -> DATA.toString());
     }

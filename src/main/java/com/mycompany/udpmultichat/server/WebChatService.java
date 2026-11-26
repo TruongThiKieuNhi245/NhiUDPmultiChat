@@ -75,7 +75,7 @@ public final class WebChatService implements AutoCloseable {
     }
 
     public synchronized void register(String login, String password) throws IOException {
-        if (users.tongNguoiDung() >= 1000) { throw new IllegalArgumentException("Đã đủ tài khoản cho bản Web 1."); }
+        if (users.tongNguoiDung() >= 1000) { throw new IllegalArgumentException("Hệ thống đã đạt giới hạn tài khoản."); }
         users.dangKy(login, password);
     }
 
