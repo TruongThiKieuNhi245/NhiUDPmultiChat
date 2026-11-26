@@ -70,6 +70,9 @@ class Web3AdminTest {
             udp.send(a,room,TinNhan.taoMa(),"Thêm sau snapshot").get(5,TimeUnit.SECONDS);assertEquals(3,stat(s.adminReport(root,snapshot.id()),"Tổng tin nhắn"));
             byte[] pdf=WebReports.pdf(snapshot);assertTrue(pdf.length>10000);
             try(var doc=Loader.loadPDF(pdf)){String text=new PDFTextStripper().getText(doc);assertTrue(text.contains("Số người dùng theo từng phòng"));assertTrue(text.contains("Phòng tiếng Việt"));assertFalse(text.contains("Thêm sau snapshot"));for(var page:doc.getPages()){assertEquals(595.276,page.getMediaBox().getWidth(),.1);for(var name:page.getResources().getFontNames())assertTrue(page.getResources().getFont(name).isEmbedded());}}
+            for(var pair:Map.of("overview","BÁO CÁO TỔNG QUAN","users","BÁO CÁO NGƯỜI DÙNG","rooms","BÁO CÁO PHÒNG CHAT","audit","BÁO CÁO NHẬT KÝ").entrySet()) {
+                try(var doc=Loader.loadPDF(WebReports.pdf(snapshot,pair.getKey()))){assertTrue(new PDFTextStripper().getText(doc).contains(pair.getValue()));}
+            }
             Map<String,String> files=new HashMap<>();try(var zip=new ZipInputStream(new ByteArrayInputStream(WebReports.zip(snapshot.data())),java.nio.charset.StandardCharsets.UTF_8)){ZipEntry e;while((e=zip.getNextEntry())!=null)files.put(e.getName(),new String(zip.readAllBytes(),java.nio.charset.StandardCharsets.UTF_8));}
             assertEquals(Set.of("nguoidung.csv","phong.csv","thanhvien_theophong.csv","tin_theo_ngay.csv","tong_hop.html"),files.keySet());
             assertTrue(files.get("nguoidung.csv").startsWith("\ufeff"));assertTrue(files.get("nguoidung.csv").contains("'=SUM(1,1)"));assertTrue(files.get("tong_hop.html").contains("&lt;script&gt;"));

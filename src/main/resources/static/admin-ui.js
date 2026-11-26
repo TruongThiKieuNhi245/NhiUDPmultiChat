@@ -98,13 +98,13 @@ export class AdminUI {
   }
   overview(parent) {
     this.cards(parent);parent.append(element('p','muted report-definition','Tệp/dung lượng: tệp đã gửi còn lưu, không tính upload chờ. Thành viên gồm cả offline; online tính theo phiên đăng nhập.'));
-    const tools=element('div','admin-tools');this.button(tools,'Mở báo cáo',()=>{this.tab='reports';this.draw();},true);this.button(tools,'Gửi thông báo toàn hệ thống',()=>this.broadcast());parent.append(tools);
+    const tools=element('div','admin-tools');this.button(tools,'Mở báo cáo',()=>{this.tab='reports';this.draw();},true);this.button(tools,'Gửi thông báo toàn hệ thống',()=>this.broadcast());this.button(tools,'Xuất PDF tổng quan',()=>this.download('pdf-overview'));parent.append(tools);
     const charts=element('div','admin-charts');this.chart(charts,'Top người chat',[...this.rows('USERS')].sort((a,b)=>Number(b[6])-Number(a[6])).slice(0,5),2,6);this.chart(charts,'Phòng hoạt động',[...this.rows('ROOMS')].sort((a,b)=>Number(b[7])-Number(a[7])).slice(0,5),2,7);parent.append(charts);
     parent.append(element('h2','','Thành viên theo phòng'));
     this.table(parent,['Phòng','Thành viên','Online','Tin'],this.rows('ROOMS').map(r=>({cells:[r[2],r[6],r[14],r[7]]})));
   }
   users(parent) {
-    const tools=element('div','admin-tools');this.button(tools,'Thêm người dùng',()=>this.userForm(),true);this.button(tools,'Kiểm duyệt tài khoản',()=>this.moderate());this.button(tools,'Danh sách cấm toàn hệ thống',()=>this.restrictions('*','Toàn hệ thống'));parent.append(tools);
+    const tools=element('div','admin-tools');this.button(tools,'Thêm người dùng',()=>this.userForm(),true);this.button(tools,'Kiểm duyệt tài khoản',()=>this.moderate());this.button(tools,'Danh sách cấm toàn hệ thống',()=>this.restrictions('*','Toàn hệ thống'));this.button(tools,'Xuất PDF người dùng',()=>this.download('pdf-users'));parent.append(tools);
     this.paged(parent,['Tài khoản','Tên hiển thị','Vai trò','Trạng thái','Số tin'],this.rows('USERS'),r=>['@'+r[1],r[2],r[3]==='ADMIN'?'Quản trị':'Thành viên',r[4],r[6]],(td,row)=>{this.button(td,'Quản lý',()=>this.userDetails(row));});
   }
   userForm(row) {
@@ -135,7 +135,7 @@ export class AdminUI {
     return this.form(row?'Sửa phòng':'Tạo phòng',fields,row?'room-edit':'room-create');
   }
   rooms(parent) {
-    const tools=element('div','admin-tools');this.button(tools,'Tạo phòng',()=>this.roomForm(),true);this.button(tools,'Kiểm duyệt thành viên',()=>this.moderate());parent.append(tools);
+    const tools=element('div','admin-tools');this.button(tools,'Tạo phòng',()=>this.roomForm(),true);this.button(tools,'Kiểm duyệt thành viên',()=>this.moderate());this.button(tools,'Xuất PDF phòng',()=>this.download('pdf-rooms'));parent.append(tools);
     this.paged(parent,['Phòng','Loại','Trạng thái','Thành viên','Online','Tin'],this.rows('ROOMS'),r=>[r[2],r[3],r[4],r[6],r[14],r[7]],(td,row)=>this.button(td,'Quản lý',()=>this.roomDetails(row)),2);
   }
   roomDetails(row) {
@@ -173,7 +173,7 @@ export class AdminUI {
     kind.onchange=()=>{seconds.disabled=kind.value.startsWith('UN') || kind.value==='KICK';seconds.required=!seconds.disabled;};
   }
   audit(parent) {
-    this.button(parent,'Tải nhật ký CSV',()=>this.download('audit'));
+    const tools=element('div','admin-tools');this.button(tools,'Xuất PDF nhật ký',()=>this.download('pdf-audit'),true);this.button(tools,'Tải nhật ký CSV',()=>this.download('audit'));parent.append(tools);
     this.paged(parent,['Thời gian','Người thực hiện','Hành động','Đối tượng','Chi tiết'],this.rows('AUDIT'),r=>r,null,0);
   }
   reports(parent) {
@@ -196,6 +196,7 @@ export class AdminUI {
     const response=await fetch('/api/admin/reports/'+id+'/'+format);
     if(!response.ok){const body=await response.json().catch(()=>({}));throw new Error(body.error||'Không tải được báo cáo. Hãy làm mới dữ liệu rồi thử lại.');}
     const blob=await response.blob();if(revision!==this.revision)return;
-    const url=URL.createObjectURL(blob),link=element('a');link.href=url;link.download=format==='pdf'?'bao-cao.pdf':format==='zip'?'bao-cao-nang-cao.zip':format==='audit'?'nhatky.csv':'tong_hop.html';link.click();setTimeout(()=>URL.revokeObjectURL(url),5000);$('admin-status').textContent='Đã tạo tệp từ bản dữ liệu đang xem.';
+    const names={pdf:'bao-cao.pdf','pdf-overview':'bao-cao-tong-quan.pdf','pdf-users':'bao-cao-nguoi-dung.pdf','pdf-rooms':'bao-cao-phong.pdf','pdf-audit':'bao-cao-nhat-ky.pdf',zip:'bao-cao-nang-cao.zip',audit:'nhatky.csv',html:'tong_hop.html'};
+    const url=URL.createObjectURL(blob),link=element('a');link.href=url;link.download=names[format]||'bao-cao.pdf';link.click();setTimeout(()=>URL.revokeObjectURL(url),5000);$('admin-status').textContent='Đã tạo tệp từ bản dữ liệu đang xem.';
   }
 }

@@ -39,7 +39,11 @@ public class WebAdminApi {
             service.auditExport(token,id,format);
             byte[] bytes;String mime,name;
             switch(format){
-                case "pdf":bytes=WebReports.pdf(snapshot);mime="application/pdf";name="bao-cao.pdf";break;
+                case "pdf":bytes=WebReports.pdf(snapshot,"all");mime="application/pdf";name="bao-cao.pdf";break;
+                case "pdf-overview":bytes=WebReports.pdf(snapshot,"overview");mime="application/pdf";name="bao-cao-tong-quan.pdf";break;
+                case "pdf-users":bytes=WebReports.pdf(snapshot,"users");mime="application/pdf";name="bao-cao-nguoi-dung.pdf";break;
+                case "pdf-rooms":bytes=WebReports.pdf(snapshot,"rooms");mime="application/pdf";name="bao-cao-phong.pdf";break;
+                case "pdf-audit":bytes=WebReports.pdf(snapshot,"audit");mime="application/pdf";name="bao-cao-nhat-ky.pdf";break;
                 case "zip":bytes=WebReports.zip(snapshot.data());mime="application/zip";name="bao-cao-nang-cao.zip";break;
                 case "html":bytes=WebReports.html(snapshot.data()).getBytes(java.nio.charset.StandardCharsets.UTF_8);mime="text/html;charset=UTF-8";name="tong_hop.html";break;
                 case "audit":bytes=WebReports.csv(List.of("Thời gian","Người thực hiện","Hành động","Đối tượng","Chi tiết"),snapshot.data().lay("AUDIT"));mime="text/csv;charset=UTF-8";name="nhatky.csv";break;

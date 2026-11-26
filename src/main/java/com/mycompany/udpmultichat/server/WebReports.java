@@ -30,27 +30,53 @@ public final class WebReports {
     }
     public static String html(AnhChupQuanTri a) { return XuatBaoCao.html(a).replace("<h1>Báo cáo Quản trị Hệ thống</h1>","<h1>Báo cáo Quản trị Hệ thống</h1><p>Tệp/dung lượng chỉ tính tệp đã gửi còn lưu; không tính upload chờ. Snapshot bất biến trong 5 phút.</p>"); }
     public static byte[] pdf(WebAdministration.Snapshot snapshot) throws IOException {
+        return pdf(snapshot,"all");
+    }
+    public static byte[] pdf(WebAdministration.Snapshot snapshot,String section) throws IOException {
         try(var document=new PDDocument();var regular=WebReports.class.getResourceAsStream("/fonts/NotoSans-Regular.ttf");var bold=WebReports.class.getResourceAsStream("/fonts/NotoSans-Bold.ttf")) {
             if(regular==null || bold==null)throw new IOException("Không tìm thấy font báo cáo.");
             var normal=PDType0Font.load(document,regular);var strong=PDType0Font.load(document,bold);
             var a=snapshot.data();var writer=new Pdf(document,normal,strong,snapshot.id());
             try {
-                writer.banner("BÁO CÁO QUẢN TRỊ","UDPmultiChat");
+                String title=switch(section){
+                    case "overview"->"BÁO CÁO TỔNG QUAN";
+                    case "users"->"BÁO CÁO NGƯỜI DÙNG";
+                    case "rooms"->"BÁO CÁO PHÒNG CHAT";
+                    case "audit"->"BÁO CÁO NHẬT KÝ";
+                    default->"BÁO CÁO QUẢN TRỊ";
+                };
+                writer.banner(title,"UDPmultiChat");
                 writer.paragraph("Thời điểm: "+DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss").withZone(ZoneId.of("Asia/Ho_Chi_Minh")).format(Instant.ofEpochMilli(a.luc()))+" (UTC+07)");
-                writer.paragraph("Phạm vi: toàn bộ tài khoản và phòng hiện có. Mã snapshot: "+snapshot.id());
-                writer.cards(a.lay("STATS"));
-                writer.paragraph("Số tin gồm văn bản, sticker, tệp, thông báo và tin đã thu hồi trong các phòng còn tồn tại. Thành viên gồm cả offline; online tính theo phiên nghiệp vụ.");
-                writer.paragraph("Tệp và dung lượng chỉ tính tệp đã gửi còn lưu, không gồm upload chờ. Báo cáo không chứa mật khẩu, token hoặc nội dung chat.");
-                var roomRows=a.lay("ROOMS").stream().map(r->List.of(r.get(2),r.get(6),r.size()>14?r.get(14):"0",r.get(7),r.get(8))).toList();
-                writer.table("Số người dùng theo từng phòng",List.of("Phòng","Thành viên","Online","Số tin","Số tệp"),new float[]{211,80,64,80,80},roomRows);
-                var top=a.lay("USERS").stream().sorted(Comparator.comparingLong((List<String> r)->Long.parseLong(r.get(6))).reversed()).limit(10).toList();
-                writer.table("Top người chat",List.of("Tài khoản","Tên hiển thị","Số tin"),new float[]{175,260,80},select(top,1,2,6));
-                var rooms=a.lay("ROOMS").stream().sorted(Comparator.comparingLong((List<String> r)->Long.parseLong(r.get(7))).reversed()).limit(10).toList();
-                writer.table("Phòng hoạt động nhiều nhất",List.of("Phòng","Số tin","Tệp","Dung lượng"),new float[]{255,80,70,110},rooms.stream().map(r->List.of(r.get(2),r.get(7),r.get(8),TepTin.dungLuong(Long.parseLong(r.get(9))))).toList());
-                Map<String,long[]> days=new TreeMap<>();for(var r:a.lay("DAYS")){long[] n=days.computeIfAbsent(r.get(0),k->new long[4]);for(int i=0;i<4;i++)n[i]+=Long.parseLong(r.get(i+2));}
-                writer.chart(days);
-                var dayRows=days.entrySet().stream().map(e->List.of(e.getKey(),""+e.getValue()[0],""+e.getValue()[1],""+e.getValue()[2],""+e.getValue()[3])).toList();
-                writer.table("Tin nhắn theo ngày",List.of("Ngày","Tổng tin","Tệp","Sticker","Đã thu hồi"),new float[]{135,100,80,85,115},dayRows);
+                writer.paragraph("Phạm vi: "+("all".equals(section)?"toàn bộ tài khoản và phòng hiện có.":title.toLowerCase(Locale.ROOT)+".")+" Mã snapshot: "+snapshot.id());
+                if("all".equals(section) || "overview".equals(section)) {
+                    writer.cards(a.lay("STATS"));
+                    writer.paragraph("Số tin gồm văn bản, sticker, tệp, thông báo và tin đã thu hồi trong các phòng còn tồn tại. Thành viên gồm cả offline; online tính theo phiên nghiệp vụ.");
+                    writer.paragraph("Tệp và dung lượng chỉ tính tệp đã gửi còn lưu, không gồm upload chờ. Báo cáo không chứa mật khẩu, token hoặc nội dung chat.");
+                    var roomRows=a.lay("ROOMS").stream().map(r->List.of(r.get(2),r.get(6),r.size()>14?r.get(14):"0",r.get(7),r.get(8))).toList();
+                    writer.table("Số người dùng theo từng phòng",List.of("Phòng","Thành viên","Online","Số tin","Số tệp"),new float[]{211,80,64,80,80},roomRows);
+                }
+                if("users".equals(section)) {
+                    var userRows=a.lay("USERS").stream().map(r->List.of("@"+r.get(1),r.get(2),r.get(3).equals("ADMIN")?"Quản trị":"Thành viên",r.get(4),r.get(5),r.get(6),r.get(9))).toList();
+                    writer.table("Danh sách tài khoản",List.of("Tài khoản","Tên hiển thị","Vai trò","Trạng thái","Phòng","Tin","Tệp"),new float[]{85,115,75,70,50,60,60},userRows);
+                }
+                if("rooms".equals(section)) {
+                    var roomRows=a.lay("ROOMS").stream().map(r->List.of(r.get(2),r.get(3),r.get(4),r.get(5),r.get(6),r.size()>14?r.get(14):"0",r.get(7))).toList();
+                    writer.table("Danh sách phòng chat",List.of("Phòng","Loại","Trạng thái","Chủ phòng","TV","Online","Tin"),new float[]{125,65,65,90,50,55,65},roomRows);
+                }
+                if("audit".equals(section)) {
+                    var auditRows=a.lay("AUDIT");
+                    writer.table("Nhật ký thao tác hệ thống",List.of("Thời gian","Người thực hiện","Hành động","Đối tượng","Chi tiết"),new float[]{95,85,105,85,145},auditRows);
+                }
+                if("all".equals(section)) {
+                    var top=a.lay("USERS").stream().sorted(Comparator.comparingLong((List<String> r)->Long.parseLong(r.get(6))).reversed()).limit(10).toList();
+                    writer.table("Top người chat",List.of("Tài khoản","Tên hiển thị","Số tin"),new float[]{175,260,80},select(top,1,2,6));
+                    var rooms=a.lay("ROOMS").stream().sorted(Comparator.comparingLong((List<String> r)->Long.parseLong(r.get(7))).reversed()).limit(10).toList();
+                    writer.table("Phòng hoạt động nhiều nhất",List.of("Phòng","Số tin","Tệp","Dung lượng"),new float[]{255,80,70,110},rooms.stream().map(r->List.of(r.get(2),r.get(7),r.get(8),TepTin.dungLuong(Long.parseLong(r.get(9))))).toList());
+                    Map<String,long[]> days=new TreeMap<>();for(var r:a.lay("DAYS")){long[] n=days.computeIfAbsent(r.get(0),k->new long[4]);for(int i=0;i<4;i++)n[i]+=Long.parseLong(r.get(i+2));}
+                    writer.chart(days);
+                    var dayRows=days.entrySet().stream().map(e->List.of(e.getKey(),""+e.getValue()[0],""+e.getValue()[1],""+e.getValue()[2],""+e.getValue()[3])).toList();
+                    writer.table("Tin nhắn theo ngày",List.of("Ngày","Tổng tin","Tệp","Sticker","Đã thu hồi"),new float[]{135,100,80,85,115},dayRows);
+                }
                 writer.finish();
             }finally{writer.close();}
             document.getDocumentInformation().setTitle("Báo cáo UDPmultiChat");document.getDocumentInformation().setProducer("UDPmultiChat / Apache PDFBox 3.0.8");

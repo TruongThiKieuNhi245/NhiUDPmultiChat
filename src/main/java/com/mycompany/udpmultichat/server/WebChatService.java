@@ -289,7 +289,7 @@ public final class WebChatService implements AutoCloseable {
     public synchronized WebAdministration.Snapshot adminReport(String token,String id) { requireAdmin(token);return admin.read(token,id); }
     public synchronized void auditExport(String token,String id,String format) throws IOException {
         var p=requireAdmin(token);mutation(token);admin.read(token,id);
-        if(!Set.of("pdf","zip","html","audit").contains(format))throw new IllegalArgumentException("Định dạng báo cáo không hợp lệ.");
+        if(!Set.of("pdf","pdf-overview","pdf-users","pdf-rooms","pdf-audit","zip","html","audit").contains(format))throw new IllegalArgumentException("Định dạng báo cáo không hợp lệ.");
         audit.ghi(p.nguoi.tenDangNhap,"WEB_EXPORT_"+format.toUpperCase(Locale.ROOT),id,"Yêu cầu xuất bản dữ liệu đang xem");
     }
     public synchronized WebAdministration.Plan broadcastPlan(String token,String id,String text) throws IOException {
