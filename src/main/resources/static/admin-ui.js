@@ -172,9 +172,53 @@ export class AdminUI {
     const kind=modal.form.elements.kind,seconds=modal.form.elements.seconds;
     kind.onchange=()=>{seconds.disabled=kind.value.startsWith('UN') || kind.value==='KICK';seconds.required=!seconds.disabled;};
   }
+  formatAuditRow(r, userMap, roomMap) {
+    const time = Number.isNaN(Date.parse(r[0])) ? r[0] : new Date(r[0]).toLocaleString('vi-VN');
+    const actor = r[1] ? '@' + r[1] : '—';
+    const actMap = {
+      WEB_ROOM_MODERATE: 'Kiểm duyệt thành viên', WEB_EXPORT_PDF: 'Xuất PDF tổng hợp',
+      'WEB_EXPORT_PDF-OVERVIEW': 'Xuất PDF tổng quan', 'WEB_EXPORT_PDF-USERS': 'Xuất PDF người dùng',
+      'WEB_EXPORT_PDF-ROOMS': 'Xuất PDF phòng', 'WEB_EXPORT_PDF-AUDIT': 'Xuất PDF nhật ký',
+      WEB_EXPORT_ZIP: 'Xuất ZIP dữ liệu', WEB_EXPORT_HTML: 'Xuất HTML báo cáo', WEB_EXPORT_AUDIT: 'Xuất CSV nhật ký',
+      WEB_BROADCAST: 'Thông báo toàn hệ thống', WEB_USER_DELETE: 'Xóa tài khoản',
+      WEB_ROOM_DELETE: 'Xóa phòng', WEB_ROOM_CLEAR: 'Xóa lịch sử phòng',
+      MUTE: 'Cấm chat', UNMUTE: 'Gỡ cấm chat', BAN: 'Cấm vào phòng', UNBAN: 'Gỡ cấm vào phòng', KICK: 'Đuổi khỏi phòng'
+    };
+    const action = actMap[r[2]] || r[2];
+    const rawTarget = r[3] || '';
+    let target = '—', scope = 'Toàn hệ thống';
+    if (rawTarget.includes(':')) {
+      const [rid, uid] = rawTarget.split(':');
+      scope = rid === '*' ? 'Toàn hệ thống' : (roomMap.get(rid) || 'Phòng đã xóa');
+      target = userMap.get(uid) || 'Tài khoản đã xóa';
+    } else if (r[2].startsWith('WEB_EXPORT')) {
+      target = 'Báo cáo hệ thống'; scope = 'Toàn hệ thống';
+    } else if (r[2] === 'WEB_BROADCAST') {
+      target = 'Tất cả thành viên'; scope = 'Toàn hệ thống';
+    } else if (r[2] === 'WEB_ROOM_DELETE' || r[2] === 'WEB_ROOM_CLEAR') {
+      target = 'Lịch sử / Phòng'; scope = roomMap.get(rawTarget) || 'Phòng đã xóa';
+    } else if (userMap.has(rawTarget)) {
+      target = userMap.get(rawTarget);
+    } else if (roomMap.has(rawTarget)) {
+      target = 'Phòng'; scope = roomMap.get(rawTarget);
+    } else if (rawTarget && rawTarget !== '*') {
+      target = rawTarget.length > 20 ? 'Hệ thống' : rawTarget;
+    }
+    let detail = r[4] || '—';
+    detail = detail
+      .replace(/^MUTE;\s*thời hạn giây=-1$/, 'Gỡ cấm chat')
+      .replace(/^BAN;\s*thời hạn giây=-1$/, 'Gỡ cấm vào phòng')
+      .replace(/^MUTE;\s*thời hạn giây=(\d+)$/, 'Cấm chat · $1 giây')
+      .replace(/^BAN;\s*thời hạn giây=(\d+)$/, 'Cấm vào phòng · $1 giây')
+      .replace(/^KICK;\s*thời hạn giây=.*$/, 'Đuổi khỏi phòng');
+    return [time, actor, action, target, scope, detail];
+  }
   audit(parent) {
     const tools=element('div','admin-tools');this.button(tools,'Xuất PDF nhật ký',()=>this.download('pdf-audit'),true);this.button(tools,'Tải nhật ký CSV',()=>this.download('audit'));parent.append(tools);
-    this.paged(parent,['Thời gian','Người thực hiện','Hành động','Đối tượng','Chi tiết'],this.rows('AUDIT'),r=>r,null,0);
+    const userMap = new Map(this.rows('USERS').map(u => [u[0], `${u[2]} (@${u[1]})`]));
+    const roomMap = new Map(this.rows('ROOMS').map(rm => [rm[0], rm[2]]));
+    roomMap.set('sanh', 'Sảnh chung');
+    this.paged(parent,['Thời gian','Người thực hiện','Hành động','Đối tượng','Phòng / Phạm vi','Chi tiết'],this.rows('AUDIT'),r=>this.formatAuditRow(r,userMap,roomMap),null,0);
   }
   reports(parent) {
     const intro=element('section','report-intro');intro.append(element('h2','','Báo cáo hệ thống'),element('p','','PDF A4 có dấu tiếng Việt, bảng thành viên theo phòng, biểu đồ tin theo ngày và top hoạt động. Số liệu xuất khớp bản đang xem.'));
