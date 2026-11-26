@@ -193,8 +193,9 @@ public final class WebChatService implements AutoCloseable {
     public synchronized Object action(String token,String action,Map<String,String> args) throws IOException {
         var person=require(token);
         mutation(token);
+        String deletedRoom=action.equals("room-delete")?rooms.lay(args.getOrDefault("roomId","")).ten:"";
         Object result=workspace.action(person,action,args);
-        if(action.equals("room-delete"))files.removeRoom(args.get("roomId"));
+        if(action.equals("room-delete")){files.removeRoom(args.get("roomId"));audit.ghi(person.nguoi.tenDangNhap,"WEB_ROOM_DELETE",args.getOrDefault("roomId",""),"Phòng: "+deletedRoom);}
         var notice=memberNotice(person,action,args,false);if(notice!=null)result=Map.of("status","ok","notice",notice);
         if(action.equals("member-moderate"))audit.ghi(person.nguoi.tenDangNhap,"WEB_ROOM_MODERATE",args.getOrDefault("roomId","")+":"+args.getOrDefault("userId",""),args.getOrDefault("kind","")+"; thời hạn giây="+args.getOrDefault("seconds","") );
         if(action.equals("member-nickname")) {
@@ -316,7 +317,8 @@ public final class WebChatService implements AutoCloseable {
             }
             rooms.tinNhan().nguoiDaXoa(id);users.xoaQuanTri(p,id);audit.ghi(p.nguoi.tenDangNhap,"WEB_USER_DELETE",id,"Thành công");result=Map.of("status","ok");
         }else if(action.equals("room-delete")) {
-            workspace.deleteAsAdmin(p,id);files.removeRoom(id);audit.ghi(p.nguoi.tenDangNhap,"WEB_ROOM_DELETE",id,"Thành công");result=Map.of("status","ok");
+            String deletedRoom=rooms.lay(id).ten;
+            workspace.deleteAsAdmin(p,id);files.removeRoom(id);audit.ghi(p.nguoi.tenDangNhap,"WEB_ROOM_DELETE",id,"Phòng: "+deletedRoom);result=Map.of("status","ok");
         }else if(action.equals("room-clear")) {
             rooms.lay(id);workspace.rememberRecalls(rooms.tinNhan().tatCa().stream().filter(t->t.roomId.equals(id) && !t.thuHoi).toList());
             rooms.tinNhan().xoaLichSu(id);files.removeRoom(id);events.accept(new Event("history-cleared",id,Map.of()));

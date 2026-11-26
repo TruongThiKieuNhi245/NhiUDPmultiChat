@@ -76,14 +76,18 @@ export class AdminUI {
     if(!rows.length){const tr=element('tr'),td=element('td','','Chưa có dữ liệu phù hợp.');td.colSpan=columns.length+(actions?1:0);tr.append(td);body.append(tr);}
     table.append(body);wrap.append(table);parent.append(wrap);
   }
-  paged(parent,columns,source,cells,actions,sortColumn=1) {
+  paged(parent,columns,source,cells,actions,sortColumn=1,timeMode=false) {
     const toolbar=element('div','table-toolbar'),input=element('input'),sort=element('select');
     input.placeholder='Tìm trong bảng…';input.setAttribute('aria-label','Tìm trong bảng');sort.setAttribute('aria-label','Sắp xếp bảng');
-    for(const [value,label] of [['asc','Tên A–Z'],['desc','Tên Z–A']]){const option=element('option','',label);option.value=value;sort.append(option);}
+    const options=timeMode?[['desc','Mới đến cũ'],['asc','Cũ đến mới']]:[['asc','Tên A–Z'],['desc','Tên Z–A']];
+    for(const [value,label] of options){const option=element('option','',label);option.value=value;sort.append(option);}
     toolbar.append(input,sort);parent.append(toolbar);const target=element('div'),pager=element('div','table-pager');parent.append(target,pager);let page=0;
     const draw=()=>{
       const query=input.value.toLocaleLowerCase('vi'),collator=new Intl.Collator('vi');
-      const rows=source.filter(row=>row.join(' ').toLocaleLowerCase('vi').includes(query)).sort((a,b)=>collator.compare(a[sortColumn],b[sortColumn])*(sort.value==='asc'?1:-1));
+      const rows=source.filter(row=>row.join(' ').toLocaleLowerCase('vi').includes(query)).sort((a,b)=>{
+        if(timeMode) return (Date.parse(a[sortColumn])-Date.parse(b[sortColumn]))*(sort.value==='asc'?1:-1);
+        return collator.compare(a[sortColumn],b[sortColumn])*(sort.value==='asc'?1:-1);
+      });
       page=Math.min(page,Math.max(0,Math.ceil(rows.length/25)-1));target.replaceChildren();pager.replaceChildren();
       this.table(target,columns,rows.slice(page*25,page*25+25).map(row=>({cells:cells(row),source:row})),actions);
       const previous=this.button(pager,'Trang trước',()=>{page--;draw();}),next=this.button(pager,'Trang sau',()=>{page++;draw();});previous.disabled=page===0;next.disabled=(page+1)*25>=rows.length;
@@ -225,6 +229,9 @@ export class AdminUI {
       target = rawTarget.length > 20 ? 'Hệ thống' : rawTarget;
     }
     let detail = r[4] || '—';
+    if (r[2] === 'WEB_ROOM_DELETE' && detail.startsWith('Phòng: ')) {
+      scope = detail.slice(7); detail = 'Đã xóa phòng';
+    }
     detail = detail
       .replace(/^MUTE;\s*thời hạn giây=-1$/, 'Gỡ cấm chat')
       .replace(/^BAN;\s*thời hạn giây=-1$/, 'Gỡ cấm vào phòng')
@@ -238,7 +245,7 @@ export class AdminUI {
     const userMap = new Map(this.rows('USERS').map(u => [u[0], `${u[2]} (@${u[1]})`]));
     const roomMap = new Map(this.rows('ROOMS').map(rm => [rm[0], rm[2]]));
     roomMap.set('sanh', 'Sảnh chung');
-    this.paged(parent,['Thời gian','Người thực hiện','Hành động','Đối tượng','Phòng / Phạm vi','Chi tiết'],this.rows('AUDIT'),r=>this.formatAuditRow(r,userMap,roomMap),null,0);
+    this.paged(parent,['Thời gian','Người thực hiện','Hành động','Đối tượng','Phòng / Phạm vi','Chi tiết'],this.rows('AUDIT'),r=>this.formatAuditRow(r,userMap,roomMap),null,0,true);
   }
   reports(parent) {
     const intro=element('section','report-intro');intro.append(element('h2','','Báo cáo hệ thống'),element('p','','PDF A4 có dấu tiếng Việt, bảng thành viên theo phòng, biểu đồ tin theo ngày và top hoạt động. Số liệu xuất khớp bản đang xem.'));
