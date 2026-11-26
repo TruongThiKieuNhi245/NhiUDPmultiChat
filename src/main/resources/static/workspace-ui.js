@@ -22,13 +22,13 @@ export class WorkspaceUI {
     });
     $('profile').onclick = () => this.profileForm();
     $('invitations').onclick = () => this.invitationList();
-    $('room-info').onclick = () => this.roomInfo();
+    $('room-info').onclick = () => this.togglePanel();
     $('room-search').oninput = () => this.renderRooms();
     $('find-messages').onclick = () => this.searchDialog();
     $('sticker').onclick = () => this.stickers();
   }
   room() { return this.snapshot?.rooms.find(room => room.id === this.currentRoom()); }
-  clear() { this.revision++; clearTimeout(this.refreshTimer); this.dialog?.close(); this.snapshot = null; $('room-list').replaceChildren(); }
+  clear() { this.revision++; clearTimeout(this.refreshTimer); this.dialog?.close(); this.closePanel(); this.snapshot = null; $('room-list').replaceChildren(); }
   scheduleRefresh() { clearTimeout(this.refreshTimer); this.refreshTimer = setTimeout(() => this.refresh().catch(() => {}),150); }
   async refresh() {
     const revision=this.revision;
@@ -39,6 +39,7 @@ export class WorkspaceUI {
     this.renderRooms();
     $('invitation-count').textContent = snapshot.invitations.length || '';
     if (snapshot.profile.forcePassword) this.passwordForm(true);
+    this.syncPanel();
     return snapshot;
   }
   renderRooms() {
@@ -165,72 +166,229 @@ export class WorkspaceUI {
     };
     parent.append(button); return button;
   }
+  panelOpen() { return !$('room-panel').hidden; }
+  togglePanel() {
+    if (this.panelOpen()) this.closePanel();
+    else { this.panelView = { name: 'info' }; this.roomInfo(); }
+  }
+  closePanel() {
+    $('room-panel').hidden = true;
+    $('room-panel').replaceChildren();
+    $('workspace').classList.remove('with-panel');
+    $('room-info').classList.remove('active');
+    $('room-info').setAttribute('aria-expanded', 'false');
+    this.panelView = null;
+  }
+  syncPanel() {
+    if (!this.panelOpen()) return;
+    const room = this.room();
+    if (!room?.joined) { this.closePanel(); return; }
+    if (this.panelView?.name === 'member' && this.panelView.roomId === room.id) return;
+    if (this.panelView?.name === 'restrictions' && this.panelView.roomId === room.id) return this.restrictions(room);
+    this.roomInfo();
+  }
+  panelBody(title, back) {
+    const panel = $('room-panel');
+    panel.hidden = false;
+    $('workspace').classList.add('with-panel');
+    $('room-info').classList.add('active');
+    $('room-info').setAttribute('aria-expanded', 'true');
+    const header = element('div', 'rp-header');
+    if (back) {
+      const btn = element('button', 'icon-button rp-back', '←');
+      btn.type = 'button'; btn.setAttribute('aria-label', 'Quay lại'); btn.onclick = back;
+      header.append(btn);
+    }
+    header.append(element('h2', '', title));
+    const close = element('button', 'icon-button rp-close', '×');
+    close.type = 'button'; close.setAttribute('aria-label', 'Đóng thông tin phòng');
+    close.onclick = () => this.closePanel();
+    header.append(close);
+    const body = element('div', 'rp-body');
+    panel.replaceChildren(header, body);
+    return body;
+  }
+  panelAction(parent, text, callback, extraClass = '') {
+    const btn = element('button', 'rp-item' + (extraClass ? ' ' + extraClass : ''));
+    btn.type = 'button';
+    btn.append(element('span', '', text), element('span', 'rp-arrow', '›'));
+    btn.onclick = async () => {
+      btn.disabled = true;
+      try { await callback(); }
+      catch (error) {
+        let node = parent.querySelector('.action-error');
+        if (!node) { node = element('p', 'error action-error'); node.setAttribute('role', 'alert'); parent.append(node); }
+        node.textContent = error.message;
+      } finally { if (btn.isConnected) btn.disabled = false; }
+    };
+    parent.append(btn);
+    return btn;
+  }
   async roomInfo() {
-    const room=this.room(); if (!room?.joined) return;
-    const members=await this.api('/members?roomId='+room.id);
-    const {content}=this.open('Thông tin · '+room.name);
-    content.append(element('p','',room.description),element('p','',`${room.memberCount} thành viên · ${room.onlineCount} đang trực tuyến`),element('p','room-code','Mã phòng: '+room.code));
-    const exports=element('section','room-export info-card');exports.append(element('h3','','Xuất lịch sử trò chuyện'),element('p','muted','Bản HTML giữ bố cục hội thoại, dễ đọc và in. Tệp và ảnh được ghi bằng tên; không nhúng dữ liệu nhị phân.'));
-    this.button(exports,'Tải bản dễ đọc (.html)',()=>this.exportHistory(room.id,'html'));
-    this.button(exports,'Tải văn bản (.txt)',()=>this.exportHistory(room.id,'txt'));content.append(exports);
-    this.button(content,room.notificationsMuted?'Bật thông báo phòng':'Tắt thông báo phòng',async () => { await this.action('notifications',{roomId:room.id,muted:String(!room.notificationsMuted)}); await this.refresh(); await this.roomInfo(); });
-    if (room.manage && room.id!=='sanh') {
-      this.button(content,'Sửa phòng',() => this.roomForm(room));
-      this.button(content,room.open?'Đóng phòng':'Mở phòng',async () => { await this.action('room-state',{roomId:room.id,open:String(!room.open)}); await this.refresh(); await this.roomInfo(); });
-      this.button(content,'Mời thành viên',() => this.inviteForm(room));
-      this.button(content,'Danh sách cấm / gỡ cấm',() => this.restrictions(room));
-      this.button(content,'Xóa phòng',() => this.form('Xóa phòng '+room.name,[this.field('confirm','Nhập XÓA để xác nhận')],async data => {
-        if (data.confirm!=='XÓA') throw new Error('Hãy nhập XÓA để xác nhận.');
-        await this.action('room-delete',{roomId:room.id}); await this.refresh(); await this.selectRoom('sanh');
-      },{submitText:'Xóa phòng'}));
+    const room = this.room(); if (!room?.joined) return;
+    this.panelView = { name: 'info', roomId: room.id };
+    const members = await this.api('/members?roomId=' + room.id);
+    if (!this.panelOpen() || this.currentRoom() !== room.id) return;
+    const body = this.panelBody('Thông tin phòng');
+
+    // Hero summary
+    const hero = element('section', 'rp-hero');
+    hero.append(element('div', 'rp-avatar', room.publicRoom ? '#' : '⌑'));
+    hero.append(element('h3', '', room.name));
+    if (room.description) hero.append(element('p', 'muted rp-desc', room.description));
+    hero.append(element('p', 'muted rp-meta', `${room.memberCount} thành viên · ${room.onlineCount} trực tuyến${room.open ? '' : ' · Đã đóng'}`));
+    const codeBtn = element('button', 'rp-code', `Mã phòng: ${room.code}`);
+    codeBtn.type = 'button'; codeBtn.title = 'Sao chép mã phòng';
+    codeBtn.onclick = () => { navigator.clipboard?.writeText(room.code); codeBtn.textContent = 'Đã sao chép: ' + room.code; setTimeout(() => { if (codeBtn.isConnected) codeBtn.textContent = 'Mã phòng: ' + room.code; }, 1600); };
+    hero.append(codeBtn);
+    body.append(hero);
+
+    // Tùy chọn phòng
+    const opts = element('section', 'rp-group');
+    opts.append(element('div', 'rp-group-title', 'Tùy chọn'));
+    this.panelAction(opts, room.notificationsMuted ? 'Bật thông báo phòng' : 'Tắt thông báo phòng', async () => {
+      await this.action('notifications', { roomId: room.id, muted: String(!room.notificationsMuted) });
+      await this.refresh();
+    });
+    if (room.manage && room.id !== 'sanh') {
+      this.panelAction(opts, 'Mời thành viên', () => this.inviteForm(room));
+      this.panelAction(opts, 'Chỉnh sửa phòng', () => this.roomForm(room));
+      this.panelAction(opts, room.open ? 'Đóng phòng' : 'Mở phòng', async () => {
+        await this.action('room-state', { roomId: room.id, open: String(!room.open) });
+        await this.refresh();
+      });
+      this.panelAction(opts, 'Danh sách cấm / gỡ cấm', () => this.restrictions(room));
     }
-    if (room.id!=='sanh' && room.ownerId!==this.snapshot.profile.id) this.button(content,'Rời phòng',() => this.form('Rời '+room.name,[],async () => {
-      await this.action('room-leave',{roomId:room.id}); await this.refresh(); await this.selectRoom('sanh');
-    },{submitText:'Rời phòng'}));
-    content.append(element('h3','','Thành viên'));
+    body.append(opts);
+
+    // Xuất lịch sử
+    const exp = element('section', 'rp-group');
+    exp.append(element('div', 'rp-group-title', 'Xuất lịch sử'));
+    const expRow = element('div', 'rp-export-row');
+    this.button(expRow, 'Tải .html', () => this.exportHistory(room.id, 'html'));
+    this.button(expRow, 'Tải .txt', () => this.exportHistory(room.id, 'txt'));
+    exp.append(expRow);
+    body.append(exp);
+
+    // Thành viên
+    const memGroup = element('section', 'rp-group');
+    memGroup.append(element('div', 'rp-group-title', `Thành viên (${members.length})`));
     for (const person of members) {
-      const card=element('section','info-card');
-      card.dataset.memberId=person.id;
-      card.append(element('strong','',person.nickname||person.name),element('p','muted',`@${person.login} · ${person.online?'Trực tuyến':'Ngoại tuyến'}${person.id===room.ownerId?' · Chủ phòng':''}`));
-      if(person.mutedUntil>Date.now())card.append(element('p','moderation-label',`Cấm chat đến ${new Date(person.mutedUntil).toLocaleString('vi-VN')}`));
-      if (person.id===this.snapshot.profile.id || room.manage) this.button(card,'Đổi biệt danh',() => this.form('Biệt danh trong '+room.name,[this.field('nickname','Biệt danh (trống để xóa)','text',person.nickname,{maxLength:30})],async data => { await this.action('member-nickname',{roomId:room.id,userId:person.id,...data}); await this.refresh(); }));
-      if (room.manage && person.id!==this.snapshot.profile.id && person.id!==room.ownerId && person.role!=='ADMIN') {
-        this.button(card,'Quản lý thành viên',() => this.memberActions(room,person));
+      const row = element('div', 'rp-member');
+      row.dataset.memberId = person.id;
+      const av = element('span', 'avatar rp-mem-av', (person.nickname || person.name).slice(0, 1).toUpperCase());
+      if (person.avatarHash) {
+        const img = element('img'); img.src = '/api/avatars/' + person.id + '?v=' + person.avatarHash; img.alt = '';
+        av.replaceChildren(img);
       }
-      content.append(card);
+      const info = element('div', 'rp-mem-info');
+      info.append(element('strong', '', person.nickname || person.name));
+      const role = person.id === room.ownerId ? ' · Chủ phòng' : person.role === 'ADMIN' ? ' · Admin' : '';
+      info.append(element('small', 'muted', `@${person.login} · ${person.online ? 'Trực tuyến' : 'Ngoại tuyến'}${role}`));
+      if (person.mutedUntil > Date.now()) info.append(element('small', 'moderation-label', `Cấm chat đến ${new Date(person.mutedUntil).toLocaleString('vi-VN')}`));
+      row.append(av, info);
+
+      const acts = element('div', 'rp-mem-acts');
+      if (person.id === this.snapshot.profile.id || room.manage) {
+        const nickBtn = element('button', 'rp-mini', 'Biệt danh');
+        nickBtn.type = 'button';
+        nickBtn.onclick = () => this.form('Biệt danh trong ' + room.name, [this.field('nickname', 'Biệt danh (trống để xóa)', 'text', person.nickname, { maxLength: 30 })], async data => {
+          await this.action('member-nickname', { roomId: room.id, userId: person.id, ...data }); await this.refresh();
+        });
+        acts.append(nickBtn);
+      }
+      if (room.manage && person.id !== this.snapshot.profile.id && person.id !== room.ownerId && person.role !== 'ADMIN') {
+        const mgrBtn = element('button', 'rp-mini', 'Quản lý');
+        mgrBtn.type = 'button';
+        mgrBtn.onclick = () => this.memberActions(room, person);
+        acts.append(mgrBtn);
+      }
+      row.append(acts);
+      memGroup.append(row);
     }
+    body.append(memGroup);
+
+    // Lời mời đã gửi
     if (room.manage) {
-      const sent=await this.api('/invitations/sent?roomId='+room.id);
-      if (!content.isConnected) return;
-      content.append(element('h3','','Lời mời đã gửi'));
-      for (const invitation of sent) {
-        const card=element('section','info-card'); card.append(element('p','','Đang mời tài khoản: '+invitation.nguoiDuocMoiId));
-        this.button(card,'Hủy lời mời',async () => { await this.action('invite-cancel',{inviteId:invitation.id}); await this.roomInfo(); }); content.append(card);
+      const sent = await this.api('/invitations/sent?roomId=' + room.id);
+      if (!this.panelOpen() || this.currentRoom() !== room.id) return;
+      if (sent.length) {
+        const invGroup = element('section', 'rp-group');
+        invGroup.append(element('div', 'rp-group-title', `Lời mời đã gửi (${sent.length})`));
+        for (const invitation of sent) {
+          const item = element('div', 'rp-member');
+          item.append(element('span', 'rp-mem-info', invitation.nguoiDuocMoiId));
+          const cancel = element('button', 'rp-mini', 'Hủy'); cancel.type = 'button';
+          cancel.onclick = async () => { await this.action('invite-cancel', { inviteId: invitation.id }); await this.roomInfo(); };
+          item.append(cancel);
+          invGroup.append(item);
+        }
+        body.append(invGroup);
       }
+    }
+
+    // Vùng nguy hiểm
+    if (room.id !== 'sanh') {
+      const danger = element('section', 'rp-group');
+      if (room.ownerId !== this.snapshot.profile.id) {
+        this.panelAction(danger, 'Rời phòng', () => this.form('Rời ' + room.name, [], async () => {
+          await this.action('room-leave', { roomId: room.id }); this.closePanel(); await this.refresh(); await this.selectRoom('sanh');
+        }, { submitText: 'Rời phòng' }), 'rp-danger');
+      }
+      if (room.manage) {
+        this.panelAction(danger, 'Xóa phòng', () => this.form('Xóa phòng ' + room.name, [this.field('confirm', 'Nhập XÓA để xác nhận')], async data => {
+          if (data.confirm !== 'XÓA') throw new Error('Hãy nhập XÓA để xác nhận.');
+          await this.action('room-delete', { roomId: room.id }); this.closePanel(); await this.refresh(); await this.selectRoom('sanh');
+        }, { submitText: 'Xóa phòng' }), 'rp-danger');
+      }
+      body.append(danger);
     }
   }
-  memberActions(room,person) {
-    const {content}=this.open('Quản lý '+person.name+' · @'+person.login);
-    for (const [title,kind] of [['Cấm chat có thời hạn','MUTE'],['Cấm vào phòng có thời hạn','BAN']]) this.button(content,title,() => this.form(title,[this.field('seconds','Thời hạn (giây)','number','300',{min:1,max:31536000,required:true}),this.field('reason','Lý do (tối đa 200 ký tự)','text','',{maxLength:200})],async data => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind,...data}); await this.refresh(); }));
-    this.button(content,'Gỡ cấm chat',async () => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind:'MUTE',seconds:'-1'}); await this.refresh(); this.dialog.close(); });
-    this.button(content,'Đuổi khỏi phòng',() => this.form('Đuổi '+person.name,[this.field('reason','Lý do (tối đa 200 ký tự)','text','',{maxLength:200})],async data => { await this.action('member-moderate',{roomId:room.id,userId:person.id,kind:'KICK',reason:data.reason}); await this.refresh(); },{submitText:'Đuổi khỏi phòng'}));
-    this.button(content,'Trở lại thông tin phòng',()=>this.roomInfo());
-    this.button(content,'Chuyển quyền chủ phòng',() => this.form('Chuyển quyền cho '+person.name,[],async () => { await this.action('room-transfer',{roomId:room.id,userId:person.id}); await this.refresh(); },{submitText:'Chuyển quyền'}));
+  memberActions(room, person) {
+    this.panelView = { name: 'member', roomId: room.id, userId: person.id };
+    const body = this.panelBody('Quản lý thành viên', () => this.roomInfo());
+    const hero = element('section', 'rp-hero');
+    hero.append(element('div', 'rp-avatar', (person.nickname || person.name).slice(0, 1).toUpperCase()));
+    hero.append(element('h3', '', person.nickname || person.name));
+    hero.append(element('p', 'muted rp-meta', `@${person.login} · ${person.online ? 'Trực tuyến' : 'Ngoại tuyến'}`));
+    body.append(hero);
+
+    const group = element('section', 'rp-group');
+    group.append(element('div', 'rp-group-title', 'Thao tác kiểm duyệt'));
+    for (const [title, kind] of [['Cấm chat có thời hạn', 'MUTE'], ['Cấm vào phòng có thời hạn', 'BAN']]) {
+      this.panelAction(group, title, () => this.form(title, [this.field('seconds', 'Thời hạn (giây)', 'number', '300', { min: 1, max: 31536000, required: true }), this.field('reason', 'Lý do (tối đa 200 ký tự)', 'text', '', { maxLength: 200 })], async data => {
+        await this.action('member-moderate', { roomId: room.id, userId: person.id, kind, ...data }); await this.refresh(); this.roomInfo();
+      }));
+    }
+    this.panelAction(group, 'Gỡ cấm chat', async () => {
+      await this.action('member-moderate', { roomId: room.id, userId: person.id, kind: 'MUTE', seconds: '-1' }); await this.refresh(); this.roomInfo();
+    });
+    this.panelAction(group, 'Chuyển quyền chủ phòng', () => this.form('Chuyển quyền cho ' + person.name, [], async () => {
+      await this.action('room-transfer', { roomId: room.id, userId: person.id }); await this.refresh(); this.roomInfo();
+    }, { submitText: 'Chuyển quyền' }));
+    this.panelAction(group, 'Đuổi khỏi phòng', () => this.form('Đuổi ' + person.name, [this.field('reason', 'Lý do (tối đa 200 ký tự)', 'text', '', { maxLength: 200 })], async data => {
+      await this.action('member-moderate', { roomId: room.id, userId: person.id, kind: 'KICK', reason: data.reason }); await this.refresh(); this.roomInfo();
+    }, { submitText: 'Đuổi khỏi phòng' }), 'rp-danger');
+    body.append(group);
   }
   async restrictions(room) {
-    const previous=this.dialog;
-    const rules=await this.api('/moderation?roomId='+encodeURIComponent(room.id));
-    if(previous && (this.dialog!==previous || !previous.open))return;
-    const {dialog,content}=this.open('Danh sách cấm · '+room.name);
-    content.append(element('p','muted','Lệnh còn hiệu lực trong phòng. Gỡ cấm vào không tự thêm lại thành viên; họ có thể tham gia lại theo quyền và sức chứa.'));
-    if(!rules.length)content.append(element('p','','Không có lệnh cấm còn hiệu lực.'));
-    for(const rule of rules) {
-      const card=element('section','info-card restriction-card');card.dataset.userId=rule.userId;card.dataset.kind=rule.kind;
-      card.append(element('h3','',rule.name+' · @'+rule.login),element('p','moderation-label',`${rule.kind==='MUTE'?'Cấm chat':'Cấm vào phòng'} đến ${new Date(rule.until).toLocaleString('vi-VN')}`));
-      if(rule.reason)card.append(element('p','','Lý do: '+rule.reason));
-      this.button(card,rule.kind==='MUTE'?'Gỡ cấm chat':'Gỡ cấm vào phòng',async()=>{await this.action('member-moderate',{roomId:room.id,userId:rule.userId,kind:rule.kind,seconds:'-1'});await this.refresh();if(this.dialog===dialog && dialog.open)await this.restrictions(room);});content.append(card);
+    this.panelView = { name: 'restrictions', roomId: room.id };
+    const rules = await this.api('/moderation?roomId=' + encodeURIComponent(room.id));
+    if (!this.panelOpen() || this.currentRoom() !== room.id || this.panelView?.name !== 'restrictions') return;
+    const body = this.panelBody('Danh sách cấm', () => this.roomInfo());
+    body.append(element('p', 'muted rp-note', 'Lệnh còn hiệu lực trong phòng. Gỡ cấm vào không tự thêm lại thành viên.'));
+    if (!rules.length) body.append(element('p', 'muted', 'Không có lệnh cấm còn hiệu lực.'));
+    for (const rule of rules) {
+      const card = element('section', 'info-card restriction-card'); card.dataset.userId = rule.userId; card.dataset.kind = rule.kind;
+      card.append(element('strong', '', rule.name + ' · @' + rule.login), element('p', 'moderation-label', `${rule.kind === 'MUTE' ? 'Cấm chat' : 'Cấm vào phòng'} đến ${new Date(rule.until).toLocaleString('vi-VN')}`));
+      if (rule.reason) card.append(element('p', '', 'Lý do: ' + rule.reason));
+      this.button(card, rule.kind === 'MUTE' ? 'Gỡ cấm chat' : 'Gỡ cấm vào phòng', async () => {
+        await this.action('member-moderate', { roomId: room.id, userId: rule.userId, kind: rule.kind, seconds: '-1' });
+        await this.refresh();
+        if (this.panelOpen() && this.panelView?.name === 'restrictions') await this.restrictions(room);
+      });
+      body.append(card);
     }
-    this.button(content,'Trở lại thông tin phòng',()=>this.roomInfo());
   }
   inviteForm(room) {
     this.findPerson('Mời vào '+room.name,async person => { await this.action('invite-send',{roomId:room.id,userId:person.id}); await this.refresh(); },'Gửi lời mời');

@@ -26,6 +26,15 @@ export class ChatView {
     this.container.replaceChildren();
   }
 
+  appendNotice(text, id) {
+    if (!text) return;
+    if (id && this.container.querySelector(`[data-notice-id="${id}"]`)) return;
+    const node = element('div', 'chat-notice', text);
+    node.setAttribute('role', 'status');
+    if (id) node.dataset.noticeId = id;
+    this.container.append(node);
+  }
+
   createRow(item, own) {
     const row = element('article', 'message-row');
     row.dataset.clientMsgId = item.clientMsgId;

@@ -80,7 +80,7 @@ async function selectRoom(id,force=false) {
   clearTimeout(typingTimer);lastTyping=0;roomEpoch++; activeRoom=id; store.roomId=id; store.saved.clear(); store.cursor=0;store.initialized=false;store.latest=true;
   recallCursor=0;unread=0;roomUnread.delete(id);view.clear();typingUsers.clear();$('typing').textContent='';
   const entry=drafts.get(id);$('message').value=entry?.text || '';replying=entry?.reply || null;
-  updateRoomHeader();showReply();ui.renderRooms();drawer(false);
+  updateRoomHeader();showReply();ui.renderRooms();ui.syncPanel?.();drawer(false);
   if (socket?.readyState===1) {
     try { await syncHistory(generation,roomEpoch); } catch (error) { alertChat(error.message); }
   }
@@ -295,12 +295,24 @@ function connect() {
     if(data.type==='member-notice') {
       const notice=data.data;
       if(notice.userId===me.id){
-        if(['KICK','BAN'].includes(notice.kind) && data.roomId===activeRoom)ui.dialog?.close();
         if(!valid())return;
-        feedback.show(moderationText(notice),{id:notice.id,important:true});ui.scheduleRefresh();
+        if(['KICK','BAN'].includes(notice.kind) && data.roomId===activeRoom){
+          ui.closePanel?.();
+          await ui.refresh().catch(()=>{});
+          await selectRoom('sanh',true);
+          view.appendNotice(moderationText(notice),notice.id);
+          $('timeline').scrollTop=$('timeline').scrollHeight;
+        } else {
+          ui.scheduleRefresh();
+          if(data.roomId!==activeRoom){view.appendNotice(moderationText(notice),notice.id);}
+        }
       }
     }
-    if(data.type==='room-activity' && data.data.actorId!==me.id && data.data.userId!==me.id)feedback.show(data.data.text,{id:data.data.id});
+    if(data.type==='room-activity' && data.roomId===activeRoom){
+      const stick=nearBottom($('timeline'));
+      view.appendNotice(data.data.text,data.data.id);
+      if(stick)$('timeline').scrollTop=$('timeline').scrollHeight;
+    }
     if (data.type === 'workspace') {ui.scheduleRefresh();admin.invalidate();}
     if (data.type === 'history-cleared' && data.roomId===activeRoom){recallCursor=0;syncRecalls(generation,roomEpoch).catch(error=>alertChat(error.message));}
     if (data.type === 'recall') applyRecall(data.data);

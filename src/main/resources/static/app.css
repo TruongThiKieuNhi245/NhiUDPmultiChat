@@ -214,7 +214,16 @@ input {
   transform:translateY(-50%);
   width:34px;
   height:34px;
+  min-width:34px;
+  min-height:34px;
+  border:0;
+  background:transparent;
+  box-shadow:none;
   color:var(--muted)
+}
+.password-toggle:hover {
+  background:transparent;
+  color:var(--primary)
 }
 input::placeholder,textarea::placeholder {
   color:var(--muted)
@@ -448,6 +457,78 @@ textarea { display: block; width: 100%; min-width: 0; resize: none; max-height: 
 .sidebar-note { display: none; }
 .invitations { margin-bottom: 8px; }
 #profile img, .avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.workspace.with-panel { grid-template-columns: 274px minmax(0, 1fr) 336px; }
+.chat-header .icon-button.active { background: var(--tint); color: var(--primary); border-color: var(--primary); }
+.room-panel {
+  min-height: 0;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.rp-header {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px;
+  background: var(--header);
+  border-bottom: 1px solid var(--border);
+}
+.rp-header h2 { margin: 0; font-size: 16px; flex: 1; }
+.rp-header .icon-button { width: 36px; height: 36px; min-width: 36px; min-height: 36px; font-size: 18px; }
+.rp-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.rp-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 8px 4px; }
+.rp-avatar {
+  width: 56px; height: 56px; border-radius: 18px;
+  display: grid; place-items: center;
+  background: var(--tint); color: var(--primary);
+  font-size: 26px; font-weight: 700;
+}
+.rp-hero h3 { margin: 4px 0 0; font-size: 17px; overflow-wrap: anywhere; }
+.rp-desc, .rp-meta, .rp-note { margin: 0; font-size: 12px; line-height: 1.5; }
+.rp-code {
+  margin-top: 4px; padding: 5px 11px; border-radius: 99px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font-size: 12px; font-weight: 600;
+}
+.rp-code:hover { background: var(--tint); color: var(--primary); }
+.rp-group { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); overflow: hidden; }
+.rp-group-title { font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); padding: 10px 14px 6px; }
+.rp-item {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 11px 14px; border: 0; border-top: 1px solid var(--border);
+  background: transparent; color: var(--text); font-size: 13px; font-weight: 500; text-align: left;
+}
+.rp-item:first-child { border-top: 0; }
+.rp-item:hover { background: var(--tint); }
+.rp-arrow { color: var(--muted); font-size: 16px; }
+.rp-danger { color: var(--error); font-weight: 600; }
+.rp-export-row { display: flex; gap: 8px; padding: 8px 14px 12px; }
+.rp-export-row .secondary { flex: 1; min-height: 36px; padding: 6px 10px; font-size: 12px; }
+.rp-member { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--border); }
+.rp-mem-av { width: 32px; height: 32px; border-radius: 10px; font-size: 13px; }
+.rp-mem-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.rp-mem-info strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-mem-info small { font-size: 11px; line-height: 1.4; }
+.rp-mem-acts { display: flex; gap: 4px; flex-shrink: 0; }
+.rp-mini {
+  padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 11px; font-weight: 600;
+}
+.rp-mini:hover { background: var(--tint); color: var(--primary); }
+.chat-notice {
+  margin: 10px auto; padding: 5px 14px; max-width: min(88%, 520px);
+  border-radius: 99px; background: var(--tint); color: var(--muted);
+  font-size: 12px; line-height: 1.5; text-align: center;
+}
+@media (max-width: 1020px) {
+  .workspace.with-panel { grid-template-columns: 274px minmax(0, 1fr); }
+  .room-panel { position: fixed; right: 0; top: 0; bottom: 0; width: min(340px, 92vw); z-index: 4; box-shadow: -8px 0 30px #0003; }
+}
+@media (max-width: 760px) {
+  .workspace.with-panel { grid-template-columns: 1fr; }
+}
 .chat-header .heading { flex: 1; }
 .chat-header .connection { margin-left: 6px; }
 .typing { min-height: 0; flex-shrink: 0; padding: 0 26px; color: var(--muted); font-size: 12px; line-height: 24px; }

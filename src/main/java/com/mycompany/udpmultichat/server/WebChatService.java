@@ -34,8 +34,16 @@ public final class WebChatService implements AutoCloseable {
         String roomName=room.equals("*")?"toàn hệ thống":rooms.lay(room).ten;
         var notice=new MemberNotice(UUID.randomUUID().toString(),user,users.lay(user).tenHienThi+" (@"+users.lay(user).tenDangNhap+")",actor.nguoi.id,actor.nguoi.tenHienThi+" (@"+actor.nguoi.tenDangNhap+")",roomName,kind,until,reason);
         events.accept(new Event("member-notice",room,notice,user));
-        if(Set.of("KICK","BAN","OWNER").contains(kind) && !room.equals("*")) {
-            var target=users.lay(user);String detail=kind.equals("OWNER")?" trở thành chủ phòng.":kind.equals("BAN")?" đã bị cấm vào phòng.":" đã được đưa ra khỏi phòng.";
+        if(Set.of("KICK","BAN","UNBAN","MUTE","UNMUTE","OWNER").contains(kind) && !room.equals("*")) {
+            var target=users.lay(user);
+            String detail=switch(kind){
+                case "OWNER" -> " đã trở thành chủ phòng.";
+                case "BAN" -> " đã bị cấm vào phòng.";
+                case "UNBAN" -> " đã được gỡ cấm vào phòng.";
+                case "MUTE" -> " đã bị cấm chat.";
+                case "UNMUTE" -> " đã được gỡ cấm chat.";
+                default -> " đã được đưa ra khỏi phòng.";
+            };
             events.accept(new Event("room-activity",room,Map.of("id",notice.id(),"actorId",actor.nguoi.id,"userId",user,"text",target.tenHienThi+" (@"+target.tenDangNhap+")"+detail)));
         }
         return notice;
@@ -189,6 +197,12 @@ public final class WebChatService implements AutoCloseable {
         if(action.equals("room-delete"))files.removeRoom(args.get("roomId"));
         var notice=memberNotice(person,action,args,false);if(notice!=null)result=Map.of("status","ok","notice",notice);
         if(action.equals("member-moderate"))audit.ghi(person.nguoi.tenDangNhap,"WEB_ROOM_MODERATE",args.getOrDefault("roomId","")+":"+args.getOrDefault("userId",""),args.getOrDefault("kind","")+"; thời hạn giây="+args.getOrDefault("seconds","") );
+        if(action.equals("member-nickname")) {
+            String r=args.getOrDefault("roomId",""), u=args.getOrDefault("userId",""), nick=args.getOrDefault("nickname","").strip();
+            var target=users.lay(u);
+            String text=nick.isEmpty()?target.tenHienThi+" đã được xóa biệt danh.":target.tenHienThi+" đã được đổi biệt danh thành \""+nick+"\".";
+            events.accept(new Event("room-activity",r,Map.of("id",UUID.randomUUID().toString(),"actorId",person.nguoi.id,"userId",u,"text",text)));
+        }
         changed(); return result;
     }
     private void mutation(String token) {

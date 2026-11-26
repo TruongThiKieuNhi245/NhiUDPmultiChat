@@ -24,8 +24,8 @@ export class Feedback {
     if(!important)row.timer=setTimeout(dismiss,7000);
   }
   action(name,data,result) {
-    if(result?.notice){this.show('Đã thực hiện. '+moderationText(result.notice,false));return;}
-    const messages={'room-create':'Đã tạo phòng.','room-edit':'Đã lưu thông tin phòng.','room-state':data.open==='true'?'Đã mở phòng.':'Đã đóng phòng.','room-delete':'Đã xóa phòng.','room-clear':'Đã xóa nội dung phòng.','room-leave':'Đã rời phòng.','room-join':'Đã tham gia phòng.','member-nickname':'Đã cập nhật biệt danh.','invite-send':'Đã gửi lời mời.','invite-answer':data.accept==='true'?'Đã chấp nhận lời mời.':'Đã từ chối lời mời.','invite-cancel':'Đã hủy lời mời.','notifications':'Đã cập nhật thông báo phòng.','user-add':'Đã tạo tài khoản.','user-edit':'Đã lưu tài khoản.','user-lock':data.locked==='true'?'Đã khóa tài khoản và thu hồi phiên.':'Đã mở khóa tài khoản.','user-reset':'Đã cấp mật khẩu tạm và thu hồi phiên cũ.','user-delete':'Đã xóa tài khoản.','password-change':'Đã đổi mật khẩu.','profile-save':'Đã lưu hồ sơ.'};
+    if(result?.notice || ['member-nickname','notifications','room-state','room-edit','invite-send','invite-cancel'].includes(name)) return;
+    const messages={'room-create':'Đã tạo phòng.','room-delete':'Đã xóa phòng.','room-clear':'Đã xóa nội dung phòng.','room-leave':'Đã rời phòng.','room-join':'Đã tham gia phòng.','invite-answer':data.accept==='true'?'Đã chấp nhận lời mời.':'Đã từ chối lời mời.','user-add':'Đã tạo tài khoản.','user-edit':'Đã lưu tài khoản.','user-lock':data.locked==='true'?'Đã khóa tài khoản và thu hồi phiên.':'Đã mở khóa tài khoản.','user-reset':'Đã cấp mật khẩu tạm và thu hồi phiên cũ.','user-delete':'Đã xóa tài khoản.','password-change':'Đã đổi mật khẩu.','profile-save':'Đã lưu hồ sơ.'};
     this.show(messages[name]);
   }
 }
