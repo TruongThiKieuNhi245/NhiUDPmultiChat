@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "url": "http://127.0.0.1:8085",
+  "sha256": "a8a9531ee0e8449696121d0384b638311c80e944a4f85b5baba9765fe2845c06",
+  "backupBeforeUpgrade": true,
+  "oldArtifactPreserved": true,
+  "existingAccountsAndRoomsPreserved": true,
+  "adminFiveTabs": true,
+  "loggedOutAfterCheck": true
+}

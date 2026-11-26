@@ -1,0 +1,25 @@
+[Unit]
+Description=UDPmultiChat Java 21
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=udpchat
+Group=udpchat
+WorkingDirectory=/opt/udpchat
+EnvironmentFile=/etc/udpchat/udpchat.env
+ExecStart=/usr/bin/java -Xms128m -Xmx768m -jar /opt/udpchat/current.jar --spring.profiles.active=proxy --chat.data-dir=/var/lib/udpchat
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+SuccessExitStatus=143
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/udpchat
+
+[Install]
+WantedBy=multi-user.target

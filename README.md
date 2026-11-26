@@ -1,3 +1,9 @@
+## Web 3.4 — Backup/khôi phục và HTTPS/WSS local
+
+Có công cụ offline backup/verify/restore/import-copy với checksum, kiểm binary/metadata và đích mới; rollback giữ cả bản dữ liệu mới hơn. Profile proxy Secure cookie đã kiểm qua TLS thật với UDP, hai phiên Edge, tệp và restart/restore/rollback. [Bàn giao, lệnh dùng, QA và giới hạn](docs/WEB3_4_DU_LIEU_VA_WEB4_LOCAL.md); [đối chiếu host nguồn chính thức](docs/TRIEN_KHAI_0_DONG.md). 36 ca JUnit khác nhau, 11 nhóm thành viên và 5 nhóm TLS/dữ liệu trên JAR cuối đều PASS. Preview **http://127.0.0.1:8085** đã backup/nâng JAR, giữ nguyên tài khoản và mật khẩu. Chưa public; host đích và thiết bị thật còn cần nghiệm thu.
+
+---
+
 ## Web 3.3 — Quản lý thành viên và thông báo
 
 Đã hoàn thiện phản hồi cấm/gỡ cấm chat, đuổi, ban/gỡ ban và chuyển chủ; banner thời hạn/lý do, danh sách cấm theo phòng/toàn hệ thống và thông báo riêng sau khi mất quyền phòng. Sửa admin thay chủ chưa được nối phòng, race CSRF khi đăng ký sớm và typing khi đổi phòng nhanh. [Bàn giao, ảnh và 5 bước thử](docs/WEB3_3_THANH_VIEN_NGHIEM_THU.md). Bản mới: **http://127.0.0.1:8085** (8084 giữ nguyên bản cũ). 30 JUnit; 11 nhóm browser thành viên, 12 admin JAR/restart, 12 UX, 11 Web 2, 8 tệp đều đạt. Chưa push/public.

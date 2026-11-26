@@ -150,13 +150,15 @@ export class AdminUI {
     this.table(content,['Tài khoản','Vai trò','Online'],members.map(r=>({cells:['@'+r[3],r[5],r[6]==='true'?'Có':'Không'],source:r})),(td,r)=>{if(r[2]!==this.profile.id)this.button(td,'Quản lý',()=>this.moderate(r[2],row[0]));});
   }
   async restrictions(roomId,name) {
+    const previous=this.ui.dialog;
     const rules=await this.request('/moderation?roomId='+encodeURIComponent(roomId));
-    const {content}=this.ui.open('Danh sách cấm · '+name);
+    if(previous && (this.ui.dialog!==previous || !previous.open))return;
+    const {dialog,content}=this.ui.open('Danh sách cấm · '+name);
     if(!rules.length)content.append(element('p','','Không có lệnh cấm còn hiệu lực.'));
     for(const rule of rules){
       const card=element('section','info-card restriction-card');card.dataset.userId=rule.userId;card.dataset.kind=rule.kind;
       card.append(element('h3','',rule.name+' · @'+rule.login),element('p','moderation-label',`${rule.kind==='MUTE'?'Cấm chat':'Cấm vào phòng'} đến ${new Date(rule.until).toLocaleString('vi-VN')}`),element('p','',rule.reason));
-      this.button(card,rule.kind==='MUTE'?'Gỡ cấm chat':'Gỡ cấm vào phòng',async()=>{await this.action('member-moderate',{roomId,userId:rule.userId,kind:rule.kind,seconds:'-1'});await this.restrictions(roomId,name);});content.append(card);
+      this.button(card,rule.kind==='MUTE'?'Gỡ cấm chat':'Gỡ cấm vào phòng',async()=>{await this.action('member-moderate',{roomId,userId:rule.userId,kind:rule.kind,seconds:'-1'});if(this.ui.dialog===dialog && dialog.open)await this.restrictions(roomId,name);});content.append(card);
     }
     content.append(element('p','muted','Gỡ cấm vào không tự thêm lại thành viên. Cấm chat toàn hệ thống và từng phòng được áp dụng độc lập.'));
   }

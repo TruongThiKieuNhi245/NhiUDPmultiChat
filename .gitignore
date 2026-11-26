@@ -12,3 +12,6 @@ docs/screenshots/bao-cao-mau/
 
 web-data/
 __pycache__/
+
+# Archive rieng tu cua cong cu backup offline.
+backups/

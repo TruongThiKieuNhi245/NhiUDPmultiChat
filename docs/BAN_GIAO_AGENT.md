@@ -1,3 +1,9 @@
+## Cập nhật Web 3.4 — Dữ liệu và Web 4 local
+
+Tiếp quản `07f6ee2`, thêm WebDataTool offline: khóa kho/checksum/validator trên bản sao, backup/verify/restore/import-copy và rollback vào thư mục mới. Thêm profile proxy/mẫu Caddy+systemd; kiểm TLS HTTPS/WSS, UDP, file, cookie/CSRF/Origin và dữ liệu qua restore/rollback bằng JAR thật. Sửa callback gỡ cấm đến muộn tự mở lại dialog đã đóng. [Bản đồ source, 36 JUnit và browser, lệnh dùng/giới hạn](WEB3_4_DU_LIEU_VA_WEB4_LOCAL.md). [Host nguồn chính thức và việc còn lại](TRIEN_KHAI_0_DONG.md). Preview vẫn 8085, dữ liệu/mật khẩu giữ nguyên, có backup và JAR cũ; chưa push/public.
+
+---
+
 ## Cập nhật Web 3.3 — Quản lý thành viên và thông báo
 
 Tiếp quản `1351412`; giữ sáu tài liệu có sửa đổi và mọi dữ liệu/preview cũ. Hoàn thiện moderation feedback/notice riêng/banner/lệnh còn hạn/gỡ cấm; sửa admin thay chủ, CSRF early submit và typing. [Chi tiết file/hàm, QA và bản mới 8085](WEB3_3_THANH_VIEN_NGHIEM_THU.md). JUnit 30, desktop admin 16; browser thành viên/admin/UX/Web 2/tệp đều PASS trong phạm vi ghi ở nghiệm thu. Backup/rollback và Web 4 còn tiếp theo; chưa push/public.
