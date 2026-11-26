@@ -1,0 +1,11 @@
+.git
+.gitignore
+target/
+web-data/
+backups/
+*.log
+docs/
+deploy/
+.idea/
+.vscode/
+*.iml

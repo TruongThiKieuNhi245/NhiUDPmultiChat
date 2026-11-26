@@ -1,0 +1,17 @@
+services:
+  udpmultichat:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      BIND_ADDRESS: "0.0.0.0"
+      CHAT_DATA_DIR: "/app/data"
+      COOKIE_SECURE: "false"
+      SERVER_FORWARD_HEADERS_STRATEGY: "none"
+      CHAT_INITIAL_ADMIN_PASSWORD: "${CHAT_INITIAL_ADMIN_PASSWORD:-Admin12345678}"
+    volumes:
+      - udpchat_data:/app/data
+
+volumes:
+  udpchat_data:

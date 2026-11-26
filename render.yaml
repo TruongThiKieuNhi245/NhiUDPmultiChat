@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: udpmultichat
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: BIND_ADDRESS
+        value: 0.0.0.0
+      - key: CHAT_DATA_DIR
+        value: /app/data
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: framework
+      - key: CHAT_INITIAL_ADMIN_PASSWORD
+        sync: false
