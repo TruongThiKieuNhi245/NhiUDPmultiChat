@@ -199,6 +199,23 @@ input {
   color:var(--text);
   margin-bottom:22px
 }
+.password-field {
+  position:relative;
+  margin-bottom:22px
+}
+.password-field input {
+  margin-bottom:0;
+  padding-right:46px
+}
+.password-toggle {
+  position:absolute;
+  right:6px;
+  top:50%;
+  transform:translateY(-50%);
+  width:34px;
+  height:34px;
+  color:var(--muted)
+}
 input::placeholder,textarea::placeholder {
   color:var(--muted)
 }

@@ -167,8 +167,20 @@ function showAuth(reason = '') {
   $('workspace').hidden = true;
   $('auth').hidden = false;
   setAuthMode(false);$('auth-error').textContent = reason;
+  setPasswordVisible(false);
   $('login').focus();
 }
+function setPasswordVisible(show) {
+  const input=$('password'), toggle=$('toggle-password');
+  input.type = show ? 'text' : 'password';
+  toggle.setAttribute('aria-pressed', String(show));
+  toggle.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+  toggle.title = show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
+  toggle.innerHTML = show
+    ? '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6a3 3 0 0 0 4.2 4.2"/><path d="M9.9 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-4 4.8"/><path d="M6.6 6.6A17.4 17.4 0 0 0 2 12s3.5 7 10 7a10.4 10.4 0 0 0 5.4-1.5"/></svg>'
+    : '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
+$('toggle-password').onclick = () => setPasswordVisible($('password').type === 'password');
 function setAuthMode(value) {
   registering = value;
   $('form-title').textContent = registering ? 'Bắt đầu câu chuyện mới.' : 'Rất vui được gặp lại.';
@@ -190,6 +202,7 @@ $('login-form').onsubmit = async event => {
     if (registering) await api('/register', { method: 'POST', body });
     me = await api('/login', { method: 'POST', body });
     $('password').value = '';
+    setPasswordVisible(false);
     await loadCsrf();
     enterChat();
   } catch (error) { $('auth-error').textContent = error.message; }
