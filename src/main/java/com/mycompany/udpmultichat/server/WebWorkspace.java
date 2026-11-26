@@ -102,7 +102,10 @@ public final class WebWorkspace {
             case "room-state": read(p,room); rooms.dongMo(p,room,bool(args,"open")); break;
             case "room-delete":
                 read(p,room); manage(p,room); invites.xoaTheoPhong(room); rooms.xoa(p,room);
-                for (var session:users.danhSach()) { session.phong.remove(room); session.choVao.remove(room); } break;
+                for (var session:users.danhSach()) { session.phong.remove(room); session.choVao.remove(room); }
+                preferences.entrySet().removeIf(e -> e.getKey().toString().startsWith("dm.") && room.equals(e.getValue()));
+                disk.ghiThuocTinh("web-preferences",preferences); break;
+            case "room-direct": return directRoom(p,value(args,"userId"));
             case "room-join": {
                 var r=rooms.datCho(p,value(args,"key"),value(args,"password")); rooms.xacNhanVao(p,r.id); return Map.of("roomId",r.id);
             }
@@ -159,6 +162,42 @@ public final class WebWorkspace {
             if (previous!=null) try { disk.ghiAnh(p.nguoi.tenDangNhap,previous); } catch (IOException rollback) { e.addSuppressed(rollback); }
             throw e;
         }
+    }
+    private Map<String,String> directRoom(Phien p,String targetId) throws IOException {
+        if (targetId.isEmpty() || targetId.equals(p.nguoi.id)) throw new IllegalArgumentException("Không thể tự nhắn riêng cho chính mình.");
+        var target=users.lay(targetId);
+        if (users.biKhoa(targetId)) throw new IllegalArgumentException("Tài khoản này đang bị khóa.");
+        String pairKey="dm."+(p.nguoi.id.compareTo(targetId)<=0?p.nguoi.id+"."+targetId:targetId+"."+p.nguoi.id);
+        String existing=preferences.getProperty(pairKey,"");
+        if (!existing.isEmpty()) {
+            var found=rooms.tatCa().stream().filter(r->r.id.equals(existing)).findFirst();
+            if (found.isPresent()) {
+                Phong r=found.get();
+                if (!rooms.laThanhVien(p.nguoi.id,r.id)) rooms.themThanhVienTrucTiep(p.nguoi.id,r.id);
+                if (!rooms.laThanhVien(targetId,r.id)) rooms.themThanhVienTrucTiep(targetId,r.id);
+                for (var s:users.danhSach()) {
+                    if ((s.nguoi.id.equals(p.nguoi.id) || s.nguoi.id.equals(targetId)) && s.sanSang && !s.phong.contains(r.id)) {
+                        try { rooms.datCho(s,r.id,""); rooms.xacNhanVao(s,r.id); } catch (IllegalArgumentException ignored) { }
+                    }
+                }
+                return Map.of("roomId",r.id);
+            }
+        }
+        String name="Riêng: "+p.nguoi.tenDangNhap+" · "+target.tenDangNhap;
+        if (name.length()>30) name=name.substring(0,30);
+        Phong r=rooms.tao(p,name,"Trò chuyện riêng 1-1",false,"",2);
+        rooms.datCho(p,r.id,""); rooms.xacNhanVao(p,r.id);
+        rooms.themThanhVienTrucTiep(targetId,r.id);
+        for (var s:users.danhSach()) {
+            if (s.nguoi.id.equals(targetId) && s.sanSang) {
+                try { rooms.datCho(s,r.id,""); rooms.xacNhanVao(s,r.id); } catch (IllegalArgumentException ignored) { }
+            }
+        }
+        Properties old=(Properties)preferences.clone();
+        preferences.setProperty(pairKey,r.id);
+        try { disk.ghiThuocTinh("web-preferences",preferences); }
+        catch (IOException e) { preferences.clear(); preferences.putAll(old); throw e; }
+        return Map.of("roomId",r.id);
     }
     private void moderate(Phien p,String room,Map<String,String> args) throws IOException {
         read(p,room); var target=users.lay(value(args,"userId")); var r=rooms.lay(room);

@@ -187,5 +187,22 @@ class Web2ServiceTest {
             assertFalse(service.canRead(b,room));
         }
     }
+    @Test void directChatReusesPrivateRoomAndIsolatesThirdUser(@TempDir Path dir) throws Exception {
+        try(var service=new WebChatService(dir);var udp=new UdpChatTransport(service)) {
+            String a=account(service,"directa"),b=account(service,"directb"),c=account(service,"directc");
+            String bid=user(service,b),aid=user(service,a);
+            String dm1=json.valueToTree(service.action(a,"room-direct",args("userId",bid))).path("roomId").asText();
+            String dm2=json.valueToTree(service.action(b,"room-direct",args("userId",aid))).path("roomId").asText();
+            assertEquals(dm1,dm2);
+            assertTrue(service.canRead(a,dm1));
+            assertTrue(service.canRead(b,dm1));
+            assertFalse(service.canRead(c,dm1));
+            assertFalse(room(service,a,dm1).path("publicRoom").asBoolean());
+            assertEquals(2,room(service,a,dm1).path("capacity").asInt());
+            var sent=udp.send(a,dm1,TinNhan.taoMa(),"Chào riêng qua UDP").get(5,TimeUnit.SECONDS).message();
+            assertEquals("Chào riêng qua UDP",service.messages(b,dm1,0,false).getFirst().text());
+            assertEquals(sent.msgId,service.messages(b,dm1,0,false).getFirst().msgId());
+        }
+    }
 
 }

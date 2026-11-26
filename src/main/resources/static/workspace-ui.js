@@ -289,6 +289,24 @@ export class WorkspaceUI {
       row.append(av, info);
 
       const acts = element('div', 'rp-mem-acts');
+      if (person.id !== this.snapshot.profile.id) {
+        const dmBtn = element('button', 'rp-mini', 'Nhắn riêng');
+        dmBtn.type = 'button';
+        dmBtn.onclick = async () => {
+          dmBtn.disabled = true;
+          try {
+            const res = await this.action('room-direct', { userId: person.id });
+            this.closePanel();
+            await this.refresh();
+            await this.selectRoom(res.roomId);
+          } catch (error) {
+            let node = memGroup.querySelector('.action-error');
+            if (!node) { node = element('p', 'error action-error'); node.setAttribute('role', 'alert'); memGroup.append(node); }
+            node.textContent = error.message;
+          } finally { if (dmBtn.isConnected) dmBtn.disabled = false; }
+        };
+        acts.append(dmBtn);
+      }
       if (person.id === this.snapshot.profile.id || room.manage) {
         const nickBtn = element('button', 'rp-mini', 'Biệt danh');
         nickBtn.type = 'button';
